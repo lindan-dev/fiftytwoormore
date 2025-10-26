@@ -676,7 +676,7 @@ const Index = () => {
                   return (
                     <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-3 sm:p-4 rounded-xl border-2 border-primary/20 shadow-sm space-y-2">
                       <div className="flex justify-between items-center text-xs sm:text-sm">
-                        <span className="font-medium">{yearCount} this year</span>
+                        <span className="font-medium">{yearCount}/{currentGoal} this year</span>
                         <div className="flex items-center gap-1.5">
                           {Array.from({ length: completedTiers }).map((_, i) => (
                             <span 
@@ -689,7 +689,6 @@ const Index = () => {
                           <span className="px-2 py-0.5 bg-primary text-primary-foreground font-bold text-xs rounded-full animate-pulse">
                             x{multiplier}
                           </span>
-                          <span className="font-semibold text-primary ml-1">Goal: {currentGoal}</span>
                         </div>
                       </div>
                       <Progress value={progressPercentage} className="h-3" />

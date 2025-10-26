@@ -89,7 +89,7 @@ export default function Auth() {
             fiftytwoormore
           </CardTitle>
           <CardDescription className="text-sm sm:text-base">
-            {isSignUp ? "Because done is better than perfect" : "Welcome back"}
+            Because done is better than perfect
           </CardDescription>
         </CardHeader>
         <CardContent className="p-4 sm:p-6">
@@ -134,7 +134,7 @@ export default function Auth() {
               disabled={loading}
               className="w-full h-10 sm:h-12 text-base sm:text-lg font-semibold"
             >
-              {loading ? "Loading..." : isSignUp ? "Sign Up" : "Sign In"}
+              {loading ? "Loading..." : "Get Streaky"}
             </Button>
             <Button
               type="button"

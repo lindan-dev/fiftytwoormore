@@ -271,34 +271,34 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-16">
       {/* Header */}
-      <div className="bg-primary text-white p-6 shadow-soft">
+      <div className="bg-primary text-white p-3 sm:p-4 shadow-soft">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigate("/")}
-            className="text-white hover:bg-white/20"
+            className="text-white hover:bg-white/20 h-9 w-9"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
           </Button>
-          <h1 className="text-2xl font-bold">Profile</h1>
-          <div className="w-10" /> {/* Spacer */}
+          <h1 className="text-xl sm:text-2xl font-bold">Profile</h1>
+          <div className="w-9" /> {/* Spacer */}
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-2xl mx-auto p-6 space-y-6 animate-fade-in">
+      <div className="max-w-2xl mx-auto p-3 sm:p-4 space-y-3 sm:space-y-4 animate-fade-in">
         {/* Profile Card */}
-        <Card className="p-6 border-2 border-primary/20 shadow-sm">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-              <User className="w-5 h-5 text-white" />
+        <Card className="p-3 sm:p-4 border-2 border-primary/20 shadow-sm">
+          <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-5">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+              <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
-            <div>
-              <h3 className="font-semibold">Your Profile</h3>
-              <p className="text-sm text-muted-foreground">
+            <div className="min-w-0 flex-1">
+              <h3 className="font-semibold text-sm sm:text-base truncate">Your Profile</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">
                 Update your personal information
               </p>
             </div>
@@ -352,14 +352,14 @@ const Profile = () => {
 
         {/* Partner Card */}
         {partner && (
-          <Card className="p-6 border-2 border-primary/20 shadow-sm">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-                <Heart className="w-5 h-5 text-white" fill="white" />
+          <Card className="p-3 sm:p-4 border-2 border-primary/20 shadow-sm">
+            <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-5">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="white" />
               </div>
-              <div>
-                <h3 className="font-semibold">Connected Partner</h3>
-                <p className="text-sm text-muted-foreground">
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold text-sm sm:text-base truncate">Connected Partner</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">
                   {partner.name}
                 </p>
               </div>

@@ -141,14 +141,14 @@ export default function ActivityLog({ activities, onDelete, onUpdate, currentUse
 
   if (activities.length === 0) {
     return (
-      <Card className="p-8 text-center border-2 border-dashed border-primary/20">
-        <p className="text-muted-foreground">No activities logged yet. Start tracking your moments together!</p>
+      <Card className="p-4 sm:p-6 text-center border-2 border-dashed border-primary/20">
+        <p className="text-sm sm:text-base text-muted-foreground">No activities logged yet. Start tracking your moments together!</p>
       </Card>
     );
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2 sm:space-y-3">
       {activities.map((activity, index) => {
         const isCurrentUser = currentUserId === activity.user_id;
         const profile = profiles[activity.user_id];
@@ -158,56 +158,56 @@ export default function ActivityLog({ activities, onDelete, onUpdate, currentUse
         return (
           <Card
             key={activity.id}
-            className={`p-4 flex items-center justify-between border-2 transition-all hover:shadow-soft animate-slide-up ${
+            className={`p-2.5 sm:p-3 flex items-center justify-between border-2 transition-all hover:shadow-soft animate-slide-up ${
               specialDate 
                 ? "border-primary/40 bg-gradient-to-r from-primary/5 to-transparent" 
                 : "border-primary/10 hover:border-primary/30"
             }`}
             style={{ animationDelay: `${index * 50}ms` }}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
               {activity.emoji && (
-                <span className="text-3xl">{activity.emoji}</span>
+                <span className="text-2xl sm:text-3xl flex-shrink-0">{activity.emoji}</span>
               )}
-              <div>
-                <p className="font-semibold text-lg">
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-sm sm:text-base truncate">
                   {new Date(activity.activity_date).toLocaleDateString(undefined, {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric'
                   })}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   {new Date(activity.activity_date).toLocaleTimeString(undefined, {
                     hour: 'numeric',
                     minute: '2-digit',
                     hour12: true
                   })}
                 </p>
-                <div className="flex items-center gap-1.5 mt-1">
-                  <User className="w-3.5 h-3.5 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground">
+                <div className="flex items-center gap-1 mt-0.5">
+                  <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground flex-shrink-0" />
+                  <p className="text-xs text-muted-foreground truncate">
                     Logged by {isCurrentUser ? "you" : loggedBy}
                   </p>
                 </div>
                 {specialDate && (
-                  <div className={`mt-2 inline-block px-2 py-0.5 rounded-full text-xs font-semibold border ${specialDate.color}`}>
+                  <div className={`mt-1.5 inline-block px-1.5 py-0.5 rounded-full text-xs font-semibold border ${specialDate.color}`}>
                     {specialDate.label}
                   </div>
                 )}
               </div>
             </div>
             {isCurrentUser && (
-              <div className="flex gap-1">
+              <div className="flex gap-0.5 flex-shrink-0">
                 <Dialog open={editingActivity?.id === activity.id} onOpenChange={(open) => !open && setEditingActivity(null)}>
                   <DialogTrigger asChild>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => handleEditClick(activity)}
-                      className="hover:bg-primary/10"
+                      className="hover:bg-primary/10 h-8 w-8 sm:h-9 sm:w-9"
                     >
-                      <Pencil className="w-4 h-4" />
+                      <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
@@ -255,9 +255,9 @@ export default function ActivityLog({ activities, onDelete, onUpdate, currentUse
                   variant="ghost"
                   size="icon"
                   onClick={() => onDelete(activity.id)}
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 sm:h-9 sm:w-9"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </Button>
               </div>
             )}

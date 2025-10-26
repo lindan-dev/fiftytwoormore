@@ -63,21 +63,21 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-3 sm:p-4">
       <Card className="w-full max-w-md shadow-soft border-2 border-primary/20 animate-scale-in">
-        <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 rounded-full bg-primary flex items-center justify-center shadow-soft">
-            <Heart className="w-8 h-8 text-white" fill="white" />
+        <CardHeader className="text-center space-y-3 sm:space-y-4 p-4 sm:p-6">
+          <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-primary flex items-center justify-center shadow-soft">
+            <Heart className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="white" />
           </div>
-          <CardTitle className="text-3xl font-bold text-primary">
+          <CardTitle className="text-2xl sm:text-3xl font-bold text-primary">
             fiftytwoormore
           </CardTitle>
-          <CardDescription className="text-base">
+          <CardDescription className="text-sm sm:text-base">
             {isSignUp ? "Create your shared space" : "Welcome back"}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleAuth} className="space-y-4">
+        <CardContent className="p-4 sm:p-6">
+          <form onSubmit={handleAuth} className="space-y-3 sm:space-y-4">
             {isSignUp && (
               <div className="space-y-2">
                 <Input
@@ -87,7 +87,7 @@ export default function Auth() {
                   onChange={(e) => setName(e.target.value)}
                   required
                   disabled={loading}
-                  className="h-12 border-2 focus:border-primary transition-colors"
+                  className="h-10 sm:h-12 border-2 focus:border-primary transition-colors text-sm sm:text-base"
                 />
               </div>
             )}
@@ -99,7 +99,7 @@ export default function Auth() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={loading}
-                className="h-12 border-2 focus:border-primary transition-colors"
+                className="h-10 sm:h-12 border-2 focus:border-primary transition-colors text-sm sm:text-base"
               />
             </div>
             <div className="space-y-2">
@@ -110,13 +110,13 @@ export default function Auth() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={loading}
-                className="h-12 border-2 focus:border-primary transition-colors"
+                className="h-10 sm:h-12 border-2 focus:border-primary transition-colors text-sm sm:text-base"
               />
             </div>
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-12 text-lg font-semibold"
+              className="w-full h-10 sm:h-12 text-base sm:text-lg font-semibold"
             >
               {loading ? "Loading..." : isSignUp ? "Sign Up" : "Sign In"}
             </Button>
@@ -125,7 +125,7 @@ export default function Auth() {
               variant="ghost"
               onClick={() => setIsSignUp(!isSignUp)}
               disabled={loading}
-              className="w-full"
+              className="w-full text-sm sm:text-base"
             >
               {isSignUp ? "Already have an account? Sign in" : "Need an account? Sign up"}
             </Button>

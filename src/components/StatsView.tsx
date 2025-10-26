@@ -160,20 +160,20 @@ export default function StatsView({ activities, compact = false }: StatsViewProp
 
     return (
       <Card className="border-2 border-primary/10 hover:border-primary/30 transition-all hover:shadow-soft">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+        <CardHeader className="pb-2 sm:pb-3 p-3 sm:p-6">
+          <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">{title}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="text-4xl font-bold text-primary">
+        <CardContent className="space-y-1.5 sm:space-y-2 p-3 pt-0 sm:p-6 sm:pt-0">
+          <div className="text-3xl sm:text-4xl font-bold text-primary">
             {current}
           </div>
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm flex-wrap">
             {getTrendIcon()}
             <span className={getTrendColor()}>
               {difference > 0 ? "+" : ""}
               {difference} ({percentChange}%)
             </span>
-            <span className="text-muted-foreground">vs previous</span>
+            <span className="text-muted-foreground whitespace-nowrap">vs previous</span>
           </div>
         </CardContent>
       </Card>
@@ -192,13 +192,13 @@ export default function StatsView({ activities, compact = false }: StatsViewProp
     color?: string;
   }) => (
     <Card className="border-2 border-primary/10 hover:border-primary/30 transition-all hover:shadow-soft">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground mb-1">{title}</p>
-            <p className={`text-3xl font-bold ${color}`}>{value}</p>
+      <CardContent className="p-3 sm:p-4">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mb-0.5 sm:mb-1 truncate">{title}</p>
+            <p className={`text-2xl sm:text-3xl font-bold ${color}`}>{value}</p>
           </div>
-          <Icon className={`w-8 h-8 ${color}`} />
+          <Icon className={`w-6 h-6 sm:w-8 sm:h-8 ${color} flex-shrink-0`} />
         </div>
       </CardContent>
     </Card>
@@ -206,7 +206,7 @@ export default function StatsView({ activities, compact = false }: StatsViewProp
 
   if (compact) {
     return (
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3">
         <SimpleStatCard
           icon={Flame}
           title="Current Streak"
@@ -236,11 +236,11 @@ export default function StatsView({ activities, compact = false }: StatsViewProp
   }
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-bold">Statistics</h2>
+    <div className="space-y-3 sm:space-y-4">
+      <h2 className="text-xl sm:text-2xl font-bold">Statistics</h2>
       
       {/* Period-based Stats */}
-      <div className="grid gap-4">
+      <div className="grid gap-3 sm:gap-4">
         <StatCard
           title="This Week"
           current={weekStats.currentCount}

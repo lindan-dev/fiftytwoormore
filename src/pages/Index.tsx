@@ -590,52 +590,52 @@ const Index = () => {
 
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-16">
       {/* Header */}
-      <div className="bg-primary text-white p-6 shadow-soft">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
-              <Heart className="w-6 h-6" fill="white" />
+      <div className="bg-primary text-white p-3 sm:p-4 shadow-soft">
+        <div className="max-w-2xl mx-auto flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm flex-shrink-0">
+              <Heart className="w-4 h-4 sm:w-6 sm:h-6" fill="white" />
             </div>
-            <h1 className="text-2xl font-bold">fiftytwoormore</h1>
+            <h1 className="text-lg sm:text-2xl font-bold truncate">fiftytwoormore</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigate("/profile")}
-              className="text-white hover:bg-white/20"
+              className="text-white hover:bg-white/20 h-8 w-8 sm:h-9 sm:w-9"
             >
-              <User className="w-5 h-5" />
+              <User className="w-4 h-4 sm:w-5 sm:h-5" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
               onClick={handleSignOut}
-              className="text-white hover:bg-white/20"
+              className="text-white hover:bg-white/20 h-8 w-8 sm:h-9 sm:w-9"
             >
-              <LogOut className="w-5 h-5" />
+              <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
             </Button>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-2xl mx-auto p-6 space-y-6 animate-fade-in">
+      <div className="max-w-2xl mx-auto p-3 sm:p-4 space-y-3 sm:space-y-4 animate-fade-in">
         {/* Connection Section */}
         {hasPartner ? (
           <>
-            <div className="bg-card p-6 rounded-xl border-2 border-primary/20 shadow-sm animate-fade-in">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
-                  <Heart className="w-6 h-6 text-white" fill="white" />
+            <div className="bg-card p-3 sm:p-4 rounded-xl border-2 border-primary/20 shadow-sm animate-fade-in">
+              <div className="flex items-center gap-2 sm:gap-3 mb-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                  <Heart className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="white" />
                 </div>
-                <div className="flex-1">
-                  <p className="text-lg">
-                    Doing it with {partnerName} since {activities.length > 0 ? new Date(activities[activities.length - 1].activity_date).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) : new Date(connectedDate).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm sm:text-base leading-tight">
+                    Doing it with <span className="font-semibold">{partnerName}</span> since {activities.length > 0 ? new Date(activities[activities.length - 1].activity_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : new Date(connectedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                   </p>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
                     {activities.length} {activities.length === 1 ? 'activity' : 'activities'} and counting 🔥
                   </p>
                 </div>
@@ -659,10 +659,10 @@ const Index = () => {
                   const weeksLeft = Math.max(0, differenceInWeeks(yearEnd, now));
                   
                   return (
-                    <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-6 rounded-xl border-2 border-primary/20 shadow-sm">
-                      <p className="text-lg font-semibold text-center">
+                    <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-3 sm:p-4 rounded-xl border-2 border-primary/20 shadow-sm">
+                      <p className="text-sm sm:text-base font-semibold text-center leading-tight">
                         {yearCount < 52 
-                          ? `Only ${52 - yearCount} to go in ${weeksLeft} ${weeksLeft === 1 ? 'week' : 'weeks'} left of year!`
+                          ? `Only ${52 - yearCount} to go in ${weeksLeft} ${weeksLeft === 1 ? 'week' : 'weeks'} left!`
                           : `Crushing it! ${yearCount - 52} over the goal!`
                         }
                       </p>
@@ -673,27 +673,27 @@ const Index = () => {
             )}
           </>
         ) : (
-          <div className="bg-card p-6 rounded-xl border-2 border-primary/20 shadow-sm animate-fade-in space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-                <Heart className="w-5 h-5 text-white" fill="white" />
+          <div className="bg-card p-3 sm:p-4 rounded-xl border-2 border-primary/20 shadow-sm animate-fade-in space-y-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="white" />
               </div>
-              <div>
-                <h3 className="font-semibold">Connect with Your Partner</h3>
-                <p className="text-sm text-muted-foreground">
-                  Share your code or enter your partner's code
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold text-sm sm:text-base truncate">Connect with Your Partner</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                  Share your code or enter partner's code
                 </p>
               </div>
             </div>
 
             {/* My Invitation Code - Only show if not connected */}
             {!hasPartner && (
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold">Your Invitation Code</Label>
+              <div className="space-y-2">
+                <Label className="text-xs sm:text-sm font-semibold">Your Invitation Code</Label>
                 {myInvitationCode ? (
                   <div className="flex gap-2">
-                    <div className="flex-1 bg-primary/5 border-2 border-primary/20 rounded-lg p-4 flex items-center justify-center">
-                      <code className="text-2xl font-bold tracking-wider text-primary">
+                    <div className="flex-1 bg-primary/5 border-2 border-primary/20 rounded-lg p-3 flex items-center justify-center">
+                      <code className="text-xl sm:text-2xl font-bold tracking-wider text-primary">
                         {myInvitationCode}
                       </code>
                     </div>
@@ -701,9 +701,9 @@ const Index = () => {
                       onClick={copyInvitationCode}
                       variant="outline"
                       size="icon"
-                      className="h-auto border-2"
+                      className="h-auto border-2 w-11 sm:w-12 flex-shrink-0"
                     >
-                      <Copy className="w-5 h-5" />
+                      <Copy className="w-4 h-4 sm:w-5 sm:h-5" />
                     </Button>
                   </div>
                 ) : (
@@ -738,8 +738,8 @@ const Index = () => {
             </div>
 
             {/* Enter Partner's Code */}
-            <div className="space-y-3">
-              <Label htmlFor="enter-code" className="text-sm font-semibold">
+            <div className="space-y-2">
+              <Label htmlFor="enter-code" className="text-xs sm:text-sm font-semibold">
                 Enter Partner's Code
               </Label>
               <div className="flex gap-2">
@@ -772,9 +772,9 @@ const Index = () => {
             <DialogTrigger asChild>
               <Button
                 disabled={!hasPartner}
-                className="flex-1 h-16 text-lg font-semibold disabled:opacity-50"
+                className="flex-1 h-12 sm:h-14 text-sm sm:text-base font-semibold disabled:opacity-50"
               >
-                <Plus className="w-6 h-6 mr-2" />
+                <Plus className="w-5 h-5 sm:w-6 sm:h-6 mr-1.5 sm:mr-2" />
                 Log Now
               </Button>
             </DialogTrigger>
@@ -802,7 +802,7 @@ const Index = () => {
               <Button
                 disabled={!hasPartner}
                 variant="outline"
-                className="h-16 px-6 border-2 border-primary/30 hover:border-primary hover:bg-primary/5 disabled:opacity-50"
+                className="h-12 sm:h-14 px-4 sm:px-6 border-2 border-primary/30 hover:border-primary hover:bg-primary/5 disabled:opacity-50 text-sm sm:text-base"
               >
                 Custom
               </Button>
@@ -850,29 +850,29 @@ const Index = () => {
         </div>
 
         {/* View Toggle */}
-        <div className="flex gap-2 bg-card p-1 rounded-xl border-2 border-primary/10">
+        <div className="flex gap-1 sm:gap-2 bg-card p-1 rounded-xl border-2 border-primary/10">
           <Button
             variant={view === "log" ? "default" : "ghost"}
-            className={`flex-1 ${
+            className={`flex-1 text-sm sm:text-base ${
               view === "log"
                 ? "bg-primary text-white"
                 : "hover:bg-primary/5"
             }`}
             onClick={() => setView("log")}
           >
-            <List className="w-4 h-4 mr-2" />
+            <List className="w-4 h-4 mr-1.5 sm:mr-2" />
             Log
           </Button>
           <Button
             variant={view === "stats" ? "default" : "ghost"}
-            className={`flex-1 ${
+            className={`flex-1 text-sm sm:text-base ${
               view === "stats"
                 ? "bg-primary text-white"
                 : "hover:bg-primary/5"
             }`}
             onClick={() => setView("stats")}
           >
-            <BarChart3 className="w-4 h-4 mr-2" />
+            <BarChart3 className="w-4 h-4 mr-1.5 sm:mr-2" />
             Stats
           </Button>
         </div>

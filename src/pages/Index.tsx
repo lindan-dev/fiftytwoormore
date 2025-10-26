@@ -606,13 +606,10 @@ const Index = () => {
                 <Heart className="w-6 h-6 text-white" fill="white" />
               </div>
               <div className="flex-1">
-                <p className="text-lg font-semibold">
-                  Doing it with {partnerName}
+                <p className="text-lg">
+                  Doing it with {partnerName} since {activities.length > 0 ? new Date(activities[activities.length - 1].activity_date).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) : new Date(connectedDate).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  since {new Date(connectedDate).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
-                </p>
-                <p className="text-sm font-medium text-primary mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   {activities.length} {activities.length === 1 ? 'activity' : 'activities'} and counting 🔥
                 </p>
               </div>
@@ -825,11 +822,16 @@ const Index = () => {
 
         {/* Content Area */}
         {view === "log" ? (
-          <ActivityLog
-            activities={activities}
-            onDelete={handleDeleteActivity}
-            currentUserId={session.user.id}
-          />
+          <>
+            {hasPartner && activities.length > 0 && (
+              <StatsView activities={activities} />
+            )}
+            <ActivityLog
+              activities={activities}
+              onDelete={handleDeleteActivity}
+              currentUserId={session.user.id}
+            />
+          </>
         ) : (
           <StatsView activities={activities} />
         )}

@@ -11,6 +11,7 @@ export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const { toast } = useToast();
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -19,9 +20,23 @@ export default function Auth() {
 
     try {
       if (isSignUp) {
+        if (!name.trim()) {
+          toast({
+            title: "Error",
+            description: "Please enter your name",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
         const { error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            data: {
+              name: name.trim(),
+            },
+          },
         });
         if (error) throw error;
         toast({
@@ -63,6 +78,19 @@ export default function Auth() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleAuth} className="space-y-4">
+            {isSignUp && (
+              <div className="space-y-2">
+                <Input
+                  type="text"
+                  placeholder="Name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  disabled={loading}
+                  className="h-12 border-2 focus:border-primary transition-colors"
+                />
+              </div>
+            )}
             <div className="space-y-2">
               <Input
                 type="email"

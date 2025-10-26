@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import Auth from "@/components/Auth";
 import EmojiSelector from "@/components/EmojiSelector";
 import { Button } from "@/components/ui/button";
-import { Heart, Plus, BarChart3, List, LogOut, Copy, Loader2 } from "lucide-react";
+import { Heart, Plus, BarChart3, List, LogOut, Copy, Loader2, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ActivityLog from "@/components/ActivityLog";
 import StatsView from "@/components/StatsView";
@@ -30,6 +31,7 @@ interface Invitation {
 }
 
 const Index = () => {
+  const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -414,14 +416,24 @@ const Index = () => {
             </div>
             <h1 className="text-2xl font-bold">fiftytwoormore</h1>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleSignOut}
-            className="text-white hover:bg-white/20"
-          >
-            <LogOut className="w-5 h-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/profile")}
+              className="text-white hover:bg-white/20"
+            >
+              <User className="w-5 h-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleSignOut}
+              className="text-white hover:bg-white/20"
+            >
+              <LogOut className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -442,44 +454,46 @@ const Index = () => {
               </div>
             </div>
 
-            {/* My Invitation Code */}
-            <div className="space-y-3">
-              <Label className="text-sm font-semibold">Your Invitation Code</Label>
-              {myInvitationCode ? (
-                <div className="flex gap-2">
-                  <div className="flex-1 bg-primary/5 border-2 border-primary/20 rounded-lg p-4 flex items-center justify-center">
-                    <code className="text-2xl font-bold tracking-wider text-primary">
-                      {myInvitationCode}
-                    </code>
+            {/* My Invitation Code - Only show if not connected */}
+            {!hasPartner && (
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold">Your Invitation Code</Label>
+                {myInvitationCode ? (
+                  <div className="flex gap-2">
+                    <div className="flex-1 bg-primary/5 border-2 border-primary/20 rounded-lg p-4 flex items-center justify-center">
+                      <code className="text-2xl font-bold tracking-wider text-primary">
+                        {myInvitationCode}
+                      </code>
+                    </div>
+                    <Button
+                      onClick={copyInvitationCode}
+                      variant="outline"
+                      size="icon"
+                      className="h-auto border-2"
+                    >
+                      <Copy className="w-5 h-5" />
+                    </Button>
                   </div>
+                ) : (
                   <Button
-                    onClick={copyInvitationCode}
-                    variant="outline"
-                    size="icon"
-                    className="h-auto border-2"
+                    onClick={generateInvitationCode}
+                    disabled={sendingInvitation}
+                    className="w-full bg-gradient-primary hover:opacity-90"
                   >
-                    <Copy className="w-5 h-5" />
+                    {sendingInvitation ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      "Generate Code"
+                    )}
                   </Button>
-                </div>
-              ) : (
-                <Button
-                  onClick={generateInvitationCode}
-                  disabled={sendingInvitation}
-                  className="w-full bg-gradient-primary hover:opacity-90"
-                >
-                  {sendingInvitation ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    "Generate Code"
-                  )}
-                </Button>
-              )}
-              {myInvitationCode && (
-                <p className="text-xs text-muted-foreground">
-                  Share this code with your partner via WhatsApp, SMS, or any messaging app
-                </p>
-              )}
-            </div>
+                )}
+                {myInvitationCode && (
+                  <p className="text-xs text-muted-foreground">
+                    Share this code with your partner via WhatsApp, SMS, or any messaging app
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Divider */}
             <div className="relative">

@@ -37,6 +37,7 @@ const Index = () => {
   const [checkingPartner, setCheckingPartner] = useState(true);
   const [view, setView] = useState<"log" | "stats">("log");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [quickLogOpen, setQuickLogOpen] = useState(false);
   const [customDate, setCustomDate] = useState("");
   const [customTime, setCustomTime] = useState("");
   const [selectedEmoji, setSelectedEmoji] = useState("");
@@ -69,6 +70,55 @@ const Index = () => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Realtime subscription for invitation acceptance
+  useEffect(() => {
+    if (!session?.user?.id || hasPartner) return;
+
+    const channel = supabase
+      .channel('invitation-status')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'couples',
+          filter: `user1_id=eq.${session.user.id},user2_id=eq.${session.user.id}`,
+        },
+        () => {
+          checkPartnerStatus();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [session?.user?.id, hasPartner]);
+
+  // Realtime subscription for activities
+  useEffect(() => {
+    if (!hasPartner) return;
+
+    const channel = supabase
+      .channel('activities-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'activities',
+        },
+        () => {
+          fetchActivities();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [hasPartner]);
 
   const checkPartnerStatus = async () => {
     if (!session?.user?.id) {
@@ -274,9 +324,7 @@ const Index = () => {
         description: "Activity logged!",
       });
       fetchActivities();
-      setDialogOpen(false);
-      setCustomDate("");
-      setCustomTime("");
+      setQuickLogOpen(false);
       setSelectedEmoji("");
     }
   };
@@ -302,7 +350,11 @@ const Index = () => {
 
     const combinedDateTime = new Date(`${customDate}T${customTime}`);
     handleLogActivity(combinedDateTime, selectedEmoji);
+    setDialogOpen(false);
+    setCustomDate("");
+    setCustomTime("");
   };
+
 
   const handleDeleteActivity = async (id: string) => {
     const { error } = await supabase.from("activities").delete().eq("id", id);
@@ -473,7 +525,7 @@ const Index = () => {
 
         {/* Quick Log Button */}
         <div className="flex gap-2">
-          <Dialog>
+          <Dialog open={quickLogOpen} onOpenChange={setQuickLogOpen}>
             <DialogTrigger asChild>
               <Button
                 disabled={!hasPartner}

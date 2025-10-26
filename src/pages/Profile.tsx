@@ -24,6 +24,7 @@ interface Profile {
   id: string;
   user_id: string;
   name: string;
+  birthday?: string;
 }
 
 interface Partner {
@@ -37,6 +38,7 @@ const Profile = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [partner, setPartner] = useState<Partner | null>(null);
   const [name, setName] = useState("");
+  const [birthday, setBirthday] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
@@ -127,6 +129,7 @@ const Profile = () => {
     } else if (data) {
       setProfile(data);
       setName(data.name || "");
+      setBirthday(data.birthday || "");
     }
   };
 
@@ -172,7 +175,10 @@ const Profile = () => {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({ name: name.trim() })
+        .update({ 
+          name: name.trim(),
+          birthday: birthday || null
+        })
         .eq("user_id", session.user.id);
 
       if (error) throw error;
@@ -318,6 +324,16 @@ const Profile = () => {
                 value={session.user.email}
                 disabled
                 className="border-2 bg-muted"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="birthday">Birthday</Label>
+              <Input
+                id="birthday"
+                type="date"
+                value={birthday}
+                onChange={(e) => setBirthday(e.target.value)}
+                className="border-2 focus:border-primary"
               />
             </div>
             <Button

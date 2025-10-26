@@ -18,6 +18,7 @@ interface Activity {
 interface Profile {
   user_id: string;
   name: string;
+  birthday?: string;
 }
 
 interface ActivityLogProps {
@@ -28,7 +29,7 @@ interface ActivityLogProps {
 }
 
 export default function ActivityLog({ activities, onDelete, onUpdate, currentUserId }: ActivityLogProps) {
-  const [profiles, setProfiles] = useState<Record<string, string>>({});
+  const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [editDate, setEditDate] = useState("");
   const [editTime, setEditTime] = useState("");
@@ -43,13 +44,13 @@ export default function ActivityLog({ activities, onDelete, onUpdate, currentUse
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("user_id, name")
+        .select("user_id, name, birthday")
         .in("user_id", userIds);
 
       if (data && !error) {
-        const profileMap: Record<string, string> = {};
+        const profileMap: Record<string, Profile> = {};
         data.forEach((profile: Profile) => {
-          profileMap[profile.user_id] = profile.name;
+          profileMap[profile.user_id] = profile;
         });
         setProfiles(profileMap);
       }
@@ -76,6 +77,39 @@ export default function ActivityLog({ activities, onDelete, onUpdate, currentUse
     setEditTime("");
     setEditEmoji("");
   };
+
+  const getSpecialDateBadge = (activityDate: string, userId: string) => {
+    const date = new Date(activityDate);
+    const month = date.getMonth() + 1; // 0-indexed
+    const day = date.getDate();
+    const profile = profiles[userId];
+
+    // Check for birthday
+    if (profile?.birthday) {
+      const birthday = new Date(profile.birthday);
+      if (birthday.getMonth() + 1 === month && birthday.getDate() === day) {
+        return { label: "🎂 Birthday", color: "bg-pink-500/20 text-pink-700 border-pink-500/50" };
+      }
+    }
+
+    // Check for Christmas (Dec 24)
+    if (month === 12 && day === 24) {
+      return { label: "🎄 Christmas", color: "bg-green-500/20 text-green-700 border-green-500/50" };
+    }
+
+    // Check for New Year's Eve (Dec 31)
+    if (month === 12 && day === 31) {
+      return { label: "🎉 New Year's", color: "bg-purple-500/20 text-purple-700 border-purple-500/50" };
+    }
+
+    // Check for Leap Day (Feb 29)
+    if (month === 2 && day === 29) {
+      return { label: "🐸 Leap Day", color: "bg-blue-500/20 text-blue-700 border-blue-500/50" };
+    }
+
+    return null;
+  };
+
   if (activities.length === 0) {
     return (
       <Card className="p-8 text-center border-2 border-dashed border-primary/20">
@@ -88,12 +122,18 @@ export default function ActivityLog({ activities, onDelete, onUpdate, currentUse
     <div className="space-y-3">
       {activities.map((activity, index) => {
         const isCurrentUser = currentUserId === activity.user_id;
-        const loggedBy = profiles[activity.user_id] || "Unknown";
+        const profile = profiles[activity.user_id];
+        const loggedBy = profile?.name || "Unknown";
+        const specialDate = getSpecialDateBadge(activity.activity_date, activity.user_id);
         
         return (
           <Card
             key={activity.id}
-            className="p-4 flex items-center justify-between border-2 border-primary/10 hover:border-primary/30 transition-all hover:shadow-soft animate-slide-up"
+            className={`p-4 flex items-center justify-between border-2 transition-all hover:shadow-soft animate-slide-up ${
+              specialDate 
+                ? "border-primary/40 bg-gradient-to-r from-primary/5 to-transparent" 
+                : "border-primary/10 hover:border-primary/30"
+            }`}
             style={{ animationDelay: `${index * 50}ms` }}
           >
             <div className="flex items-center gap-3">
@@ -121,6 +161,11 @@ export default function ActivityLog({ activities, onDelete, onUpdate, currentUse
                     Logged by {isCurrentUser ? "you" : loggedBy}
                   </p>
                 </div>
+                {specialDate && (
+                  <div className={`mt-2 inline-block px-2 py-0.5 rounded-full text-xs font-semibold border ${specialDate.color}`}>
+                    {specialDate.label}
+                  </div>
+                )}
               </div>
             </div>
             {isCurrentUser && (

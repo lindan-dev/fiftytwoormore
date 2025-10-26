@@ -4,9 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Check, X, Loader2 } from "lucide-react";
+import { Heart, Mail, Check, X, Loader2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import logo from "@/assets/logo.png";
 
 interface Invitation {
   id: string;
@@ -169,8 +168,8 @@ export default function InvitationFlow({ userEmail, userId, onConnected }: Invit
     <div className="min-h-screen flex items-center justify-center bg-gradient-soft p-4">
       <Card className="w-full max-w-md shadow-glow border-2 border-primary/20 animate-scale-in">
         <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-glow">
-            <img src={logo} alt="52+" className="w-12 h-12" />
+          <div className="mx-auto w-16 h-16 rounded-full bg-gradient-primary flex items-center justify-center shadow-glow">
+            <Heart className="w-8 h-8 text-white" fill="white" />
           </div>
           <CardTitle className="text-3xl font-bold">Connect with Your Partner</CardTitle>
           <CardDescription className="text-base">

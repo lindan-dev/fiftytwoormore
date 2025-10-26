@@ -5,9 +5,8 @@ import { Session } from "@supabase/supabase-js";
 import Auth from "@/components/Auth";
 import EmojiSelector from "@/components/EmojiSelector";
 import { Button } from "@/components/ui/button";
-import { Plus, BarChart3, List, LogOut, Copy, Loader2, User } from "lucide-react";
+import { Heart, Plus, BarChart3, List, LogOut, Copy, Loader2, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import logo from "@/assets/logo.png";
 import ActivityLog from "@/components/ActivityLog";
 import StatsView from "@/components/StatsView";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -544,7 +543,7 @@ const Index = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-soft">
         <div className="animate-pulse">
-          <img src={logo} alt="52+" className="w-12 h-12" />
+          <Heart className="w-12 h-12 text-primary" />
         </div>
       </div>
     );
@@ -558,7 +557,7 @@ const Index = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-soft">
         <div className="animate-pulse">
-          <img src={logo} alt="52+" className="w-12 h-12" />
+          <Heart className="w-12 h-12 text-primary" />
         </div>
       </div>
     );
@@ -571,8 +570,8 @@ const Index = () => {
       <div className="bg-gradient-primary text-white p-6 shadow-glow">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center backdrop-blur-sm">
-              <img src={logo} alt="52+" className="w-7 h-7" />
+            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
+              <Heart className="w-6 h-6" fill="white" />
             </div>
             <h1 className="text-2xl font-bold">fiftytwoormore</h1>
           </div>
@@ -603,8 +602,8 @@ const Index = () => {
         {hasPartner ? (
           <div className="bg-card p-6 rounded-xl border-2 border-primary/20 shadow-sm animate-fade-in">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center">
-                <img src={logo} alt="52+" className="w-9 h-9" />
+              <div className="w-12 h-12 rounded-full bg-gradient-primary flex items-center justify-center">
+                <Heart className="w-6 h-6 text-white" fill="white" />
               </div>
               <div className="flex-1">
                 <p className="text-lg font-semibold">
@@ -622,8 +621,8 @@ const Index = () => {
         ) : (
           <div className="bg-card p-6 rounded-xl border-2 border-primary/20 shadow-sm animate-fade-in space-y-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center">
-                <img src={logo} alt="52+" className="w-7 h-7" />
+              <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center">
+                <Heart className="w-5 h-5 text-white" fill="white" />
               </div>
               <div>
                 <h3 className="font-semibold">Connect with Your Partner</h3>

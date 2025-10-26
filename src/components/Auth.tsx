@@ -143,7 +143,7 @@ export default function Auth() {
               disabled={loading}
               className="w-full text-sm sm:text-base"
             >
-              {isSignUp ? "Already have an account? Sign in" : "Need an account? Sign up"}
+              {isSignUp ? "Already have an account? Sign in" : "First time here? Create an account and invite your partner"}
             </Button>
           </form>
         </CardContent>

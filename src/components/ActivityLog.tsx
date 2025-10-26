@@ -1,4 +1,3 @@
-import { format } from "date-fns";
 import { Trash2, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -75,10 +74,18 @@ export default function ActivityLog({ activities, onDelete, currentUserId }: Act
               )}
               <div>
                 <p className="font-semibold text-lg">
-                  {format(new Date(activity.activity_date), "MMM d, yyyy")}
+                  {new Date(activity.activity_date).toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                  })}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {format(new Date(activity.activity_date), "h:mm a")}
+                  {new Date(activity.activity_date).toLocaleTimeString(undefined, {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                  })}
                 </p>
                 <div className="flex items-center gap-1.5 mt-1">
                   <User className="w-3.5 h-3.5 text-muted-foreground" />

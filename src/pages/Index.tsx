@@ -610,7 +610,7 @@ const Index = () => {
                   Doing it with {partnerName}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  since {new Date(connectedDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  since {new Date(connectedDate).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
                 </p>
                 <p className="text-sm font-medium text-primary mt-1">
                   {activities.length} {activities.length === 1 ? 'activity' : 'activities'} and counting 🔥

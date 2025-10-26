@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Minus, Flame, Calendar, Zap } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Flame, Calendar, Zap, Moon, Sunrise, Coffee, Sun, Sunset, Stars } from "lucide-react";
 import {
   startOfWeek,
   startOfMonth,
@@ -12,6 +12,9 @@ import {
   startOfDay,
   differenceInDays,
   isSameDay,
+  format,
+  endOfWeek,
+  getHours,
 } from "date-fns";
 
 interface Activity {
@@ -134,6 +137,93 @@ export default function StatsView({ activities, compact = false }: StatsViewProp
   const weekStats = useMemo(() => calculateStats("week"), [activities]);
   const monthStats = useMemo(() => calculateStats("month"), [activities]);
   const yearStats = useMemo(() => calculateStats("year"), [activities]);
+
+  const bestMonth = useMemo(() => {
+    if (activities.length === 0) return null;
+
+    const monthCounts = new Map<string, { count: number; month: string; year: number }>();
+
+    activities.forEach(activity => {
+      const date = new Date(activity.activity_date);
+      const monthKey = format(date, 'yyyy-MM');
+      const month = format(date, 'MMMM');
+      const year = date.getFullYear();
+
+      if (!monthCounts.has(monthKey)) {
+        monthCounts.set(monthKey, { count: 0, month, year });
+      }
+      const entry = monthCounts.get(monthKey)!;
+      entry.count++;
+    });
+
+    let best = { count: 0, month: '', year: 0 };
+    monthCounts.forEach(entry => {
+      if (entry.count > best.count) {
+        best = entry;
+      }
+    });
+
+    return best.count > 0 ? best : null;
+  }, [activities]);
+
+  const bestWeek = useMemo(() => {
+    if (activities.length === 0) return null;
+
+    const weekCounts = new Map<string, { count: number; weekStart: Date; weekEnd: Date }>();
+
+    activities.forEach(activity => {
+      const date = new Date(activity.activity_date);
+      const weekStart = startOfWeek(date, { weekStartsOn: 1 });
+      const weekEnd = endOfWeek(date, { weekStartsOn: 1 });
+      const weekKey = format(weekStart, 'yyyy-MM-dd');
+
+      if (!weekCounts.has(weekKey)) {
+        weekCounts.set(weekKey, { count: 0, weekStart, weekEnd });
+      }
+      const entry = weekCounts.get(weekKey)!;
+      entry.count++;
+    });
+
+    let best = { count: 0, weekStart: new Date(), weekEnd: new Date() };
+    weekCounts.forEach(entry => {
+      if (entry.count > best.count) {
+        best = entry;
+      }
+    });
+
+    return best.count > 0 ? best : null;
+  }, [activities]);
+
+  const timeOfDayStats = useMemo(() => {
+    const stats = {
+      nightOwl: 0,      // 10pm - 4am (22-4)
+      earlyBird: 0,     // 4am - 8am
+      lazyMorning: 0,   // 8am - 12pm
+      nooner: 0,        // 12pm - 3pm
+      afternoon: 0,     // 3pm - 6pm (15-18)
+      evening: 0,       // 6pm - 10pm (18-22)
+    };
+
+    activities.forEach(activity => {
+      const hour = getHours(new Date(activity.activity_date));
+
+      if (hour >= 22 || hour < 4) {
+        stats.nightOwl++;
+      } else if (hour >= 4 && hour < 8) {
+        stats.earlyBird++;
+      } else if (hour >= 8 && hour < 12) {
+        stats.lazyMorning++;
+      } else if (hour >= 12 && hour < 15) {
+        stats.nooner++;
+      } else if (hour >= 15 && hour < 18) {
+        stats.afternoon++;
+      } else if (hour >= 18 && hour < 22) {
+        stats.evening++;
+      }
+    });
+
+    return stats;
+  }, [activities]);
 
   const StatCard = ({
     title,
@@ -258,6 +348,92 @@ export default function StatsView({ activities, compact = false }: StatsViewProp
           current={yearStats.currentCount}
           difference={yearStats.difference}
           percentChange={yearStats.percentChange}
+        />
+      </div>
+
+      {/* Best Period Stats */}
+      {(bestMonth || bestWeek) && (
+        <>
+          <h3 className="text-lg sm:text-xl font-semibold mt-4">Best Periods</h3>
+          <div className="grid gap-3 sm:gap-4">
+            {bestMonth && (
+              <Card className="border-2 border-primary/10 hover:border-primary/30 transition-all hover:shadow-soft">
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm text-muted-foreground mb-0.5 sm:mb-1 truncate">Best Month</p>
+                      <p className="text-xl sm:text-2xl font-bold text-primary truncate">
+                        {bestMonth.month} {bestMonth.year}
+                      </p>
+                      <p className="text-sm sm:text-base text-muted-foreground mt-0.5">
+                        {bestMonth.count} {bestMonth.count === 1 ? 'activity' : 'activities'}
+                      </p>
+                    </div>
+                    <Calendar className="w-8 h-8 sm:w-10 sm:h-10 text-primary flex-shrink-0" />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            {bestWeek && (
+              <Card className="border-2 border-primary/10 hover:border-primary/30 transition-all hover:shadow-soft">
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm text-muted-foreground mb-0.5 sm:mb-1 truncate">Best Week</p>
+                      <p className="text-sm sm:text-base font-bold text-primary">
+                        {format(bestWeek.weekStart, 'MMM d')} - {format(bestWeek.weekEnd, 'MMM d, yyyy')}
+                      </p>
+                      <p className="text-sm sm:text-base text-muted-foreground mt-0.5">
+                        {bestWeek.count} {bestWeek.count === 1 ? 'activity' : 'activities'}
+                      </p>
+                    </div>
+                    <Flame className="w-8 h-8 sm:w-10 sm:h-10 text-orange-500 flex-shrink-0" />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Time of Day Stats */}
+      <h3 className="text-lg sm:text-xl font-semibold mt-4">Time of Day</h3>
+      <div className="grid grid-cols-2 gap-2 sm:gap-3">
+        <SimpleStatCard
+          icon={Moon}
+          title="Night Owl"
+          value={timeOfDayStats.nightOwl}
+          color="text-indigo-500"
+        />
+        <SimpleStatCard
+          icon={Sunrise}
+          title="Early Bird"
+          value={timeOfDayStats.earlyBird}
+          color="text-amber-500"
+        />
+        <SimpleStatCard
+          icon={Coffee}
+          title="Lazy Morning"
+          value={timeOfDayStats.lazyMorning}
+          color="text-brown-500"
+        />
+        <SimpleStatCard
+          icon={Sun}
+          title="Nooner"
+          value={timeOfDayStats.nooner}
+          color="text-yellow-500"
+        />
+        <SimpleStatCard
+          icon={Sunset}
+          title="Afternoon Delight"
+          value={timeOfDayStats.afternoon}
+          color="text-orange-400"
+        />
+        <SimpleStatCard
+          icon={Stars}
+          title="Evening Bliss"
+          value={timeOfDayStats.evening}
+          color="text-purple-500"
         />
       </div>
     </div>

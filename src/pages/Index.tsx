@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { startOfYear, endOfYear, differenceInWeeks, parseISO } from "date-fns";
 
 interface Activity {
   id: string;
@@ -641,7 +642,34 @@ const Index = () => {
               </div>
             </div>
             {activities.length > 0 && (
-              <StatsView activities={activities} compact={true} />
+              <>
+                <StatsView activities={activities} compact={true} />
+                {/* Year Goal Tracker */}
+                {(() => {
+                  const now = new Date();
+                  const yearStart = startOfYear(now);
+                  const yearEnd = endOfYear(now);
+                  
+                  const yearActivities = activities.filter(activity => {
+                    const activityDate = parseISO(activity.activity_date);
+                    return activityDate >= yearStart && activityDate <= yearEnd;
+                  });
+                  
+                  const yearCount = yearActivities.length;
+                  const weeksLeft = Math.max(0, differenceInWeeks(yearEnd, now));
+                  
+                  return (
+                    <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-6 rounded-xl border-2 border-primary/20 shadow-sm">
+                      <p className="text-lg font-semibold text-center">
+                        {yearCount < 52 
+                          ? `Only ${52 - yearCount} to go in ${weeksLeft} ${weeksLeft === 1 ? 'week' : 'weeks'} left of year!`
+                          : `Crushing it! ${yearCount - 52} over the goal!`
+                        }
+                      </p>
+                    </div>
+                  );
+                })()}
+              </>
             )}
           </>
         ) : (

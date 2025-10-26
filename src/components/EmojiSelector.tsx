@@ -32,6 +32,15 @@ const EMOJI_PRESETS = [
   { emoji: "🦋", label: "Butterfly" },
   { emoji: "🌊", label: "Wave" },
   { emoji: "⛓️", label: "Chains" },
+  { emoji: "🛏️", label: "Bed" },
+  { emoji: "🛋️", label: "Sofa" },
+  { emoji: "🧺", label: "Rug" },
+  { emoji: "🪑", label: "Chair" },
+  { emoji: "🍽️", label: "Dining" },
+  { emoji: "🥕", label: "Carrot" },
+  { emoji: "🚿", label: "Shower" },
+  { emoji: "🌳", label: "Outdoor" },
+  { emoji: "🚗", label: "Car" },
 ];
 
 export default function EmojiSelector({ onSelect, selectedEmoji }: EmojiSelectorProps) {

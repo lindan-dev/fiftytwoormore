@@ -7,6 +7,7 @@ interface Activity {
   id: string;
   activity_date: string;
   user_id: string;
+  emoji?: string;
 }
 
 interface ActivityLogProps {
@@ -32,13 +33,18 @@ export default function ActivityLog({ activities, onDelete, currentUserId }: Act
           className="p-4 flex items-center justify-between border-2 border-primary/10 hover:border-primary/30 transition-all hover:shadow-soft animate-slide-up"
           style={{ animationDelay: `${index * 50}ms` }}
         >
-          <div>
-            <p className="font-semibold text-lg">
-              {format(new Date(activity.activity_date), "MMM d, yyyy")}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {format(new Date(activity.activity_date), "h:mm a")}
-            </p>
+          <div className="flex items-center gap-3">
+            {activity.emoji && (
+              <span className="text-3xl">{activity.emoji}</span>
+            )}
+            <div>
+              <p className="font-semibold text-lg">
+                {format(new Date(activity.activity_date), "MMM d, yyyy")}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {format(new Date(activity.activity_date), "h:mm a")}
+              </p>
+            </div>
           </div>
           {currentUserId === activity.user_id && (
             <Button

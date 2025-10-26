@@ -3,12 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import Auth from "@/components/Auth";
 import InvitationFlow from "@/components/InvitationFlow";
+import EmojiSelector from "@/components/EmojiSelector";
 import { Button } from "@/components/ui/button";
-import { Heart, Plus, BarChart3, List, LogOut } from "lucide-react";
+import { Heart, Plus, BarChart3, List, LogOut, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ActivityLog from "@/components/ActivityLog";
 import StatsView from "@/components/StatsView";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -17,6 +19,7 @@ interface Activity {
   user_id: string;
   activity_date: string;
   created_at: string;
+  emoji?: string;
 }
 
 const Index = () => {
@@ -29,6 +32,8 @@ const Index = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [customDate, setCustomDate] = useState("");
   const [customTime, setCustomTime] = useState("");
+  const [selectedEmoji, setSelectedEmoji] = useState("");
+  const [showInvitationFlow, setShowInvitationFlow] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -89,8 +94,17 @@ const Index = () => {
     }
   };
 
-  const handleLogActivity = async (activityDate?: Date) => {
+  const handleLogActivity = async (activityDate?: Date, emoji?: string) => {
     if (!session?.user) return;
+
+    if (!hasPartner) {
+      toast({
+        title: "Partner required",
+        description: "You need to connect with your partner first.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const dateToLog = activityDate || new Date();
 
@@ -98,6 +112,7 @@ const Index = () => {
       {
         user_id: session.user.id,
         activity_date: dateToLog.toISOString(),
+        emoji: emoji || null,
       },
     ]);
 
@@ -116,6 +131,7 @@ const Index = () => {
       setDialogOpen(false);
       setCustomDate("");
       setCustomTime("");
+      setSelectedEmoji("");
     }
   };
 
@@ -129,8 +145,17 @@ const Index = () => {
       return;
     }
 
+    if (!selectedEmoji) {
+      toast({
+        title: "Error",
+        description: "Please select an emoji",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const combinedDateTime = new Date(`${customDate}T${customTime}`);
-    handleLogActivity(combinedDateTime);
+    handleLogActivity(combinedDateTime, selectedEmoji);
   };
 
   const handleDeleteActivity = async (id: string) => {
@@ -179,12 +204,15 @@ const Index = () => {
     );
   }
 
-  if (!hasPartner) {
+  if (showInvitationFlow) {
     return (
       <InvitationFlow
         userEmail={session.user.email || ""}
         userId={session.user.id}
-        onConnected={checkPartnerStatus}
+        onConnected={() => {
+          setShowInvitationFlow(false);
+          checkPartnerStatus();
+        }}
       />
     );
   }
@@ -200,33 +228,78 @@ const Index = () => {
             </div>
             <h1 className="text-2xl font-bold">fiftytwoormore</h1>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleSignOut}
-            className="text-white hover:bg-white/20"
-          >
-            <LogOut className="w-5 h-5" />
-          </Button>
+          <div className="flex gap-2">
+            {!hasPartner && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowInvitationFlow(true)}
+                className="text-white hover:bg-white/20"
+              >
+                <Mail className="w-5 h-5" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleSignOut}
+              className="text-white hover:bg-white/20"
+            >
+              <LogOut className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Content */}
       <div className="max-w-2xl mx-auto p-6 space-y-6 animate-fade-in">
+        {/* Partner Status Alert */}
+        {!hasPartner && (
+          <Alert className="border-2 border-primary/30 bg-primary/5 animate-fade-in">
+            <Mail className="h-4 w-4" />
+            <AlertDescription>
+              Connect with your partner to start tracking activities. Click the envelope icon to send an invitation.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Quick Log Button */}
         <div className="flex gap-2">
-          <Button
-            onClick={() => handleLogActivity()}
-            className="flex-1 h-16 text-lg font-semibold bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow"
-          >
-            <Plus className="w-6 h-6 mr-2" />
-            Log Now
-          </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button
+                disabled={!hasPartner}
+                className="flex-1 h-16 text-lg font-semibold bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow disabled:opacity-50"
+              >
+                <Plus className="w-6 h-6 mr-2" />
+                Log Now
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Choose an Activity</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <EmojiSelector
+                  onSelect={setSelectedEmoji}
+                  selectedEmoji={selectedEmoji}
+                />
+                <Button
+                  onClick={() => handleLogActivity(undefined, selectedEmoji)}
+                  disabled={!selectedEmoji}
+                  className="w-full bg-gradient-primary hover:opacity-90"
+                >
+                  Log Activity
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button
+                disabled={!hasPartner}
                 variant="outline"
-                className="h-16 px-6 border-2 border-primary/30 hover:border-primary hover:bg-primary/5"
+                className="h-16 px-6 border-2 border-primary/30 hover:border-primary hover:bg-primary/5 disabled:opacity-50"
               >
                 Custom
               </Button>
@@ -254,9 +327,17 @@ const Index = () => {
                     onChange={(e) => setCustomTime(e.target.value)}
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label>Activity Type</Label>
+                  <EmojiSelector
+                    onSelect={setSelectedEmoji}
+                    selectedEmoji={selectedEmoji}
+                  />
+                </div>
                 <Button
                   onClick={handleCustomLog}
                   className="w-full bg-gradient-primary hover:opacity-90"
+                  disabled={!selectedEmoji || !customDate || !customTime}
                 >
                   Log Activity
                 </Button>

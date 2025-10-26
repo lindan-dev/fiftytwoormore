@@ -18,18 +18,21 @@ export type Database = {
         Row: {
           activity_date: string
           created_at: string
+          emoji: string | null
           id: string
           user_id: string
         }
         Insert: {
           activity_date?: string
           created_at?: string
+          emoji?: string | null
           id?: string
           user_id: string
         }
         Update: {
           activity_date?: string
           created_at?: string
+          emoji?: string | null
           id?: string
           user_id?: string
         }

@@ -63,13 +63,13 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-soft p-4">
-      <Card className="w-full max-w-md shadow-glow border-2 border-primary/20 animate-scale-in">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-md shadow-soft border-2 border-primary/20 animate-scale-in">
         <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 rounded-full bg-gradient-primary flex items-center justify-center shadow-glow">
+          <div className="mx-auto w-16 h-16 rounded-full bg-primary flex items-center justify-center shadow-soft">
             <Heart className="w-8 h-8 text-white" fill="white" />
           </div>
-          <CardTitle className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+          <CardTitle className="text-3xl font-bold text-primary">
             fiftytwoormore
           </CardTitle>
           <CardDescription className="text-base">
@@ -116,7 +116,7 @@ export default function Auth() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-12 text-lg font-semibold bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow"
+              className="w-full h-12 text-lg font-semibold"
             >
               {loading ? "Loading..." : isSignUp ? "Sign Up" : "Sign In"}
             </Button>

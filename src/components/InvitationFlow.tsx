@@ -165,10 +165,10 @@ export default function InvitationFlow({ userEmail, userId, onConnected }: Invit
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-soft p-4">
-      <Card className="w-full max-w-md shadow-glow border-2 border-primary/20 animate-scale-in">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-md shadow-soft border-2 border-primary/20 animate-scale-in">
         <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 rounded-full bg-gradient-primary flex items-center justify-center shadow-glow">
+          <div className="mx-auto w-16 h-16 rounded-full bg-primary flex items-center justify-center shadow-soft">
             <Heart className="w-8 h-8 text-white" fill="white" />
           </div>
           <CardTitle className="text-3xl font-bold">Connect with Your Partner</CardTitle>
@@ -190,7 +190,7 @@ export default function InvitationFlow({ userEmail, userId, onConnected }: Invit
                 <Button
                   onClick={handleAcceptInvitation}
                   disabled={loading}
-                  className="flex-1 bg-gradient-primary hover:opacity-90"
+                  className="flex-1"
                 >
                   {loading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -239,7 +239,7 @@ export default function InvitationFlow({ userEmail, userId, onConnected }: Invit
               <Button
                 onClick={handleSendInvitation}
                 disabled={loading || !partnerEmail}
-                className="w-full h-12 text-lg font-semibold bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow"
+                className="w-full h-12 text-lg font-semibold"
               >
                 {loading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />

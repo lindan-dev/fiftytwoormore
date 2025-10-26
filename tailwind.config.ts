@@ -118,12 +118,7 @@ export default {
         "scale-in": "scale-in 0.2s ease-out",
         "slide-up": "slide-up 0.4s ease-out",
       },
-      backgroundImage: {
-        'gradient-primary': 'var(--gradient-primary)',
-        'gradient-soft': 'var(--gradient-soft)',
-      },
       boxShadow: {
-        'glow': 'var(--shadow-glow)',
         'soft': 'var(--shadow-soft)',
       },
     },

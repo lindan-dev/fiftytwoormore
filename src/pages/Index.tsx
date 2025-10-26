@@ -541,7 +541,7 @@ const Index = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-soft">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-pulse">
           <Heart className="w-12 h-12 text-primary" />
         </div>
@@ -555,7 +555,7 @@ const Index = () => {
 
   if (checkingPartner) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-soft">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-pulse">
           <Heart className="w-12 h-12 text-primary" />
         </div>
@@ -565,9 +565,9 @@ const Index = () => {
 
 
   return (
-    <div className="min-h-screen bg-gradient-soft pb-20">
+    <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <div className="bg-gradient-primary text-white p-6 shadow-glow">
+      <div className="bg-primary text-white p-6 shadow-soft">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
@@ -602,7 +602,7 @@ const Index = () => {
         {hasPartner ? (
           <div className="bg-card p-6 rounded-xl border-2 border-primary/20 shadow-sm animate-fade-in">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-gradient-primary flex items-center justify-center">
+              <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
                 <Heart className="w-6 h-6 text-white" fill="white" />
               </div>
               <div className="flex-1">
@@ -621,7 +621,7 @@ const Index = () => {
         ) : (
           <div className="bg-card p-6 rounded-xl border-2 border-primary/20 shadow-sm animate-fade-in space-y-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
                 <Heart className="w-5 h-5 text-white" fill="white" />
               </div>
               <div>
@@ -656,7 +656,7 @@ const Index = () => {
                   <Button
                     onClick={generateInvitationCode}
                     disabled={sendingInvitation}
-                    className="w-full bg-gradient-primary hover:opacity-90"
+                    className="w-full"
                   >
                     {sendingInvitation ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -702,7 +702,6 @@ const Index = () => {
                 <Button
                   onClick={handleConnectWithCode}
                   disabled={sendingInvitation || !enterCode || enterCode.length < 8}
-                  className="bg-gradient-primary hover:opacity-90"
                 >
                   {sendingInvitation ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -719,7 +718,7 @@ const Index = () => {
             <DialogTrigger asChild>
               <Button
                 disabled={!hasPartner}
-                className="flex-1 h-16 text-lg font-semibold bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow disabled:opacity-50"
+                className="flex-1 h-16 text-lg font-semibold disabled:opacity-50"
               >
                 <Plus className="w-6 h-6 mr-2" />
                 Log Now
@@ -737,7 +736,7 @@ const Index = () => {
                 <Button
                   onClick={() => handleLogActivity(undefined, selectedEmoji)}
                   disabled={!selectedEmoji}
-                  className="w-full bg-gradient-primary hover:opacity-90"
+                  className="w-full"
                 >
                   Log Activity
                 </Button>
@@ -786,7 +785,7 @@ const Index = () => {
                 </div>
                 <Button
                   onClick={handleCustomLog}
-                  className="w-full bg-gradient-primary hover:opacity-90"
+                  className="w-full"
                   disabled={!selectedEmoji || !customDate || !customTime}
                 >
                   Log Activity
@@ -802,7 +801,7 @@ const Index = () => {
             variant={view === "log" ? "default" : "ghost"}
             className={`flex-1 ${
               view === "log"
-                ? "bg-gradient-primary text-white hover:opacity-90"
+                ? "bg-primary text-white"
                 : "hover:bg-primary/5"
             }`}
             onClick={() => setView("log")}
@@ -814,7 +813,7 @@ const Index = () => {
             variant={view === "stats" ? "default" : "ghost"}
             className={`flex-1 ${
               view === "stats"
-                ? "bg-gradient-primary text-white hover:opacity-90"
+                ? "bg-primary text-white"
                 : "hover:bg-primary/5"
             }`}
             onClick={() => setView("stats")}

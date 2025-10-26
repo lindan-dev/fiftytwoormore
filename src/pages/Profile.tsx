@@ -251,7 +251,7 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-soft">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-pulse">
           <Heart className="w-12 h-12 text-primary" />
         </div>
@@ -265,9 +265,9 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-soft pb-20">
+    <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <div className="bg-gradient-primary text-white p-6 shadow-glow">
+      <div className="bg-primary text-white p-6 shadow-soft">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <Button
             variant="ghost"
@@ -287,7 +287,7 @@ const Profile = () => {
         {/* Profile Card */}
         <Card className="p-6 border-2 border-primary/20 shadow-sm">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
               <User className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -323,7 +323,7 @@ const Profile = () => {
             <Button
               onClick={handleSave}
               disabled={saving}
-              className="w-full bg-gradient-primary hover:opacity-90"
+              className="w-full"
             >
               {saving ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -338,7 +338,7 @@ const Profile = () => {
         {partner && (
           <Card className="p-6 border-2 border-primary/20 shadow-sm">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
                 <Heart className="w-5 h-5 text-white" fill="white" />
               </div>
               <div>

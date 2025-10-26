@@ -99,7 +99,7 @@ export default function StatsView({ activities }: StatsViewProps) {
           <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          <div className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+          <div className="text-4xl font-bold text-primary">
             {current}
           </div>
           <div className="flex items-center gap-2 text-sm">

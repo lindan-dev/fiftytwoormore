@@ -5,22 +5,11 @@ import { Session } from "@supabase/supabase-js";
 import Auth from "@/components/Auth";
 import EmojiSelector from "@/components/EmojiSelector";
 import { Button } from "@/components/ui/button";
-import { Heart, Plus, BarChart3, List, LogOut, Copy, Loader2, User, Trash2 } from "lucide-react";
+import { Heart, Plus, BarChart3, List, LogOut, Copy, Loader2, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ActivityLog from "@/components/ActivityLog";
 import StatsView from "@/components/StatsView";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,6 +37,7 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [hasPartner, setHasPartner] = useState(false);
   const [partnerName, setPartnerName] = useState<string>("");
+  const [connectedDate, setConnectedDate] = useState<string>("");
   const [checkingPartner, setCheckingPartner] = useState(true);
   const [view, setView] = useState<"log" | "stats">("log");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -170,6 +160,7 @@ const Index = () => {
         console.error("Error fetching couple:", error);
         setHasPartner(false);
         setPartnerName("");
+        setConnectedDate("");
         checkInvitations();
         setCheckingPartner(false);
         return;
@@ -177,6 +168,7 @@ const Index = () => {
 
       if (data) {
         setHasPartner(true);
+        setConnectedDate(data.created_at);
         
         // Get partner's ID
         const partnerId = data.user1_id === session.user.id ? data.user2_id : data.user1_id;
@@ -202,12 +194,14 @@ const Index = () => {
       } else {
         setHasPartner(false);
         setPartnerName("");
+        setConnectedDate("");
         checkInvitations();
       }
     } catch (error) {
       console.error("Error in checkPartnerStatus:", error);
       setHasPartner(false);
       setPartnerName("");
+      setConnectedDate("");
     } finally {
       setCheckingPartner(false);
     }
@@ -557,55 +551,22 @@ const Index = () => {
         {/* Connection Section */}
         {hasPartner ? (
           <div className="bg-card p-6 rounded-xl border-2 border-primary/20 shadow-sm animate-fade-in">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center">
-                  <Heart className="w-5 h-5 text-white" fill="white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold">Connected Partner</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {partnerName}
-                  </p>
-                </div>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-gradient-primary flex items-center justify-center">
+                <Heart className="w-6 h-6 text-white" fill="white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-lg font-semibold">
+                  Doing it with {partnerName}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  since {new Date(connectedDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                </p>
+                <p className="text-sm font-medium text-primary mt-1">
+                  {activities.length} {activities.length === 1 ? 'activity' : 'activities'} and counting 🔥
+                </p>
               </div>
             </div>
-
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="destructive"
-                  className="w-full"
-                  disabled={disconnecting}
-                >
-                  {disconnecting ? (
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  ) : (
-                    <Trash2 className="w-4 h-4 mr-2" />
-                  )}
-                  Delete Connection & All Data
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently delete your connection with {partnerName} and{" "}
-                    <strong>all shared activity history</strong>. This action cannot be undone.
-                    You'll need a new invitation code to reconnect.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDisconnectPartner}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    Delete Everything
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
           </div>
         ) : (
           <div className="bg-card p-6 rounded-xl border-2 border-primary/20 shadow-sm animate-fade-in space-y-6">

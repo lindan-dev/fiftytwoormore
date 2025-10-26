@@ -400,12 +400,6 @@ export default function StatsView({ activities, compact = false }: StatsViewProp
       <h3 className="text-lg sm:text-xl font-semibold mt-4">Time of Day</h3>
       <div className="grid grid-cols-2 gap-2 sm:gap-3">
         <SimpleStatCard
-          icon={Moon}
-          title="Night Owl"
-          value={timeOfDayStats.nightOwl}
-          color="text-indigo-500"
-        />
-        <SimpleStatCard
           icon={Sunrise}
           title="Early Bird"
           value={timeOfDayStats.earlyBird}
@@ -434,6 +428,12 @@ export default function StatsView({ activities, compact = false }: StatsViewProp
           title="Evening Bliss"
           value={timeOfDayStats.evening}
           color="text-purple-500"
+        />
+        <SimpleStatCard
+          icon={Moon}
+          title="Night Owl"
+          value={timeOfDayStats.nightOwl}
+          color="text-indigo-500"
         />
       </div>
     </div>

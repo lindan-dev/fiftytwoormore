@@ -159,35 +159,24 @@ const Index = () => {
     setSendingInvitation(true);
 
     try {
-      // Find invitation by code prefix
-      const { data: invitations, error: searchError } = await supabase
-        .from("couple_invitations")
-        .select("*")
-        .eq("status", "pending");
-
-      if (searchError) throw searchError;
-
-      const matchingInvite = invitations?.find((inv) =>
-        inv.id.toUpperCase().startsWith(enterCode.toUpperCase())
+      // Validate invitation code via secure edge function
+      const { data, error: validateError } = await supabase.functions.invoke(
+        "validate-invitation-code",
+        {
+          body: { code: enterCode },
+        }
       );
 
-      if (!matchingInvite) {
+      if (validateError || !data?.success) {
         toast({
           title: "Invalid code",
-          description: "This invitation code doesn't exist or has expired.",
+          description: data?.error || "This invitation code doesn't exist or has expired.",
           variant: "destructive",
         });
         return;
       }
 
-      if (matchingInvite.sender_id === session.user.id) {
-        toast({
-          title: "Error",
-          description: "You can't use your own invitation code.",
-          variant: "destructive",
-        });
-        return;
-      }
+      const matchingInvite = data.invitation;
 
       // Update invitation status
       const { error: updateError } = await supabase

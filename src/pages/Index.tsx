@@ -21,6 +21,7 @@ interface Activity {
   activity_date: string;
   created_at: string;
   emoji?: string;
+  notes?: string;
 }
 
 interface Invitation {
@@ -46,6 +47,7 @@ const Index = () => {
   const [customDate, setCustomDate] = useState("");
   const [customTime, setCustomTime] = useState("");
   const [selectedEmoji, setSelectedEmoji] = useState("");
+  const [selectedNotes, setSelectedNotes] = useState("");
   const [invitationCode, setInvitationCode] = useState("");
   const [enterCode, setEnterCode] = useState("");
   const [sendingInvitation, setSendingInvitation] = useState(false);
@@ -391,7 +393,7 @@ const Index = () => {
   };
 
 
-  const handleLogActivity = async (activityDate?: Date, emoji?: string) => {
+  const handleLogActivity = async (activityDate?: Date, emoji?: string, notes?: string) => {
     if (!session?.user) return;
 
     if (!hasPartner) {
@@ -410,6 +412,7 @@ const Index = () => {
         user_id: session.user.id,
         activity_date: dateToLog.toISOString(),
         emoji: emoji || null,
+        notes: notes || null,
       },
     ]);
 
@@ -427,6 +430,7 @@ const Index = () => {
       fetchActivities();
       setQuickLogOpen(false);
       setSelectedEmoji("");
+      setSelectedNotes("");
     }
   };
 
@@ -450,19 +454,21 @@ const Index = () => {
     }
 
     const combinedDateTime = new Date(`${customDate}T${customTime}`);
-    handleLogActivity(combinedDateTime, selectedEmoji);
+    handleLogActivity(combinedDateTime, selectedEmoji, selectedNotes);
     setDialogOpen(false);
     setCustomDate("");
     setCustomTime("");
+    setSelectedNotes("");
   };
 
 
-  const handleUpdateActivity = async (id: string, activityDate: Date, emoji: string) => {
+  const handleUpdateActivity = async (id: string, activityDate: Date, emoji: string, notes?: string) => {
     const { error } = await supabase
       .from("activities")
       .update({
         activity_date: activityDate.toISOString(),
         emoji: emoji,
+        notes: notes || null,
       })
       .eq("id", id);
 
@@ -787,8 +793,19 @@ const Index = () => {
                   onSelect={setSelectedEmoji}
                   selectedEmoji={selectedEmoji}
                 />
+                <div className="space-y-2">
+                  <Label htmlFor="quick-notes">Notes (optional)</Label>
+                  <Input
+                    id="quick-notes"
+                    type="text"
+                    placeholder="Add a note..."
+                    value={selectedNotes}
+                    onChange={(e) => setSelectedNotes(e.target.value)}
+                    maxLength={200}
+                  />
+                </div>
                 <Button
-                  onClick={() => handleLogActivity(undefined, selectedEmoji)}
+                  onClick={() => handleLogActivity(undefined, selectedEmoji, selectedNotes)}
                   disabled={!selectedEmoji}
                   className="w-full"
                 >
@@ -835,6 +852,17 @@ const Index = () => {
                   <EmojiSelector
                     onSelect={setSelectedEmoji}
                     selectedEmoji={selectedEmoji}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="custom-notes">Notes (optional)</Label>
+                  <Input
+                    id="custom-notes"
+                    type="text"
+                    placeholder="Add a note..."
+                    value={selectedNotes}
+                    onChange={(e) => setSelectedNotes(e.target.value)}
+                    maxLength={200}
                   />
                 </div>
                 <Button

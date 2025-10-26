@@ -13,6 +13,7 @@ interface Activity {
   activity_date: string;
   user_id: string;
   emoji?: string;
+  notes?: string;
 }
 
 interface Profile {
@@ -24,7 +25,7 @@ interface Profile {
 interface ActivityLogProps {
   activities: Activity[];
   onDelete: (id: string) => void;
-  onUpdate: (id: string, activityDate: Date, emoji: string) => void;
+  onUpdate: (id: string, activityDate: Date, emoji: string, notes?: string) => void;
   currentUserId?: string;
 }
 
@@ -34,6 +35,7 @@ export default function ActivityLog({ activities, onDelete, onUpdate, currentUse
   const [editDate, setEditDate] = useState("");
   const [editTime, setEditTime] = useState("");
   const [editEmoji, setEditEmoji] = useState("");
+  const [editNotes, setEditNotes] = useState("");
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -91,17 +93,19 @@ export default function ActivityLog({ activities, onDelete, onUpdate, currentUse
     setEditDate(date.toISOString().split('T')[0]);
     setEditTime(date.toTimeString().slice(0, 5));
     setEditEmoji(activity.emoji || "");
+    setEditNotes(activity.notes || "");
   };
 
   const handleSaveEdit = () => {
     if (!editingActivity || !editDate || !editTime || !editEmoji) return;
     
     const combinedDateTime = new Date(`${editDate}T${editTime}`);
-    onUpdate(editingActivity.id, combinedDateTime, editEmoji);
+    onUpdate(editingActivity.id, combinedDateTime, editEmoji, editNotes);
     setEditingActivity(null);
     setEditDate("");
     setEditTime("");
     setEditEmoji("");
+    setEditNotes("");
   };
 
   const getSpecialDateBadge = (activityDate: string) => {
@@ -171,18 +175,10 @@ export default function ActivityLog({ activities, onDelete, onUpdate, currentUse
               )}
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-sm sm:text-base truncate">
-                  {new Date(activity.activity_date).toLocaleDateString(undefined, {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                  })}
+                  {new Date(activity.activity_date).toLocaleDateString()}
                 </p>
                 <p className="text-xs sm:text-sm text-muted-foreground">
-                  {new Date(activity.activity_date).toLocaleTimeString(undefined, {
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    hour12: true
-                  })}
+                  {new Date(activity.activity_date).toLocaleTimeString()}
                 </p>
                 <div className="flex items-center gap-1 mt-0.5">
                   <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground flex-shrink-0" />
@@ -190,6 +186,11 @@ export default function ActivityLog({ activities, onDelete, onUpdate, currentUse
                     Logged by {isCurrentUser ? "you" : loggedBy}
                   </p>
                 </div>
+                {activity.notes && (
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1 italic">
+                    {activity.notes}
+                  </p>
+                )}
                 {specialDate && (
                   <div className={`mt-1.5 inline-block px-1.5 py-0.5 rounded-full text-xs font-semibold border ${specialDate.color}`}>
                     {specialDate.label}
@@ -239,6 +240,17 @@ export default function ActivityLog({ activities, onDelete, onUpdate, currentUse
                         <EmojiSelector
                           selectedEmoji={editEmoji}
                           onSelect={setEditEmoji}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-notes">Notes (optional)</Label>
+                        <Input
+                          id="edit-notes"
+                          type="text"
+                          placeholder="Add a note..."
+                          value={editNotes}
+                          onChange={(e) => setEditNotes(e.target.value)}
+                          maxLength={200}
                         />
                       </div>
                       <Button 

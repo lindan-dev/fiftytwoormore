@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
@@ -65,9 +65,6 @@ const Index = () => {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session) {
-        checkPartnerStatus();
-      }
       setLoading(false);
     });
 
@@ -75,16 +72,24 @@ const Index = () => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session) {
-        checkPartnerStatus();
-      } else {
+      if (!session) {
         setActivities([]);
         setHasPartner(false);
+        setPartnerName("");
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Check partner status when session changes
+  useEffect(() => {
+    if (session?.user?.id) {
+      checkPartnerStatus();
+    } else {
+      setCheckingPartner(false);
+    }
+  }, [session?.user?.id]);
 
   // Realtime subscription for invitation acceptance
   useEffect(() => {
@@ -98,10 +103,13 @@ const Index = () => {
           event: 'INSERT',
           schema: 'public',
           table: 'couples',
-          filter: `user1_id=eq.${session.user.id},user2_id=eq.${session.user.id}`,
         },
-        () => {
-          checkPartnerStatus();
+        (payload) => {
+          // Check if the inserted couple involves this user
+          const newCouple = payload.new as { user1_id: string; user2_id: string };
+          if (newCouple.user1_id === session.user.id || newCouple.user2_id === session.user.id) {
+            checkPartnerStatus();
+          }
         }
       )
       .subscribe();
@@ -110,6 +118,100 @@ const Index = () => {
       supabase.removeChannel(channel);
     };
   }, [session?.user?.id, hasPartner]);
+
+  const fetchActivities = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("activities")
+      .select("*")
+      .order("activity_date", { ascending: false });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load activities",
+        variant: "destructive",
+      });
+    } else {
+      setActivities(data || []);
+    }
+  }, [toast]);
+
+  const checkInvitations = useCallback(async () => {
+    if (!session?.user) return;
+
+    // Check if I have an active invitation code
+    const { data: myInvite } = await supabase
+      .from("couple_invitations")
+      .select("*")
+      .eq("sender_id", session.user.id)
+      .eq("status", "pending")
+      .maybeSingle();
+
+    if (myInvite) {
+      setMyInvitationCode(myInvite.id.substring(0, 8).toUpperCase());
+    }
+  }, [session?.user]);
+
+  const checkPartnerStatus = useCallback(async () => {
+    if (!session?.user?.id) {
+      setCheckingPartner(false);
+      return;
+    }
+    
+    setCheckingPartner(true);
+    try {
+      const { data, error } = await supabase
+        .from("couples")
+        .select("*")
+        .or(`user1_id.eq.${session.user.id},user2_id.eq.${session.user.id}`)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error fetching couple:", error);
+        setHasPartner(false);
+        setPartnerName("");
+        checkInvitations();
+        setCheckingPartner(false);
+        return;
+      }
+
+      if (data) {
+        setHasPartner(true);
+        
+        // Get partner's ID
+        const partnerId = data.user1_id === session.user.id ? data.user2_id : data.user1_id;
+        
+        // Fetch partner's profile
+        const { data: partnerProfile, error: profileError } = await supabase
+          .from("profiles")
+          .select("name")
+          .eq("user_id", partnerId)
+          .maybeSingle();
+        
+        if (profileError) {
+          console.error("Error fetching partner profile:", profileError);
+        }
+        
+        if (partnerProfile) {
+          setPartnerName(partnerProfile.name || "Partner");
+        } else {
+          setPartnerName("Partner");
+        }
+        
+        fetchActivities();
+      } else {
+        setHasPartner(false);
+        setPartnerName("");
+        checkInvitations();
+      }
+    } catch (error) {
+      console.error("Error in checkPartnerStatus:", error);
+      setHasPartner(false);
+      setPartnerName("");
+    } finally {
+      setCheckingPartner(false);
+    }
+  }, [session?.user, fetchActivities, checkInvitations]);
 
   // Realtime subscription for activities
   useEffect(() => {
@@ -133,62 +235,7 @@ const Index = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [hasPartner]);
-
-  const checkPartnerStatus = async () => {
-    if (!session?.user?.id) {
-      setCheckingPartner(false);
-      return;
-    }
-    
-    setCheckingPartner(true);
-    const { data } = await supabase
-      .from("couples")
-      .select("*")
-      .or(`user1_id.eq.${session.user.id},user2_id.eq.${session.user.id}`)
-      .single();
-
-    if (data) {
-      setHasPartner(true);
-      
-      // Get partner's ID
-      const partnerId = data.user1_id === session.user.id ? data.user2_id : data.user1_id;
-      
-      // Fetch partner's profile
-      const { data: partnerProfile } = await supabase
-        .from("profiles")
-        .select("name")
-        .eq("user_id", partnerId)
-        .single();
-      
-      if (partnerProfile) {
-        setPartnerName(partnerProfile.name || "Partner");
-      }
-      
-      fetchActivities();
-    } else {
-      setHasPartner(false);
-      setPartnerName("");
-      checkInvitations();
-    }
-    setCheckingPartner(false);
-  };
-
-  const checkInvitations = async () => {
-    if (!session?.user) return;
-
-    // Check if I have an active invitation code
-    const { data: myInvite } = await supabase
-      .from("couple_invitations")
-      .select("*")
-      .eq("sender_id", session.user.id)
-      .eq("status", "pending")
-      .maybeSingle();
-
-    if (myInvite) {
-      setMyInvitationCode(myInvite.id.substring(0, 8).toUpperCase());
-    }
-  };
+  }, [hasPartner, fetchActivities]);
 
   const generateInvitationCode = async () => {
     if (!session?.user) return;
@@ -304,22 +351,6 @@ const Index = () => {
     }
   };
 
-  const fetchActivities = async () => {
-    const { data, error } = await supabase
-      .from("activities")
-      .select("*")
-      .order("activity_date", { ascending: false });
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load activities",
-        variant: "destructive",
-      });
-    } else {
-      setActivities(data || []);
-    }
-  };
 
   const handleLogActivity = async (activityDate?: Date, emoji?: string) => {
     if (!session?.user) return;

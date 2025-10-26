@@ -4,7 +4,7 @@ import { Session } from "@supabase/supabase-js";
 import Auth from "@/components/Auth";
 import EmojiSelector from "@/components/EmojiSelector";
 import { Button } from "@/components/ui/button";
-import { Heart, Plus, BarChart3, List, LogOut, Mail, Send, Check, X, Loader2 } from "lucide-react";
+import { Heart, Plus, BarChart3, List, LogOut, Copy, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ActivityLog from "@/components/ActivityLog";
 import StatsView from "@/components/StatsView";
@@ -40,10 +40,10 @@ const Index = () => {
   const [customDate, setCustomDate] = useState("");
   const [customTime, setCustomTime] = useState("");
   const [selectedEmoji, setSelectedEmoji] = useState("");
-  const [partnerEmail, setPartnerEmail] = useState("");
+  const [invitationCode, setInvitationCode] = useState("");
+  const [enterCode, setEnterCode] = useState("");
   const [sendingInvitation, setSendingInvitation] = useState(false);
-  const [sentInvitation, setSentInvitation] = useState<Invitation | null>(null);
-  const [receivedInvitation, setReceivedInvitation] = useState<Invitation | null>(null);
+  const [myInvitationCode, setMyInvitationCode] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -71,11 +71,13 @@ const Index = () => {
   }, []);
 
   const checkPartnerStatus = async () => {
+    if (!session?.user?.id) return;
+    
     setCheckingPartner(true);
     const { data } = await supabase
       .from("couples")
       .select("*")
-      .or(`user1_id.eq.${session?.user.id},user2_id.eq.${session?.user.id}`)
+      .or(`user1_id.eq.${session.user.id},user2_id.eq.${session.user.id}`)
       .single();
 
     if (data) {
@@ -91,56 +93,45 @@ const Index = () => {
   const checkInvitations = async () => {
     if (!session?.user) return;
 
-    // Check for sent invitations
-    const { data: sent } = await supabase
+    // Check if I have an active invitation code
+    const { data: myInvite } = await supabase
       .from("couple_invitations")
       .select("*")
       .eq("sender_id", session.user.id)
       .eq("status", "pending")
-      .single();
+      .maybeSingle();
 
-    if (sent) setSentInvitation(sent);
-
-    // Check for received invitations
-    const { data: received } = await supabase
-      .from("couple_invitations")
-      .select("*")
-      .eq("receiver_email", session.user.email)
-      .eq("status", "pending")
-      .single();
-
-    if (received) setReceivedInvitation(received);
+    if (myInvite) {
+      setMyInvitationCode(myInvite.id.substring(0, 8).toUpperCase());
+    }
   };
 
-  const handleSendInvitation = async () => {
-    if (!partnerEmail || partnerEmail === session?.user.email) {
-      toast({
-        title: "Invalid email",
-        description: "Please enter your partner's email address",
-        variant: "destructive",
-      });
-      return;
-    }
+  const generateInvitationCode = async () => {
+    if (!session?.user) return;
 
     setSendingInvitation(true);
 
     try {
-      const { error } = await supabase.from("couple_invitations").insert([
-        {
-          sender_id: session!.user.id,
-          receiver_email: partnerEmail.toLowerCase().trim(),
-        },
-      ]);
+      const { data, error } = await supabase
+        .from("couple_invitations")
+        .insert([
+          {
+            sender_id: session.user.id,
+            receiver_email: "", // Empty for code-based invitations
+          },
+        ])
+        .select()
+        .single();
 
       if (error) throw error;
 
-      toast({
-        title: "Invitation sent!",
-        description: "Your partner can now accept the invitation when they sign up.",
-      });
+      const code = data.id.substring(0, 8).toUpperCase();
+      setMyInvitationCode(code);
 
-      checkInvitations();
-      setPartnerEmail("");
+      toast({
+        title: "Invitation code created!",
+        description: "Share this code with your partner.",
+      });
     } catch (error: any) {
       toast({
         title: "Error",
@@ -152,24 +143,61 @@ const Index = () => {
     }
   };
 
-  const handleAcceptInvitation = async () => {
-    if (!receivedInvitation || !session?.user) return;
+  const handleConnectWithCode = async () => {
+    if (!enterCode || !session?.user) {
+      toast({
+        title: "Error",
+        description: "Please enter an invitation code",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setSendingInvitation(true);
 
     try {
+      // Find invitation by code prefix
+      const { data: invitations, error: searchError } = await supabase
+        .from("couple_invitations")
+        .select("*")
+        .eq("status", "pending");
+
+      if (searchError) throw searchError;
+
+      const matchingInvite = invitations?.find((inv) =>
+        inv.id.toUpperCase().startsWith(enterCode.toUpperCase())
+      );
+
+      if (!matchingInvite) {
+        toast({
+          title: "Invalid code",
+          description: "This invitation code doesn't exist or has expired.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (matchingInvite.sender_id === session.user.id) {
+        toast({
+          title: "Error",
+          description: "You can't use your own invitation code.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Update invitation status
       const { error: updateError } = await supabase
         .from("couple_invitations")
         .update({ status: "accepted" })
-        .eq("id", receivedInvitation.id);
+        .eq("id", matchingInvite.id);
 
       if (updateError) throw updateError;
 
       // Create couple relationship
       const { error: coupleError } = await supabase.from("couples").insert([
         {
-          user1_id: receivedInvitation.sender_id,
+          user1_id: matchingInvite.sender_id,
           user2_id: session.user.id,
         },
       ]);
@@ -193,33 +221,13 @@ const Index = () => {
     }
   };
 
-  const handleRejectInvitation = async () => {
-    if (!receivedInvitation) return;
-
-    setSendingInvitation(true);
-
-    try {
-      const { error } = await supabase
-        .from("couple_invitations")
-        .update({ status: "rejected" })
-        .eq("id", receivedInvitation.id);
-
-      if (error) throw error;
-
+  const copyInvitationCode = () => {
+    if (myInvitationCode) {
+      navigator.clipboard.writeText(myInvitationCode);
       toast({
-        title: "Invitation declined",
-        description: "You can accept a different invitation or send your own.",
+        title: "Copied!",
+        description: "Invitation code copied to clipboard",
       });
-
-      setReceivedInvitation(null);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setSendingInvitation(false);
     }
   };
 
@@ -375,103 +383,98 @@ const Index = () => {
 
       {/* Content */}
       <div className="max-w-2xl mx-auto p-6 space-y-6 animate-fade-in">
-        {/* Received Invitation Alert */}
-        {!hasPartner && receivedInvitation && (
-          <Alert className="border-2 border-primary/30 bg-primary/5 animate-fade-in">
-            <Mail className="h-4 w-4" />
-            <AlertDescription>
-              <div className="space-y-3">
-                <p className="font-semibold">You have an invitation!</p>
-                <p className="text-sm">Someone wants to connect with you as their partner.</p>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleAcceptInvitation}
-                    disabled={sendingInvitation}
-                    size="sm"
-                    className="bg-gradient-primary hover:opacity-90"
-                  >
-                    {sendingInvitation ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <>
-                        <Check className="w-4 h-4 mr-2" />
-                        Accept
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    onClick={handleRejectInvitation}
-                    disabled={sendingInvitation}
-                    variant="outline"
-                    size="sm"
-                    className="border-2"
-                  >
-                    <X className="w-4 h-4 mr-2" />
-                    Decline
-                  </Button>
-                </div>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Awaiting Connection Alert */}
-        {!hasPartner && !receivedInvitation && sentInvitation && (
-          <Alert className="border-2 border-primary/30 bg-primary/5 animate-fade-in">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <AlertDescription>
-              <div>
-                <p className="font-semibold">Awaiting connection</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Waiting for {sentInvitation.receiver_email} to accept your invitation
-                </p>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Send Invitation Section */}
-        {!hasPartner && !receivedInvitation && !sentInvitation && (
-          <div className="bg-card p-6 rounded-xl border-2 border-primary/20 shadow-sm animate-fade-in space-y-4">
+        {/* Connection Section */}
+        {!hasPartner && (
+          <div className="bg-card p-6 rounded-xl border-2 border-primary/20 shadow-sm animate-fade-in space-y-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center">
-                <Mail className="w-5 h-5 text-white" />
+                <Heart className="w-5 h-5 text-white" fill="white" />
               </div>
               <div>
                 <h3 className="font-semibold">Connect with Your Partner</h3>
                 <p className="text-sm text-muted-foreground">
-                  Enter your partner's email to send an invitation
+                  Share your code or enter your partner's code
                 </p>
               </div>
             </div>
-            <div className="flex gap-2">
-              <Input
-                type="email"
-                placeholder="partner@example.com"
-                value={partnerEmail}
-                onChange={(e) => setPartnerEmail(e.target.value)}
-                disabled={sendingInvitation}
-                className="flex-1 border-2 focus:border-primary"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && partnerEmail) {
-                    handleSendInvitation();
-                  }
-                }}
-              />
-              <Button
-                onClick={handleSendInvitation}
-                disabled={sendingInvitation || !partnerEmail}
-                className="bg-gradient-primary hover:opacity-90"
-              >
-                {sendingInvitation ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <Send className="w-4 h-4 mr-2" />
-                    Send
-                  </>
-                )}
-              </Button>
+
+            {/* My Invitation Code */}
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Your Invitation Code</Label>
+              {myInvitationCode ? (
+                <div className="flex gap-2">
+                  <div className="flex-1 bg-primary/5 border-2 border-primary/20 rounded-lg p-4 flex items-center justify-center">
+                    <code className="text-2xl font-bold tracking-wider text-primary">
+                      {myInvitationCode}
+                    </code>
+                  </div>
+                  <Button
+                    onClick={copyInvitationCode}
+                    variant="outline"
+                    size="icon"
+                    className="h-auto border-2"
+                  >
+                    <Copy className="w-5 h-5" />
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  onClick={generateInvitationCode}
+                  disabled={sendingInvitation}
+                  className="w-full bg-gradient-primary hover:opacity-90"
+                >
+                  {sendingInvitation ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    "Generate Code"
+                  )}
+                </Button>
+              )}
+              {myInvitationCode && (
+                <p className="text-xs text-muted-foreground">
+                  Share this code with your partner via WhatsApp, SMS, or any messaging app
+                </p>
+              )}
+            </div>
+
+            {/* Divider */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-primary/20"></div>
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">Or</span>
+              </div>
+            </div>
+
+            {/* Enter Partner's Code */}
+            <div className="space-y-3">
+              <Label htmlFor="enter-code" className="text-sm font-semibold">
+                Enter Partner's Code
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  id="enter-code"
+                  type="text"
+                  placeholder="ABC12345"
+                  value={enterCode}
+                  onChange={(e) => setEnterCode(e.target.value.toUpperCase())}
+                  disabled={sendingInvitation}
+                  maxLength={8}
+                  className="flex-1 border-2 focus:border-primary text-center text-lg font-mono tracking-wider"
+                />
+                <Button
+                  onClick={handleConnectWithCode}
+                  disabled={sendingInvitation || !enterCode || enterCode.length < 8}
+                  className="bg-gradient-primary hover:opacity-90"
+                >
+                  {sendingInvitation ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    "Connect"
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         )}

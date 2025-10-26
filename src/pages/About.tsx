@@ -17,27 +17,21 @@ const About = () => {
             About fiftytwoormore
           </CardTitle>
           <CardDescription className="text-sm sm:text-base">
-            [Your app description will go here]
+            Because done is better than perfect
           </CardDescription>
         </CardHeader>
         <CardContent className="p-4 sm:p-6 space-y-4">
           <div className="prose prose-sm sm:prose max-w-none">
-            <p className="text-muted-foreground">
-              [Add your detailed about text here. This is a placeholder that you can replace with information about your app, its purpose, and how it helps couples track their activities together.]
+            <p className="text-muted-foreground mb-4">
+              Sex should be fun. Easy. And frequent. The more seldom we make time for each other, the higher demands for is to be amazing when we do. We realized that we for the first time laughed during sex. Because the quantity took away the anxiety for it to be perfect.
             </p>
             
-            <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">
-              How It Works
-            </h3>
-            <p className="text-muted-foreground">
-              [Explain how your app works - placeholder text to be replaced.]
+            <p className="text-muted-foreground mb-4">
+              This app is created for couples who want to challenge their sex life and beat the 52 times a year.
             </p>
             
-            <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">
-              Why We Built This
-            </h3>
             <p className="text-muted-foreground">
-              [Share your motivation and story - placeholder text to be replaced.]
+              Privately and secure, this is for the two of you. No one else. Unless you want to.
             </p>
 
             <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">

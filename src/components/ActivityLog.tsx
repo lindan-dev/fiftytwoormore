@@ -80,31 +80,42 @@ export default function ActivityLog({ activities, onDelete, onUpdate, currentUse
 
   const getSpecialDateBadge = (activityDate: string) => {
     const date = new Date(activityDate);
-    const month = date.getMonth() + 1; // 0-indexed
-    const day = date.getDate();
+    const activityMonth = date.getMonth() + 1; // 0-indexed
+    const activityDay = date.getDate();
 
     // Check for birthday - check ALL profiles, not just the one who logged
     for (const profile of Object.values(profiles)) {
       if (profile?.birthday) {
-        const birthday = new Date(profile.birthday);
-        if (birthday.getMonth() + 1 === month && birthday.getDate() === day) {
+        // Parse birthday as UTC to avoid timezone issues
+        const [year, month, day] = profile.birthday.split('-').map(Number);
+        
+        console.log('Checking birthday:', { 
+          profileBirthday: profile.birthday, 
+          parsedMonth: month, 
+          parsedDay: day,
+          activityMonth, 
+          activityDay,
+          profileName: profile.name 
+        });
+        
+        if (month === activityMonth && day === activityDay) {
           return { label: "🎂 Birthday", color: "bg-pink-500/20 text-pink-700 border-pink-500/50" };
         }
       }
     }
 
     // Check for Christmas (Dec 24)
-    if (month === 12 && day === 24) {
+    if (activityMonth === 12 && activityDay === 24) {
       return { label: "🎄 Christmas", color: "bg-green-500/20 text-green-700 border-green-500/50" };
     }
 
     // Check for New Year's Eve (Dec 31)
-    if (month === 12 && day === 31) {
+    if (activityMonth === 12 && activityDay === 31) {
       return { label: "🎉 New Year's", color: "bg-purple-500/20 text-purple-700 border-purple-500/50" };
     }
 
     // Check for Leap Day (Feb 29)
-    if (month === 2 && day === 29) {
+    if (activityMonth === 2 && activityDay === 29) {
       return { label: "🐸 Leap Day", color: "bg-blue-500/20 text-blue-700 border-blue-500/50" };
     }
 

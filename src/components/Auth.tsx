@@ -55,7 +55,7 @@ export default function Auth() {
             <Heart className="w-8 h-8 text-white" fill="white" />
           </div>
           <CardTitle className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Together
+            fiftytwoormore
           </CardTitle>
           <CardDescription className="text-base">
             {isSignUp ? "Create your shared space" : "Welcome back"}

@@ -157,7 +157,7 @@ const Index = () => {
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
               <Heart className="w-6 h-6" fill="white" />
             </div>
-            <h1 className="text-2xl font-bold">Together</h1>
+            <h1 className="text-2xl font-bold">fiftytwoormore</h1>
           </div>
           <Button
             variant="ghost"

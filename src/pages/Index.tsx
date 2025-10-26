@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import Auth from "@/components/Auth";
+import InvitationFlow from "@/components/InvitationFlow";
 import { Button } from "@/components/ui/button";
 import { Heart, Plus, BarChart3, List, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +23,8 @@ const Index = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasPartner, setHasPartner] = useState(false);
+  const [checkingPartner, setCheckingPartner] = useState(true);
   const [view, setView] = useState<"log" | "stats">("log");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [customDate, setCustomDate] = useState("");
@@ -32,7 +35,7 @@ const Index = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) {
-        fetchActivities();
+        checkPartnerStatus();
       }
       setLoading(false);
     });
@@ -42,14 +45,32 @@ const Index = () => {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session) {
-        fetchActivities();
+        checkPartnerStatus();
       } else {
         setActivities([]);
+        setHasPartner(false);
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const checkPartnerStatus = async () => {
+    setCheckingPartner(true);
+    const { data } = await supabase
+      .from("couples")
+      .select("*")
+      .or(`user1_id.eq.${session?.user.id},user2_id.eq.${session?.user.id}`)
+      .single();
+
+    if (data) {
+      setHasPartner(true);
+      fetchActivities();
+    } else {
+      setHasPartner(false);
+    }
+    setCheckingPartner(false);
+  };
 
   const fetchActivities = async () => {
     const { data, error } = await supabase
@@ -146,6 +167,26 @@ const Index = () => {
 
   if (!session) {
     return <Auth />;
+  }
+
+  if (checkingPartner) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-soft">
+        <div className="animate-pulse">
+          <Heart className="w-12 h-12 text-primary" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasPartner) {
+    return (
+      <InvitationFlow
+        userEmail={session.user.email || ""}
+        userId={session.user.id}
+        onConnected={checkPartnerStatus}
+      />
+    );
   }
 
   return (

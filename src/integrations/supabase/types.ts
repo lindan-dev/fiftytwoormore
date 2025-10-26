@@ -35,12 +35,57 @@ export type Database = {
         }
         Relationships: []
       }
+      couple_invitations: {
+        Row: {
+          created_at: string
+          id: string
+          receiver_email: string
+          sender_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          receiver_email: string
+          sender_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          receiver_email?: string
+          sender_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      couples: {
+        Row: {
+          created_at: string
+          id: string
+          user1_id: string
+          user2_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user1_id: string
+          user2_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          user1_id?: string
+          user2_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_partner_id: { Args: { user_id: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never

@@ -191,9 +191,15 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
                     {firstEmoji}
                   </span>
                   
-                  {/* Multiple activities indicator dot */}
-                  {hasMultiple && (
+                  {/* Multiple activities indicator dots */}
+                  {dayActivities.length === 2 && (
                     <div className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-primary rounded-full border-2 border-white z-20 shadow-sm" />
+                  )}
+                  {dayActivities.length >= 3 && (
+                    <>
+                      <div className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-primary rounded-full border-2 border-white z-20 shadow-sm" />
+                      <div className="absolute top-0.5 right-3 sm:top-1 sm:right-4 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-primary rounded-full border-2 border-white z-20 shadow-sm" />
+                    </>
                   )}
                 </div>
               ) : (

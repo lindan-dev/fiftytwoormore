@@ -81,33 +81,7 @@ const Index = () => {
     }
   }, [session?.user?.id]);
 
-  // Realtime subscription for invitation acceptance
-  useEffect(() => {
-    if (!session?.user?.id || hasPartner) return;
-
-    const channel = supabase
-      .channel('invitation-status')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'couples',
-        },
-        (payload) => {
-          // Check if the inserted couple involves this user
-          const newCouple = payload.new as { user1_id: string; user2_id: string };
-          if (newCouple.user1_id === session.user.id || newCouple.user2_id === session.user.id) {
-            checkPartnerStatus();
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [session?.user?.id, hasPartner]);
+  // Moved after function declarations to avoid TS error
 
   const fetchActivities = useCallback(async () => {
     const { data, error } = await supabase
@@ -230,6 +204,76 @@ const Index = () => {
       supabase.removeChannel(channel);
     };
   }, [hasPartner, fetchActivities]);
+
+  // Realtime subscription for couple connection/disconnection
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    const channel = supabase
+      .channel('couple-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'couples',
+        },
+        (payload) => {
+          // Check if the inserted couple involves this user
+          const newCouple = payload.new as { user1_id: string; user2_id: string };
+          if (newCouple.user1_id === session.user.id || newCouple.user2_id === session.user.id) {
+            checkPartnerStatus();
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'couples',
+        },
+        async (payload) => {
+          // Check if the deleted couple involves this user
+          const deletedCouple = payload.old as { user1_id: string; user2_id: string };
+          if (deletedCouple.user1_id === session.user.id || deletedCouple.user2_id === session.user.id) {
+            // Get partner name before they disconnect
+            const partnerId = deletedCouple.user1_id === session.user.id 
+              ? deletedCouple.user2_id 
+              : deletedCouple.user1_id;
+            
+            // Fetch partner's profile
+            const { data: partnerProfile } = await supabase
+              .from("profiles")
+              .select("name")
+              .eq("user_id", partnerId)
+              .maybeSingle();
+            
+            const disconnectedPartnerName = partnerProfile?.name || "Your partner";
+            
+            toast({
+              title: "Partner Disconnected",
+              description: `${disconnectedPartnerName} has disconnected from you and all your data is gone. Better luck next time.`,
+              variant: "destructive",
+              duration: 10000,
+            });
+            
+            // Reset state
+            setHasPartner(false);
+            setPartnerName("");
+            setConnectedDate("");
+            setActivities([]);
+            setMyInvitationCode(null);
+            checkInvitations();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [session?.user?.id, checkPartnerStatus, checkInvitations, toast]);
 
   const generateInvitationCode = async () => {
     if (!session?.user) return;
@@ -453,15 +497,19 @@ const Index = () => {
           : coupleData.user1_id;
 
         // Delete all activities for both users
-        const { error: activitiesError } = await supabase
+        await supabase
           .from("activities")
           .delete()
           .in("user_id", [session.user.id, partnerId]);
 
-        if (activitiesError) throw activitiesError;
+        // Delete all invitations for both users
+        await supabase
+          .from("couple_invitations")
+          .delete()
+          .or(`sender_id.eq.${session.user.id},sender_id.eq.${partnerId}`);
       }
 
-      // Delete couple relationship
+      // Delete couple relationship (this will trigger realtime notification to partner)
       const { error: coupleError } = await supabase
         .from("couples")
         .delete()
@@ -476,7 +524,9 @@ const Index = () => {
 
       setHasPartner(false);
       setPartnerName("");
+      setConnectedDate("");
       setActivities([]);
+      setMyInvitationCode(null);
       checkInvitations();
     } catch (error: any) {
       toast({

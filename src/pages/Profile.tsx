@@ -65,6 +65,56 @@ const Profile = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Realtime subscription for partner disconnection
+  useEffect(() => {
+    if (!session?.user?.id || !partner) return;
+
+    const channel = supabase
+      .channel('couple-disconnection')
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'couples',
+        },
+        async (payload) => {
+          // Check if the deleted couple involves this user
+          const deletedCouple = payload.old as { user1_id: string; user2_id: string };
+          if (deletedCouple.user1_id === session.user.id || deletedCouple.user2_id === session.user.id) {
+            // Get partner name before they disconnect
+            const partnerId = deletedCouple.user1_id === session.user.id 
+              ? deletedCouple.user2_id 
+              : deletedCouple.user1_id;
+            
+            // Fetch partner's profile
+            const { data: partnerProfile } = await supabase
+              .from("profiles")
+              .select("name")
+              .eq("user_id", partnerId)
+              .maybeSingle();
+            
+            const disconnectedPartnerName = partnerProfile?.name || "Your partner";
+            
+            toast({
+              title: "Partner Disconnected",
+              description: `${disconnectedPartnerName} has disconnected from you and all your data is gone. Better luck next time.`,
+              variant: "destructive",
+              duration: 10000,
+            });
+            
+            setPartner(null);
+            navigate("/");
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [session?.user?.id, partner, toast, navigate]);
+
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
       .from("profiles")
@@ -148,17 +198,42 @@ const Profile = () => {
     setDisconnecting(true);
 
     try {
-      // Delete couple relationship
-      const { error } = await supabase
+      // Get partner's ID first
+      const { data: coupleData } = await supabase
+        .from("couples")
+        .select("*")
+        .or(`user1_id.eq.${session.user.id},user2_id.eq.${session.user.id}`)
+        .single();
+
+      if (coupleData) {
+        const partnerId = coupleData.user1_id === session.user.id 
+          ? coupleData.user2_id 
+          : coupleData.user1_id;
+
+        // Delete all activities for both users
+        await supabase
+          .from("activities")
+          .delete()
+          .in("user_id", [session.user.id, partnerId]);
+
+        // Delete all invitations for both users
+        await supabase
+          .from("couple_invitations")
+          .delete()
+          .or(`sender_id.eq.${session.user.id},sender_id.eq.${partnerId}`);
+      }
+
+      // Delete couple relationship (this will trigger realtime notification to partner)
+      const { error: coupleError } = await supabase
         .from("couples")
         .delete()
         .or(`user1_id.eq.${session.user.id},user2_id.eq.${session.user.id}`);
 
-      if (error) throw error;
+      if (coupleError) throw coupleError;
 
       toast({
         title: "Disconnected",
-        description: "You have been disconnected from your partner",
+        description: "You have been disconnected and all shared data has been deleted",
       });
 
       setPartner(null);

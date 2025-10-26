@@ -82,7 +82,7 @@ export default function StatsView({ activities, compact = false }: StatsViewProp
 
     dayActivityCounts.forEach(count => {
       if (count === 2) doubleDays++;
-      if (count >= 3) tripleDays++;
+      else if (count >= 3) tripleDays++;
     });
 
     return { doubleDays, tripleDays };

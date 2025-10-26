@@ -362,7 +362,7 @@ export default function StatsView({ activities, compact = false }: StatsViewProp
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <p className="text-xs sm:text-sm text-muted-foreground mb-0.5 sm:mb-1 truncate">Best Month</p>
-                      <p className="text-xl sm:text-2xl font-bold text-primary truncate">
+                      <p className="text-sm sm:text-base font-bold text-primary truncate">
                         {bestMonth.month} {bestMonth.year}
                       </p>
                       <p className="text-sm sm:text-base text-muted-foreground mt-0.5">

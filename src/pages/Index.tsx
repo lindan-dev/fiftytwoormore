@@ -670,12 +670,20 @@ const Index = () => {
                   const previousGoal = currentGoal - 52;
                   const progressInCurrentTier = yearCount - previousGoal;
                   const progressPercentage = (progressInCurrentTier / 52) * 100;
+                  const multiplier = Math.floor(yearCount / 52) + 1;
                   
                   return (
                     <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-3 sm:p-4 rounded-xl border-2 border-primary/20 shadow-sm space-y-2">
                       <div className="flex justify-between items-center text-xs sm:text-sm">
                         <span className="font-medium">{yearCount} this year</span>
-                        <span className="font-semibold text-primary">Goal: {currentGoal}</span>
+                        <div className="flex items-center gap-2">
+                          {multiplier > 1 && (
+                            <span className="px-2 py-0.5 bg-primary text-primary-foreground font-bold text-xs rounded-full animate-pulse">
+                              x{multiplier}
+                            </span>
+                          )}
+                          <span className="font-semibold text-primary">Goal: {currentGoal}</span>
+                        </div>
                       </div>
                       <Progress value={progressPercentage} className="h-3" />
                       <p className="text-xs sm:text-sm text-center text-muted-foreground">

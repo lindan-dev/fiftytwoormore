@@ -42,6 +42,31 @@ export default function ActivityLog({ activities, onDelete, onUpdate, currentUse
       
       if (userIds.length === 0) return;
 
+      // Also fetch current user's partner profile
+      if (currentUserId) {
+        const { data: coupleData } = await supabase
+          .from("couples")
+          .select("user1_id, user2_id")
+          .or(`user1_id.eq.${currentUserId},user2_id.eq.${currentUserId}`)
+          .maybeSingle();
+
+        if (coupleData) {
+          const partnerId = coupleData.user1_id === currentUserId 
+            ? coupleData.user2_id 
+            : coupleData.user1_id;
+          
+          // Add partner to userIds if not already there
+          if (!userIds.includes(partnerId)) {
+            userIds.push(partnerId);
+          }
+          
+          // Add current user if not already there
+          if (!userIds.includes(currentUserId)) {
+            userIds.push(currentUserId);
+          }
+        }
+      }
+
       const { data, error } = await supabase
         .from("profiles")
         .select("user_id, name, birthday")
@@ -53,11 +78,12 @@ export default function ActivityLog({ activities, onDelete, onUpdate, currentUse
           profileMap[profile.user_id] = profile;
         });
         setProfiles(profileMap);
+        console.log('Loaded profiles:', profileMap);
       }
     };
 
     fetchProfiles();
-  }, [activities]);
+  }, [activities, currentUserId]);
 
   const handleEditClick = (activity: Activity) => {
     setEditingActivity(activity);
@@ -83,20 +109,11 @@ export default function ActivityLog({ activities, onDelete, onUpdate, currentUse
     const activityMonth = date.getMonth() + 1; // 0-indexed
     const activityDay = date.getDate();
 
-    // Check for birthday - check ALL profiles, not just the one who logged
+    // Check for birthday - check ALL profiles
     for (const profile of Object.values(profiles)) {
       if (profile?.birthday) {
         // Parse birthday as UTC to avoid timezone issues
         const [year, month, day] = profile.birthday.split('-').map(Number);
-        
-        console.log('Checking birthday:', { 
-          profileBirthday: profile.birthday, 
-          parsedMonth: month, 
-          parsedDay: day,
-          activityMonth, 
-          activityDay,
-          profileName: profile.name 
-        });
         
         if (month === activityMonth && day === activityDay) {
           return { label: "🎂 Birthday", color: "bg-pink-500/20 text-pink-700 border-pink-500/50" };

@@ -23,7 +23,11 @@ const About = () => {
         <CardContent className="p-4 sm:p-6 space-y-4">
           <div className="prose prose-sm sm:prose max-w-none">
             <p className="text-muted-foreground mb-4">
-              Sex should be fun. Easy. And frequent. The more seldom we make time for each other, the higher demands for is to be amazing when we do. We realized that we for the first time laughed during sex. Because the quantity took away the anxiety for it to be perfect.
+              Sex should be fun. Easy. And frequent. The more seldom we make time for each other, the more perfect we expect it to be when we do.
+            </p>
+            
+            <p className="text-muted-foreground mb-4">
+              A while back we realized that we laughed more during sex than we had done ever before. And we concluded that it was because we made time for it much more often than we had before.
             </p>
             
             <p className="text-muted-foreground mb-4">

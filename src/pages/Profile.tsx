@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, User, Heart, Trash2, Loader2 } from "lucide-react";
+import { ArrowLeft, User, Heart, Trash2, Loader2, UserX } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -42,6 +42,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -255,6 +256,74 @@ const Profile = () => {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (!session?.user) return;
+
+    setDeleting(true);
+
+    try {
+      // Get partner's ID first if exists
+      const { data: coupleData } = await supabase
+        .from("couples")
+        .select("*")
+        .or(`user1_id.eq.${session.user.id},user2_id.eq.${session.user.id}`)
+        .maybeSingle();
+
+      if (coupleData) {
+        const partnerId = coupleData.user1_id === session.user.id 
+          ? coupleData.user2_id 
+          : coupleData.user1_id;
+
+        // Delete all activities for both users
+        await supabase
+          .from("activities")
+          .delete()
+          .in("user_id", [session.user.id, partnerId]);
+
+        // Delete couple relationship
+        await supabase
+          .from("couples")
+          .delete()
+          .or(`user1_id.eq.${session.user.id},user2_id.eq.${session.user.id}`);
+      } else {
+        // Just delete own activities if no partner
+        await supabase
+          .from("activities")
+          .delete()
+          .eq("user_id", session.user.id);
+      }
+
+      // Delete all invitations
+      await supabase
+        .from("couple_invitations")
+        .delete()
+        .eq("sender_id", session.user.id);
+
+      // Delete profile
+      await supabase
+        .from("profiles")
+        .delete()
+        .eq("user_id", session.user.id);
+
+      // Sign out the user
+      await supabase.auth.signOut();
+
+      toast({
+        title: "Account Deleted",
+        description: "All your data has been permanently deleted",
+      });
+
+      navigate("/");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      setDeleting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -399,6 +468,61 @@ const Profile = () => {
             </AlertDialog>
           </Card>
         )}
+
+        {/* Delete Account Card */}
+        <Card className="p-3 sm:p-4 border-2 border-destructive/20 shadow-sm">
+          <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-5">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-destructive flex items-center justify-center flex-shrink-0">
+              <UserX className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-semibold text-sm sm:text-base truncate">Delete Account</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Permanently delete your account and all data
+              </p>
+            </div>
+          </div>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="destructive"
+                className="w-full"
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <UserX className="w-4 h-4 mr-2" />
+                )}
+                Forget Me
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Your Account?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete your account and remove all your data from our servers, including:
+                  <ul className="list-disc list-inside mt-2 space-y-1">
+                    <li>Your profile information</li>
+                    <li>All activity history</li>
+                    <li>Your partner connection</li>
+                    <li>All invitations</li>
+                  </ul>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={handleDeleteAccount}
+                  className="bg-destructive hover:bg-destructive/90"
+                >
+                  Delete Everything
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </Card>
       </div>
     </div>
   );

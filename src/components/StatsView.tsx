@@ -194,6 +194,26 @@ export default function StatsView({ activities, compact = false }: StatsViewProp
     return best.count > 0 ? best : null;
   }, [activities]);
 
+  const bestYear = useMemo(() => {
+    if (activities.length === 0) return null;
+
+    const yearCounts = new Map<number, number>();
+
+    activities.forEach(activity => {
+      const year = new Date(activity.activity_date).getFullYear();
+      yearCounts.set(year, (yearCounts.get(year) || 0) + 1);
+    });
+
+    let best = { count: 0, year: 0 };
+    yearCounts.forEach((count, year) => {
+      if (count > best.count) {
+        best = { count, year };
+      }
+    });
+
+    return best.count > 0 ? best : null;
+  }, [activities]);
+
   const timeOfDayStats = useMemo(() => {
     const stats = {
       nightOwl: 0,      // 10pm - 4am (22-4)
@@ -352,10 +372,28 @@ export default function StatsView({ activities, compact = false }: StatsViewProp
       </div>
 
       {/* Best Period Stats */}
-      {(bestMonth || bestWeek) && (
+      {(bestMonth || bestWeek || bestYear) && (
         <>
           <h3 className="text-lg sm:text-xl font-semibold mt-4">Best Periods</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            {bestYear && (
+              <Card className="border-2 border-primary/10 hover:border-primary/30 transition-all hover:shadow-soft">
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm text-muted-foreground mb-0.5 sm:mb-1 truncate">Best Year</p>
+                      <p className="text-sm sm:text-base font-bold text-primary truncate">
+                        {bestYear.year}
+                      </p>
+                      <p className="text-sm sm:text-base text-muted-foreground mt-0.5">
+                        {bestYear.count} {bestYear.count === 1 ? 'activity' : 'activities'}
+                      </p>
+                    </div>
+                    <Zap className="w-8 h-8 sm:w-10 sm:h-10 text-yellow-500 flex-shrink-0" />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             {bestMonth && (
               <Card className="border-2 border-primary/10 hover:border-primary/30 transition-all hover:shadow-soft">
                 <CardContent className="p-3 sm:p-4">

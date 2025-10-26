@@ -38,10 +38,7 @@ const About = () => {
               Cheaper than therapy ❤️
             </h3>
             <p className="text-muted-foreground mb-3">
-              If fiftytwoormore brings a little more laughter, closeness, or "well… that was nice" into your week — consider backing the project with €5.
-            </p>
-            <p className="text-muted-foreground mb-3">
-              It helps us make it even more fun.
+              Should fiftytwoormore bring a little more laughter, closeness, or "well… that was nice" into your week — consider backing the project with €5. It helps us make it even more fun.
             </p>
             <p className="text-muted-foreground">
               And it's cheaper than therapy.

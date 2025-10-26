@@ -1,7 +1,11 @@
 import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import EmojiSelector from "./EmojiSelector";
 import { 
   startOfMonth, 
   endOfMonth, 
@@ -25,11 +29,20 @@ interface Activity {
 
 interface CalendarViewProps {
   activities: Activity[];
-  onDayClick?: (date: Date, activities: Activity[]) => void;
+  currentUserId?: string;
+  onDelete: (id: string) => void;
+  onUpdate: (id: string, activityDate: Date, emoji: string, notes?: string) => void;
 }
 
-export default function CalendarView({ activities, onDayClick }: CalendarViewProps) {
+export default function CalendarView({ activities, currentUserId, onDelete, onUpdate }: CalendarViewProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [selectedActivities, setSelectedActivities] = useState<Activity[]>([]);
+  const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [editDate, setEditDate] = useState("");
+  const [editTime, setEditTime] = useState("");
+  const [editEmoji, setEditEmoji] = useState("");
+  const [editNotes, setEditNotes] = useState("");
 
   // Group activities by date
   const activitiesByDate = useMemo(() => {
@@ -70,8 +83,40 @@ export default function CalendarView({ activities, onDayClick }: CalendarViewPro
   const handleDayClick = (day: Date) => {
     if (!isSameMonth(day, currentMonth)) return;
     const dayActivities = getDayActivities(day);
-    if (onDayClick && dayActivities.length > 0) {
-      onDayClick(day, dayActivities);
+    if (dayActivities.length > 0) {
+      setSelectedDay(day);
+      setSelectedActivities(dayActivities);
+    }
+  };
+
+  const handleEditClick = (activity: Activity) => {
+    setEditingActivity(activity);
+    const date = new Date(activity.activity_date);
+    setEditDate(date.toISOString().split('T')[0]);
+    setEditTime(date.toTimeString().slice(0, 5));
+    setEditEmoji(activity.emoji || "");
+    setEditNotes(activity.notes || "");
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingActivity || !editDate || !editTime || !editEmoji) return;
+    
+    const combinedDateTime = new Date(`${editDate}T${editTime}`);
+    onUpdate(editingActivity.id, combinedDateTime, editEmoji, editNotes);
+    setEditingActivity(null);
+    setEditDate("");
+    setEditTime("");
+    setEditEmoji("");
+    setEditNotes("");
+  };
+
+  const handleDelete = (id: string) => {
+    onDelete(id);
+    // Remove from selected activities
+    setSelectedActivities(prev => prev.filter(a => a.id !== id));
+    // Close dialog if no more activities
+    if (selectedActivities.length <= 1) {
+      setSelectedDay(null);
     }
   };
 
@@ -148,7 +193,7 @@ export default function CalendarView({ activities, onDayClick }: CalendarViewPro
                   
                   {/* Multiple activities indicator dot */}
                   {hasMultiple && (
-                    <div className="absolute top-1 right-1 sm:top-2 sm:right-2 w-2 h-2 sm:w-2.5 sm:h-2.5 bg-white rounded-full border-2 border-background z-20" />
+                    <div className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-primary rounded-full border-2 border-white z-20 shadow-sm" />
                   )}
                 </div>
               ) : (
@@ -160,6 +205,114 @@ export default function CalendarView({ activities, onDayClick }: CalendarViewPro
           );
         })}
       </div>
+
+      {/* Activity Details Dialog */}
+      <Dialog open={selectedDay !== null && !editingActivity} onOpenChange={(open) => !open && setSelectedDay(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedDay && format(selectedDay, 'MMMM d, yyyy')}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+            {selectedActivities.map((activity) => {
+              const isCurrentUser = currentUserId === activity.user_id;
+              return (
+                <Card key={activity.id} className="p-3 border-2">
+                  <div className="flex items-start gap-3">
+                    {activity.emoji && (
+                      <span className="text-3xl flex-shrink-0">{activity.emoji}</span>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-muted-foreground">
+                        {new Date(activity.activity_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                      {activity.notes && (
+                        <p className="text-sm mt-1 italic">{activity.notes}</p>
+                      )}
+                    </div>
+                    {isCurrentUser && (
+                      <div className="flex gap-1 flex-shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditClick(activity)}
+                          className="h-8 w-8 hover:bg-primary/10"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(activity.id)}
+                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Activity Dialog */}
+      <Dialog open={editingActivity !== null} onOpenChange={(open) => !open && setEditingActivity(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Activity</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-date">Date</Label>
+              <Input
+                id="edit-date"
+                type="date"
+                value={editDate}
+                onChange={(e) => setEditDate(e.target.value)}
+                max={new Date().toISOString().split('T')[0]}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-time">Time</Label>
+              <Input
+                id="edit-time"
+                type="time"
+                value={editTime}
+                onChange={(e) => setEditTime(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Emoji</Label>
+              <EmojiSelector
+                selectedEmoji={editEmoji}
+                onSelect={setEditEmoji}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-notes">Notes (optional)</Label>
+              <Input
+                id="edit-notes"
+                type="text"
+                placeholder="Add a note..."
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                maxLength={200}
+              />
+            </div>
+            <Button 
+              onClick={handleSaveEdit} 
+              className="w-full"
+              disabled={!editDate || !editTime || !editEmoji}
+            >
+              Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

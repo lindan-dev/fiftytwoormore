@@ -1013,6 +1013,9 @@ const Index = () => {
         {view === "log" ? (
           <CalendarView
             activities={activities}
+            currentUserId={session.user.id}
+            onDelete={handleDeleteActivity}
+            onUpdate={handleUpdateActivity}
           />
         ) : (
           <StatsView activities={activities} compact={false} />

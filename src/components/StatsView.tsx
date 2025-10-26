@@ -239,36 +239,8 @@ export default function StatsView({ activities, compact = false }: StatsViewProp
     <div className="space-y-4">
       <h2 className="text-2xl font-bold">Statistics</h2>
       
-      {/* Streak and Special Days Stats */}
-      <div className="grid grid-cols-2 gap-3">
-        <SimpleStatCard
-          icon={Flame}
-          title="Current Streak"
-          value={calculateStreaks.currentStreak}
-          color="text-orange-500"
-        />
-        <SimpleStatCard
-          icon={Calendar}
-          title="Longest Streak"
-          value={calculateStreaks.longestStreak}
-          color="text-primary"
-        />
-        <SimpleStatCard
-          icon={Zap}
-          title="Double Days"
-          value={calculateMultipleDays.doubleDays}
-          color="text-blue-500"
-        />
-        <SimpleStatCard
-          icon={Zap}
-          title="Triple Days"
-          value={calculateMultipleDays.tripleDays}
-          color="text-purple-500"
-        />
-      </div>
-
       {/* Period-based Stats */}
-      <div className="grid gap-4 mt-6">
+      <div className="grid gap-4">
         <StatCard
           title="This Week"
           current={weekStats.currentCount}

@@ -43,16 +43,18 @@ const About = () => {
             <p className="text-muted-foreground">
               And it's cheaper than therapy.
             </p>
-            <a 
-              href="https://buy.stripe.com/14AbJ34zR6ofcci1fJ5EY00"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block mt-4"
-            >
-              <Button className="w-full sm:w-auto">
-                Support Our Project - €5 ❤️
-              </Button>
-            </a>
+            <div className="text-center">
+              <a 
+                href="https://buy.stripe.com/14AbJ34zR6ofcci1fJ5EY00"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block mt-4"
+              >
+                <Button className="w-full sm:w-auto">
+                  Support Our Project - €5 ❤️
+                </Button>
+              </a>
+            </div>
           </div>
           
           <Button

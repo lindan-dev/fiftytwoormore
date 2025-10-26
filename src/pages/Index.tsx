@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { startOfYear, endOfYear, differenceInWeeks, parseISO } from "date-fns";
 
 interface Activity {
@@ -664,12 +665,23 @@ const Index = () => {
                   const yearCount = yearActivities.length;
                   const weeksLeft = Math.max(0, differenceInWeeks(yearEnd, now));
                   
+                  // Calculate which goal tier we're on (52, 104, 156, etc.)
+                  const currentGoal = Math.ceil(yearCount / 52) * 52;
+                  const previousGoal = currentGoal - 52;
+                  const progressInCurrentTier = yearCount - previousGoal;
+                  const progressPercentage = (progressInCurrentTier / 52) * 100;
+                  
                   return (
-                    <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-3 sm:p-4 rounded-xl border-2 border-primary/20 shadow-sm">
-                      <p className="text-sm sm:text-base font-semibold text-center leading-tight">
+                    <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-3 sm:p-4 rounded-xl border-2 border-primary/20 shadow-sm space-y-2">
+                      <div className="flex justify-between items-center text-xs sm:text-sm">
+                        <span className="font-medium">{yearCount} this year</span>
+                        <span className="font-semibold text-primary">Goal: {currentGoal}</span>
+                      </div>
+                      <Progress value={progressPercentage} className="h-3" />
+                      <p className="text-xs sm:text-sm text-center text-muted-foreground">
                         {yearCount < 52 
-                          ? `Only ${52 - yearCount} to go in ${weeksLeft} ${weeksLeft === 1 ? 'week' : 'weeks'} left!`
-                          : `Crushing it! ${yearCount - 52} over the goal!`
+                          ? `${52 - yearCount} more to reach your goal with ${weeksLeft} ${weeksLeft === 1 ? 'week' : 'weeks'} left!`
+                          : `Crushing it! ${yearCount - previousGoal} of 52 towards ${currentGoal} 🔥`
                         }
                       </p>
                     </div>

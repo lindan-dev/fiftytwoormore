@@ -456,6 +456,30 @@ const Index = () => {
   };
 
 
+  const handleUpdateActivity = async (id: string, activityDate: Date, emoji: string) => {
+    const { error } = await supabase
+      .from("activities")
+      .update({
+        activity_date: activityDate.toISOString(),
+        emoji: emoji,
+      })
+      .eq("id", id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update activity",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Activity updated",
+      });
+      fetchActivities();
+    }
+  };
+
   const handleDeleteActivity = async (id: string) => {
     const { error } = await supabase.from("activities").delete().eq("id", id);
 
@@ -830,6 +854,7 @@ const Index = () => {
           <ActivityLog
             activities={activities}
             onDelete={handleDeleteActivity}
+            onUpdate={handleUpdateActivity}
             currentUserId={session.user.id}
           />
         ) : (

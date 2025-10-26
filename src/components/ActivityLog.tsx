@@ -1,8 +1,12 @@
-import { Trash2, User } from "lucide-react";
+import { Trash2, User, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
+import EmojiSelector from "./EmojiSelector";
 
 interface Activity {
   id: string;
@@ -19,11 +23,16 @@ interface Profile {
 interface ActivityLogProps {
   activities: Activity[];
   onDelete: (id: string) => void;
+  onUpdate: (id: string, activityDate: Date, emoji: string) => void;
   currentUserId?: string;
 }
 
-export default function ActivityLog({ activities, onDelete, currentUserId }: ActivityLogProps) {
+export default function ActivityLog({ activities, onDelete, onUpdate, currentUserId }: ActivityLogProps) {
   const [profiles, setProfiles] = useState<Record<string, string>>({});
+  const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [editDate, setEditDate] = useState("");
+  const [editTime, setEditTime] = useState("");
+  const [editEmoji, setEditEmoji] = useState("");
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -48,6 +57,25 @@ export default function ActivityLog({ activities, onDelete, currentUserId }: Act
 
     fetchProfiles();
   }, [activities]);
+
+  const handleEditClick = (activity: Activity) => {
+    setEditingActivity(activity);
+    const date = new Date(activity.activity_date);
+    setEditDate(date.toISOString().split('T')[0]);
+    setEditTime(date.toTimeString().slice(0, 5));
+    setEditEmoji(activity.emoji || "");
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingActivity || !editDate || !editTime || !editEmoji) return;
+    
+    const combinedDateTime = new Date(`${editDate}T${editTime}`);
+    onUpdate(editingActivity.id, combinedDateTime, editEmoji);
+    setEditingActivity(null);
+    setEditDate("");
+    setEditTime("");
+    setEditEmoji("");
+  };
   if (activities.length === 0) {
     return (
       <Card className="p-8 text-center border-2 border-dashed border-primary/20">
@@ -96,14 +124,68 @@ export default function ActivityLog({ activities, onDelete, currentUserId }: Act
               </div>
             </div>
             {isCurrentUser && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onDelete(activity.id)}
-                className="text-destructive hover:text-destructive hover:bg-destructive/10"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
+              <div className="flex gap-1">
+                <Dialog open={editingActivity?.id === activity.id} onOpenChange={(open) => !open && setEditingActivity(null)}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEditClick(activity)}
+                      className="hover:bg-primary/10"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Edit Activity</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 mt-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-date">Date</Label>
+                        <Input
+                          id="edit-date"
+                          type="date"
+                          value={editDate}
+                          onChange={(e) => setEditDate(e.target.value)}
+                          max={new Date().toISOString().split('T')[0]}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-time">Time</Label>
+                        <Input
+                          id="edit-time"
+                          type="time"
+                          value={editTime}
+                          onChange={(e) => setEditTime(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Emoji</Label>
+                        <EmojiSelector
+                          selectedEmoji={editEmoji}
+                          onSelect={setEditEmoji}
+                        />
+                      </div>
+                      <Button 
+                        onClick={handleSaveEdit} 
+                        className="w-full"
+                        disabled={!editDate || !editTime || !editEmoji}
+                      >
+                        Save Changes
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onDelete(activity.id)}
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
             )}
           </Card>
         );

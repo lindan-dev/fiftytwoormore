@@ -720,7 +720,7 @@ const Index = () => {
         {hasPartner ? (
           <>
             <div className="bg-card p-3 sm:p-4 rounded-xl border-2 border-primary/20 shadow-sm animate-fade-in">
-              <div className="flex items-center gap-2 sm:gap-3 mb-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
                   <Heart className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="white" />
                 </div>

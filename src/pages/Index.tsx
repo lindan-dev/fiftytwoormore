@@ -5,11 +5,22 @@ import { Session } from "@supabase/supabase-js";
 import Auth from "@/components/Auth";
 import EmojiSelector from "@/components/EmojiSelector";
 import { Button } from "@/components/ui/button";
-import { Heart, Plus, BarChart3, List, LogOut, Copy, Loader2, User } from "lucide-react";
+import { Heart, Plus, BarChart3, List, LogOut, Copy, Loader2, User, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ActivityLog from "@/components/ActivityLog";
 import StatsView from "@/components/StatsView";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,6 +47,7 @@ const Index = () => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasPartner, setHasPartner] = useState(false);
+  const [partnerName, setPartnerName] = useState<string>("");
   const [checkingPartner, setCheckingPartner] = useState(true);
   const [view, setView] = useState<"log" | "stats">("log");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -47,6 +59,7 @@ const Index = () => {
   const [enterCode, setEnterCode] = useState("");
   const [sendingInvitation, setSendingInvitation] = useState(false);
   const [myInvitationCode, setMyInvitationCode] = useState<string | null>(null);
+  const [disconnecting, setDisconnecting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -137,9 +150,25 @@ const Index = () => {
 
     if (data) {
       setHasPartner(true);
+      
+      // Get partner's ID
+      const partnerId = data.user1_id === session.user.id ? data.user2_id : data.user1_id;
+      
+      // Fetch partner's profile
+      const { data: partnerProfile } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("user_id", partnerId)
+        .single();
+      
+      if (partnerProfile) {
+        setPartnerName(partnerProfile.name || "Partner");
+      }
+      
       fetchActivities();
     } else {
       setHasPartner(false);
+      setPartnerName("");
       checkInvitations();
     }
     setCheckingPartner(false);
@@ -380,6 +409,61 @@ const Index = () => {
     await supabase.auth.signOut();
   };
 
+  const handleDisconnectPartner = async () => {
+    if (!session?.user) return;
+
+    setDisconnecting(true);
+
+    try {
+      // Get partner's ID first
+      const { data: coupleData } = await supabase
+        .from("couples")
+        .select("*")
+        .or(`user1_id.eq.${session.user.id},user2_id.eq.${session.user.id}`)
+        .single();
+
+      if (coupleData) {
+        const partnerId = coupleData.user1_id === session.user.id 
+          ? coupleData.user2_id 
+          : coupleData.user1_id;
+
+        // Delete all activities for both users
+        const { error: activitiesError } = await supabase
+          .from("activities")
+          .delete()
+          .in("user_id", [session.user.id, partnerId]);
+
+        if (activitiesError) throw activitiesError;
+      }
+
+      // Delete couple relationship
+      const { error: coupleError } = await supabase
+        .from("couples")
+        .delete()
+        .or(`user1_id.eq.${session.user.id},user2_id.eq.${session.user.id}`);
+
+      if (coupleError) throw coupleError;
+
+      toast({
+        title: "Disconnected",
+        description: "You have been disconnected and all shared data has been deleted",
+      });
+
+      setHasPartner(false);
+      setPartnerName("");
+      setActivities([]);
+      checkInvitations();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setDisconnecting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-soft">
@@ -440,7 +524,59 @@ const Index = () => {
       {/* Content */}
       <div className="max-w-2xl mx-auto p-6 space-y-6 animate-fade-in">
         {/* Connection Section */}
-        {!hasPartner && (
+        {hasPartner ? (
+          <div className="bg-card p-6 rounded-xl border-2 border-primary/20 shadow-sm animate-fade-in">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center">
+                  <Heart className="w-5 h-5 text-white" fill="white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Connected Partner</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {partnerName}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="destructive"
+                  className="w-full"
+                  disabled={disconnecting}
+                >
+                  {disconnecting ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <Trash2 className="w-4 h-4 mr-2" />
+                  )}
+                  Delete Connection & All Data
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete your connection with {partnerName} and{" "}
+                    <strong>all shared activity history</strong>. This action cannot be undone.
+                    You'll need a new invitation code to reconnect.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDisconnectPartner}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Delete Everything
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        ) : (
           <div className="bg-card p-6 rounded-xl border-2 border-primary/20 shadow-sm animate-fade-in space-y-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center">
@@ -536,8 +672,6 @@ const Index = () => {
             </div>
           </div>
         )}
-
-        {/* Quick Log Button */}
         <div className="flex gap-2">
           <Dialog open={quickLogOpen} onOpenChange={setQuickLogOpen}>
             <DialogTrigger asChild>

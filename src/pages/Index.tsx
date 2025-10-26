@@ -600,21 +600,26 @@ const Index = () => {
       <div className="max-w-2xl mx-auto p-6 space-y-6 animate-fade-in">
         {/* Connection Section */}
         {hasPartner ? (
-          <div className="bg-card p-6 rounded-xl border-2 border-primary/20 shadow-sm animate-fade-in">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
-                <Heart className="w-6 h-6 text-white" fill="white" />
-              </div>
-              <div className="flex-1">
-                <p className="text-lg">
-                  Doing it with {partnerName} since {activities.length > 0 ? new Date(activities[activities.length - 1].activity_date).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) : new Date(connectedDate).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {activities.length} {activities.length === 1 ? 'activity' : 'activities'} and counting 🔥
-                </p>
+          <>
+            <div className="bg-card p-6 rounded-xl border-2 border-primary/20 shadow-sm animate-fade-in">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
+                  <Heart className="w-6 h-6 text-white" fill="white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-lg">
+                    Doing it with {partnerName} since {activities.length > 0 ? new Date(activities[activities.length - 1].activity_date).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) : new Date(connectedDate).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {activities.length} {activities.length === 1 ? 'activity' : 'activities'} and counting 🔥
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+            {activities.length > 0 && (
+              <StatsView activities={activities} compact={true} />
+            )}
+          </>
         ) : (
           <div className="bg-card p-6 rounded-xl border-2 border-primary/20 shadow-sm animate-fade-in space-y-6">
             <div className="flex items-center gap-3">
@@ -822,18 +827,13 @@ const Index = () => {
 
         {/* Content Area */}
         {view === "log" ? (
-          <>
-            {hasPartner && activities.length > 0 && (
-              <StatsView activities={activities} />
-            )}
-            <ActivityLog
-              activities={activities}
-              onDelete={handleDeleteActivity}
-              currentUserId={session.user.id}
-            />
-          </>
+          <ActivityLog
+            activities={activities}
+            onDelete={handleDeleteActivity}
+            currentUserId={session.user.id}
+          />
         ) : (
-          <StatsView activities={activities} />
+          <StatsView activities={activities} compact={false} />
         )}
       </div>
     </div>

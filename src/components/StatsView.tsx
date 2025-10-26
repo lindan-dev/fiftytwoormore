@@ -21,11 +21,12 @@ interface Activity {
 
 interface StatsViewProps {
   activities: Activity[];
+  compact?: boolean;
 }
 
 type Period = "week" | "month" | "year";
 
-export default function StatsView({ activities }: StatsViewProps) {
+export default function StatsView({ activities, compact = false }: StatsViewProps) {
   const calculateStreaks = useMemo(() => {
     if (activities.length === 0) return { currentStreak: 0, longestStreak: 0 };
 
@@ -202,6 +203,37 @@ export default function StatsView({ activities }: StatsViewProps) {
       </CardContent>
     </Card>
   );
+
+  if (compact) {
+    return (
+      <div className="grid grid-cols-2 gap-3">
+        <SimpleStatCard
+          icon={Flame}
+          title="Current Streak"
+          value={calculateStreaks.currentStreak}
+          color="text-orange-500"
+        />
+        <SimpleStatCard
+          icon={Calendar}
+          title="Longest Streak"
+          value={calculateStreaks.longestStreak}
+          color="text-primary"
+        />
+        <SimpleStatCard
+          icon={Zap}
+          title="Double Days"
+          value={calculateMultipleDays.doubleDays}
+          color="text-blue-500"
+        />
+        <SimpleStatCard
+          icon={Zap}
+          title="Triple Days"
+          value={calculateMultipleDays.tripleDays}
+          color="text-purple-500"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

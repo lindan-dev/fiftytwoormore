@@ -5,7 +5,7 @@ import { Session } from "@supabase/supabase-js";
 import Auth from "@/components/Auth";
 import EmojiSelector from "@/components/EmojiSelector";
 import { Button } from "@/components/ui/button";
-import { Heart, Plus, BarChart3, List, LogOut, Copy, Loader2, User } from "lucide-react";
+import { Heart, Plus, BarChart3, List, LogOut, Copy, Loader2, User, Download, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ActivityLog from "@/components/ActivityLog";
 import StatsView from "@/components/StatsView";
@@ -54,6 +54,8 @@ const Index = () => {
   const [sendingInvitation, setSendingInvitation] = useState(false);
   const [myInvitationCode, setMyInvitationCode] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -74,6 +76,34 @@ const Index = () => {
     });
 
     return () => subscription.unsubscribe();
+  }, []);
+
+  // Check if app should show install prompt
+  useEffect(() => {
+    // Only show on mobile devices
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    
+    // Check if already installed
+    const isInstalled = window.matchMedia('(display-mode: standalone)').matches;
+    
+    // Check if user dismissed the prompt
+    const isDismissed = localStorage.getItem('installPromptDismissed') === 'true';
+    
+    if (isMobile && !isInstalled && !isDismissed) {
+      setShowInstallPrompt(true);
+    }
+
+    // Capture the beforeinstallprompt event
+    const handler = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handler);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+    };
   }, []);
 
   // Check partner status when session changes
@@ -571,6 +601,26 @@ const Index = () => {
     }
   };
 
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      
+      if (outcome === 'accepted') {
+        setShowInstallPrompt(false);
+      }
+      
+      setDeferredPrompt(null);
+    } else {
+      navigate("/install");
+    }
+  };
+
+  const dismissInstallPrompt = () => {
+    setShowInstallPrompt(false);
+    localStorage.setItem('installPromptDismissed', 'true');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -627,6 +677,33 @@ const Index = () => {
           </div>
         </div>
       </div>
+
+      {/* Install Prompt Banner */}
+      {showInstallPrompt && (
+        <Alert className="max-w-2xl mx-auto m-3 sm:m-4 border-2 border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10">
+          <Download className="h-4 w-4 text-primary" />
+          <AlertDescription className="flex items-center justify-between gap-2">
+            <span className="text-sm flex-1">Install app for offline access & better experience</span>
+            <div className="flex gap-2 flex-shrink-0">
+              <Button 
+                size="sm" 
+                onClick={handleInstallClick}
+                className="h-8 text-xs"
+              >
+                Install
+              </Button>
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                onClick={dismissInstallPrompt}
+                className="h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Content */}
       <div className="max-w-2xl mx-auto p-3 sm:p-4 space-y-3 sm:space-y-4 animate-fade-in">

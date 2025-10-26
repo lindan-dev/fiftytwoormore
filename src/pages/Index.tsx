@@ -1028,6 +1028,19 @@ const Index = () => {
         ) : (
           <StatsView activities={activities} compact={false} />
         )}
+
+        {/* Support Link */}
+        <div className="text-center mt-6 pb-4">
+          <a 
+            href="https://buy.stripe.com/14AbJ34zR6ofcci1fJ5EY00"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
+          >
+            <Heart className="w-4 h-4 fill-current" />
+            Support our project - cheaper than therapy ❤️
+          </a>
+        </div>
       </div>
     </div>
   );

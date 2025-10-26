@@ -39,6 +39,29 @@ const About = () => {
             <p className="text-muted-foreground">
               [Share your motivation and story - placeholder text to be replaced.]
             </p>
+
+            <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">
+              Cheaper than therapy ❤️
+            </h3>
+            <p className="text-muted-foreground mb-3">
+              If fiftytwoormore brings a little more laughter, closeness, or "well… that was nice" into your week — consider backing the project with €5.
+            </p>
+            <p className="text-muted-foreground mb-3">
+              It helps us make it even more fun.
+            </p>
+            <p className="text-muted-foreground">
+              And it's cheaper than therapy.
+            </p>
+            <a 
+              href="https://buy.stripe.com/14AbJ34zR6ofcci1fJ5EY00"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-4"
+            >
+              <Button className="w-full sm:w-auto">
+                Support Our Project - €5 ❤️
+              </Button>
+            </a>
           </div>
           
           <Button

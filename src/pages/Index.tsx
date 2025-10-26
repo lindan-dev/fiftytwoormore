@@ -71,7 +71,10 @@ const Index = () => {
   }, []);
 
   const checkPartnerStatus = async () => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id) {
+      setCheckingPartner(false);
+      return;
+    }
     
     setCheckingPartner(true);
     const { data } = await supabase

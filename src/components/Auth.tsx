@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Heart } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 export default function Auth() {
   const [loading, setLoading] = useState(false);
@@ -66,8 +66,8 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-soft p-4">
       <Card className="w-full max-w-md shadow-glow border-2 border-primary/20 animate-scale-in">
         <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 rounded-full bg-gradient-primary flex items-center justify-center shadow-glow">
-            <Heart className="w-8 h-8 text-white" fill="white" />
+          <div className="mx-auto w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-glow">
+            <img src={logo} alt="52+" className="w-12 h-12" />
           </div>
           <CardTitle className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
             fiftytwoormore

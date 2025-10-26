@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, User, Heart, Trash2, Loader2 } from "lucide-react";
+import { ArrowLeft, User, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import logo from "@/assets/logo.png";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -253,7 +254,7 @@ const Profile = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-soft">
         <div className="animate-pulse">
-          <Heart className="w-12 h-12 text-primary" />
+          <img src={logo} alt="52+" className="w-12 h-12" />
         </div>
       </div>
     );
@@ -338,8 +339,8 @@ const Profile = () => {
         {partner && (
           <Card className="p-6 border-2 border-primary/20 shadow-sm">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center">
-                <Heart className="w-5 h-5 text-white" fill="white" />
+              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center">
+                <img src={logo} alt="52+" className="w-7 h-7" />
               </div>
               <div>
                 <h3 className="font-semibold">Connected Partner</h3>

@@ -54,9 +54,9 @@ const About = () => {
                 rel="noopener noreferrer"
                 className="inline-block mt-4"
               >
-                <Button className="w-full sm:w-auto">
-                  Support Our Project - €5 ❤️
-                </Button>
+              <Button variant="outline" className="w-full sm:w-auto border-primary text-primary hover:bg-primary hover:text-primary-foreground">
+                Support Our Project - €5 ❤️
+              </Button>
               </a>
             </div>
           </div>

@@ -183,24 +183,26 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
             >
               {hasActivities && firstEmoji ? (
                 <div className="relative w-full h-full flex items-center justify-center">
-                  {/* White circle background */}
-                  <div className="absolute inset-1 sm:inset-2 bg-white rounded-full shadow-sm" />
-                  
-                  {/* Emoji */}
-                  <span className="relative text-xl sm:text-2xl z-10">
-                    {firstEmoji}
-                  </span>
-                  
-                  {/* Multiple activities indicator dots */}
-                  {dayActivities.length === 2 && (
-                    <div className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-primary rounded-full border-2 border-white z-20 shadow-sm" />
+                  {/* Rings for multiple activities */}
+                  {dayActivities.length >= 5 && (
+                    <div className="absolute inset-0 rounded-full border-2 border-primary/30" />
+                  )}
+                  {dayActivities.length >= 4 && (
+                    <div className="absolute inset-[3px] sm:inset-[4px] rounded-full border-2 border-primary/40" />
                   )}
                   {dayActivities.length >= 3 && (
-                    <>
-                      <div className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-primary rounded-full border-2 border-white z-20 shadow-sm" />
-                      <div className="absolute top-0.5 right-3 sm:top-1 sm:right-4 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-primary rounded-full border-2 border-white z-20 shadow-sm" />
-                    </>
+                    <div className="absolute inset-[6px] sm:inset-[8px] rounded-full border-2 border-primary/50" />
                   )}
+                  {dayActivities.length >= 2 && (
+                    <div className="absolute inset-[9px] sm:inset-[12px] rounded-full border-2 border-primary/60" />
+                  )}
+                  
+                  {/* White circle background with emoji */}
+                  <div className="absolute inset-[12px] sm:inset-[16px] bg-white rounded-full shadow-sm flex items-center justify-center">
+                    <span className="text-lg sm:text-xl">
+                      {firstEmoji}
+                    </span>
+                  </div>
                 </div>
               ) : (
                 <span className={`text-sm sm:text-base ${isCurrentMonth ? 'text-foreground' : 'text-muted-foreground'}`}>

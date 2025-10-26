@@ -5,7 +5,7 @@ import { Session } from "@supabase/supabase-js";
 import Auth from "@/components/Auth";
 import EmojiSelector from "@/components/EmojiSelector";
 import { Button } from "@/components/ui/button";
-import { Heart, Plus, BarChart3, List, LogOut, Copy, Loader2, User, Download, X } from "lucide-react";
+import { Heart, Plus, BarChart3, List, LogOut, Copy, Loader2, User, Download, X, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ActivityLog from "@/components/ActivityLog";
 import CalendarView from "@/components/CalendarView";
@@ -659,6 +659,14 @@ const Index = () => {
             <h1 className="text-lg sm:text-2xl font-bold truncate">fiftytwoormore</h1>
           </div>
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/about")}
+              className="text-white hover:bg-white/20 h-8 w-8 sm:h-9 sm:w-9"
+            >
+              <Info className="w-4 h-4 sm:w-5 sm:h-5" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"

@@ -5,6 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Heart } from "lucide-react";
+import { z } from "zod";
+
+const authSchema = z.object({
+  email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters"),
+  password: z.string().min(8, "Password must be at least 8 characters").max(72, "Password must be less than 72 characters"),
+  name: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters").optional(),
+});
 
 export default function Auth() {
   const [loading, setLoading] = useState(false);
@@ -19,22 +26,31 @@ export default function Auth() {
     setLoading(true);
 
     try {
+      // Validate input using zod schema
+      const validationData = isSignUp
+        ? { email, password, name }
+        : { email, password };
+      
+      const result = authSchema.safeParse(validationData);
+      
+      if (!result.success) {
+        const firstError = result.error.errors[0];
+        toast({
+          title: "Validation Error",
+          description: firstError.message,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       if (isSignUp) {
-        if (!name.trim()) {
-          toast({
-            title: "Error",
-            description: "Please enter your name",
-            variant: "destructive",
-          });
-          setLoading(false);
-          return;
-        }
         const { error } = await supabase.auth.signUp({
-          email,
-          password,
+          email: result.data.email,
+          password: result.data.password,
           options: {
             data: {
-              name: name.trim(),
+              name: result.data.name,
             },
           },
         });
@@ -46,8 +62,8 @@ export default function Auth() {
         setIsSignUp(false);
       } else {
         const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+          email: result.data.email,
+          password: result.data.password,
         });
         if (error) throw error;
       }

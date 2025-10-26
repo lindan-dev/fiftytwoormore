@@ -1038,7 +1038,7 @@ const Index = () => {
             className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
           >
             <Heart className="w-4 h-4 fill-current" />
-            Support our project - cheaper than therapy ❤️
+            Support our project - cheaper than therapy
           </a>
         </div>
       </div>

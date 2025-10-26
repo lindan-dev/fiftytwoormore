@@ -78,17 +78,18 @@ export default function ActivityLog({ activities, onDelete, onUpdate, currentUse
     setEditEmoji("");
   };
 
-  const getSpecialDateBadge = (activityDate: string, userId: string) => {
+  const getSpecialDateBadge = (activityDate: string) => {
     const date = new Date(activityDate);
     const month = date.getMonth() + 1; // 0-indexed
     const day = date.getDate();
-    const profile = profiles[userId];
 
-    // Check for birthday
-    if (profile?.birthday) {
-      const birthday = new Date(profile.birthday);
-      if (birthday.getMonth() + 1 === month && birthday.getDate() === day) {
-        return { label: "🎂 Birthday", color: "bg-pink-500/20 text-pink-700 border-pink-500/50" };
+    // Check for birthday - check ALL profiles, not just the one who logged
+    for (const profile of Object.values(profiles)) {
+      if (profile?.birthday) {
+        const birthday = new Date(profile.birthday);
+        if (birthday.getMonth() + 1 === month && birthday.getDate() === day) {
+          return { label: "🎂 Birthday", color: "bg-pink-500/20 text-pink-700 border-pink-500/50" };
+        }
       }
     }
 
@@ -124,7 +125,7 @@ export default function ActivityLog({ activities, onDelete, onUpdate, currentUse
         const isCurrentUser = currentUserId === activity.user_id;
         const profile = profiles[activity.user_id];
         const loggedBy = profile?.name || "Unknown";
-        const specialDate = getSpecialDateBadge(activity.activity_date, activity.user_id);
+        const specialDate = getSpecialDateBadge(activity.activity_date);
         
         return (
           <Card

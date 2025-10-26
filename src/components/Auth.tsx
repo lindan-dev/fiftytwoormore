@@ -89,7 +89,7 @@ export default function Auth() {
             fiftytwoormore
           </CardTitle>
           <CardDescription className="text-sm sm:text-base">
-            {isSignUp ? "Create your shared space" : "Welcome back"}
+            {isSignUp ? "Because done is better than perfect" : "Welcome back"}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-4 sm:p-6">

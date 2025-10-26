@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Heart, Plus, BarChart3, List, LogOut, Copy, Loader2, User, Download, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ActivityLog from "@/components/ActivityLog";
+import CalendarView from "@/components/CalendarView";
 import StatsView from "@/components/StatsView";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -1010,11 +1011,8 @@ const Index = () => {
 
         {/* Content Area */}
         {view === "log" ? (
-          <ActivityLog
+          <CalendarView
             activities={activities}
-            onDelete={handleDeleteActivity}
-            onUpdate={handleUpdateActivity}
-            currentUserId={session.user.id}
           />
         ) : (
           <StatsView activities={activities} compact={false} />

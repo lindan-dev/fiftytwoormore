@@ -59,6 +59,8 @@ const EMOJI_PRESETS = [
   { emoji: "🏩", label: "Hotell" },
   { emoji: "🚻", label: "Toilet" },
   { emoji: "🎥", label: "Recording" },
+  { emoji: "📸", label: "Photographing" },
+  { emoji: "🍜", label: "Nudes" },
   { emoji: "☎️", label: "Phone sex" },
 ];
 

@@ -14,6 +14,7 @@ const authSchema = z.object({
 export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -24,52 +25,80 @@ export default function Auth() {
     e.preventDefault();
     setLoading(true);
     try {
-      // Validate input using zod schema
-      const validationData = isSignUp ? {
-        email,
-        password,
-        name
-      } : {
-        email,
-        password
-      };
-      const result = authSchema.safeParse(validationData);
-      if (!result.success) {
-        const firstError = result.error.errors[0];
-        toast({
-          title: "Validation Error",
-          description: firstError.message,
-          variant: "destructive"
+      if (isForgotPassword) {
+        // Validate email only
+        const emailSchema = z.string().trim().email("Invalid email address");
+        const result = emailSchema.safeParse(email);
+        if (!result.success) {
+          toast({
+            title: "Validation Error",
+            description: "Please enter a valid email address",
+            variant: "destructive"
+          });
+          setLoading(false);
+          return;
+        }
+
+        const { error } = await supabase.auth.resetPasswordForEmail(result.data, {
+          redirectTo: `${window.location.origin}/reset-password`,
         });
-        setLoading(false);
-        return;
-      }
-      if (isSignUp) {
-        const {
-          error
-        } = await supabase.auth.signUp({
-          email: result.data.email,
-          password: result.data.password,
-          options: {
-            data: {
-              name: result.data.name
-            }
-          }
-        });
+        
         if (error) throw error;
+        
         toast({
-          title: "Account created!",
-          description: "You can now sign in with your credentials."
+          title: "Check your email",
+          description: "We've sent you a password reset link.",
         });
-        setIsSignUp(false);
+        setIsForgotPassword(false);
+        setEmail("");
       } else {
-        const {
-          error
-        } = await supabase.auth.signInWithPassword({
-          email: result.data.email,
-          password: result.data.password
-        });
-        if (error) throw error;
+        // Validate input using zod schema
+        const validationData = isSignUp ? {
+          email,
+          password,
+          name
+        } : {
+          email,
+          password
+        };
+        const result = authSchema.safeParse(validationData);
+        if (!result.success) {
+          const firstError = result.error.errors[0];
+          toast({
+            title: "Validation Error",
+            description: firstError.message,
+            variant: "destructive"
+          });
+          setLoading(false);
+          return;
+        }
+        if (isSignUp) {
+          const {
+            error
+          } = await supabase.auth.signUp({
+            email: result.data.email,
+            password: result.data.password,
+            options: {
+              data: {
+                name: result.data.name
+              }
+            }
+          });
+          if (error) throw error;
+          toast({
+            title: "Account created!",
+            description: "You can now sign in with your credentials."
+          });
+          setIsSignUp(false);
+        } else {
+          const {
+            error
+          } = await supabase.auth.signInWithPassword({
+            email: result.data.email,
+            password: result.data.password
+          });
+          if (error) throw error;
+        }
       }
     } catch (error: any) {
       toast({
@@ -94,21 +123,54 @@ export default function Auth() {
         </CardHeader>
         <CardContent className="p-4 sm:p-6">
           <form onSubmit={handleAuth} className="space-y-3 sm:space-y-4">
-            {isSignUp && <div className="space-y-2">
+            {isSignUp && !isForgotPassword && <div className="space-y-2">
                 <Input type="text" placeholder="Name" value={name} onChange={e => setName(e.target.value)} required disabled={loading} className="h-10 sm:h-12 border-2 focus:border-primary transition-colors text-sm sm:text-base" />
               </div>}
             <div className="space-y-2">
               <Input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required disabled={loading} className="h-10 sm:h-12 border-2 focus:border-primary transition-colors text-sm sm:text-base" />
             </div>
-            <div className="space-y-2">
+            {!isForgotPassword && <div className="space-y-2">
               <Input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required disabled={loading} className="h-10 sm:h-12 border-2 focus:border-primary transition-colors text-sm sm:text-base" />
-            </div>
+            </div>}
             <Button type="submit" disabled={loading} className="w-full h-10 sm:h-12 text-base sm:text-lg font-semibold">
-              {loading ? "Loading..." : "Get Streaky"}
+              {loading ? "Loading..." : isForgotPassword ? "Send Reset Link" : "Get Streaky"}
             </Button>
-            <Button type="button" variant="ghost" onClick={() => setIsSignUp(!isSignUp)} disabled={loading} className="w-full text-sm sm:text-base">
-              {isSignUp ? "Already have an account? Sign in" : "Need an account? Sign up here."}
-            </Button>
+            {!isForgotPassword && (
+              <>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  onClick={() => setIsSignUp(!isSignUp)} 
+                  disabled={loading} 
+                  className="w-full text-sm sm:text-base"
+                >
+                  {isSignUp ? "Already have an account? Sign in" : "Need an account? Sign up here."}
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="link" 
+                  onClick={() => setIsForgotPassword(true)} 
+                  disabled={loading} 
+                  className="w-full text-sm sm:text-base text-muted-foreground"
+                >
+                  Forgot password?
+                </Button>
+              </>
+            )}
+            {isForgotPassword && (
+              <Button 
+                type="button" 
+                variant="ghost" 
+                onClick={() => {
+                  setIsForgotPassword(false);
+                  setEmail("");
+                }} 
+                disabled={loading} 
+                className="w-full text-sm sm:text-base"
+              >
+                Back to sign in
+              </Button>
+            )}
           </form>
         </CardContent>
       </Card>

@@ -49,6 +49,7 @@ const EMOJI_PRESETS = [
   { emoji: "🏕️", label: "Tent" },
   { emoji: "🏩", label: "Hotell" },
   { emoji: "🚻", label: "Public toilet" },
+  { emoji: "🛍️", label: "Dressing room" },
   { emoji: "🗺️", label: "Abroad" },
   { emoji: "🚗", label: "Car" },
   { emoji: "🚌", label: "Bus" },

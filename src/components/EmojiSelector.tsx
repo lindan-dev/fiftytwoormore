@@ -11,7 +11,7 @@ const EMOJI_PRESETS = [
   { emoji: "🍑", label: "Ass" },
   { emoji: "🍆", label: "Dick" },
   { emoji: "💋", label: "Kiss" },
-  { emoji: "👅", label: "Oral” },
+  { emoji: "👅", label: "Oral" },
   { emoji: "🍩", label: "Anal" },
   { emoji: "👉", label: "Fingering" },
   { emoji: "✂️", label: "Scissoring" },

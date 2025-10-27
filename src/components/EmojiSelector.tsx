@@ -43,7 +43,7 @@ const EMOJI_PRESETS = [
   { emoji: "🚿", label: "Shower" },
   { emoji: "🛁", label: "Bathtub" },
   { emoji: "🪑", label: "Chair" },
-  { emoji: "🍽️", label: "Kitchen” },
+  { emoji: "🍽️", label: "Kitchen" },
   { emoji: "🌳", label: "Outdoor" },
   { emoji: "🏖️", label: "Beach" },
   { emoji: "🏕️", label: "Tent" },
@@ -57,7 +57,6 @@ const EMOJI_PRESETS = [
   { emoji: "🛥️", label: "Boat" },
   { emoji: "🎥", label: "Recording" },
   { emoji: "📸", label: "Photographing" },
-
 ];
 
 export default function EmojiSelector({ onSelect, selectedEmoji }: EmojiSelectorProps) {

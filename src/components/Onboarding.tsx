@@ -78,7 +78,7 @@ const Onboarding = ({ onComplete, startSlide = 0 }: OnboardingProps) => {
         </div>
 
         {/* Main content card */}
-        <Card className="p-8 sm:p-12 text-center space-y-6 animate-scale-in shadow-[var(--shadow-soft)] min-h-[400px] flex flex-col justify-center">
+        <Card className="p-8 sm:p-12 text-center space-y-6 animate-scale-in shadow-[var(--shadow-soft)] h-[450px] flex flex-col justify-between">
           {/* Icon */}
           <div className="flex justify-center">
             <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-primary/10 flex items-center justify-center">

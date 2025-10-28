@@ -433,6 +433,12 @@ const Index = () => {
   const handleOnboardingComplete = () => {
     localStorage.setItem('hasSeenOnboarding', 'true');
     setShowOnboarding(false);
+    setIsJoiningViaInvite(false);
+  };
+
+  const handleShowOnboarding = () => {
+    setShowOnboarding(true);
+    setOnboardingStartSlide(0);
   };
 
   const copyInvitationCode = () => {
@@ -693,7 +699,7 @@ const Index = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate("/about")}
+              onClick={handleShowOnboarding}
               className="text-white hover:bg-white/20 h-8 w-8 sm:h-9 sm:w-9"
             >
               <Info className="w-4 h-4 sm:w-5 sm:h-5" />

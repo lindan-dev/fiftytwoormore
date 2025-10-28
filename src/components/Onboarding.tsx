@@ -30,6 +30,12 @@ const slides = [
     subtitle: "Only you and your partner can see your streak. No tracking, no ads, no awkward data.",
   },
   {
+    icon: Heart,
+    title: "Cheaper than therapy ❤️",
+    subtitle: "Should fiftytwoormore bring a little more laughter, closeness, or \"well… that was nice\" into your week — consider backing the project with €5. It helps us make it even more fun.",
+    supportLink: "https://buy.stripe.com/14AbJ34zR6ofcci1fJ5EY00",
+  },
+  {
     icon: Flame,
     title: "Start your streak 🔥",
     subtitle: "Reconnect. Laugh. Because intimacy is built one small moment at a time.",
@@ -92,7 +98,7 @@ const Onboarding = ({ onComplete, startSlide = 0 }: OnboardingProps) => {
           </p>
         </Card>
 
-        {/* Navigation */}
+          {/* Navigation */}
         <div className="flex flex-col gap-3">
           {currentSlideData.isFinal ? (
             <Button
@@ -102,6 +108,30 @@ const Onboarding = ({ onComplete, startSlide = 0 }: OnboardingProps) => {
             >
               Get Streaky
             </Button>
+          ) : currentSlideData.supportLink ? (
+            <>
+              <a 
+                href={currentSlideData.supportLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full"
+              >
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full text-base sm:text-lg h-12 sm:h-14 border-2"
+                >
+                  Support Project - €5 ❤️
+                </Button>
+              </a>
+              <Button
+                onClick={handleNext}
+                size="lg"
+                className="w-full text-base sm:text-lg h-12 sm:h-14"
+              >
+                Next
+              </Button>
+            </>
           ) : (
             <>
               <Button

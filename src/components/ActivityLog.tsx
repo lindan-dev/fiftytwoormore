@@ -179,13 +179,8 @@ export default function ActivityLog({ activities, onDelete, onUpdate, currentUse
                 </p>
                 <p className="text-xs sm:text-sm text-muted-foreground">
                   {new Date(activity.activity_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {" (by "}{isCurrentUser ? "you" : loggedBy}{")"}
                 </p>
-                <div className="flex items-center gap-1 mt-0.5">
-                  <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground flex-shrink-0" />
-                  <p className="text-xs text-muted-foreground truncate">
-                    Logged by {isCurrentUser ? "you" : loggedBy}
-                  </p>
-                </div>
                 {activity.notes && (
                   <p className="text-xs sm:text-sm text-muted-foreground mt-1 italic">
                     {activity.notes}

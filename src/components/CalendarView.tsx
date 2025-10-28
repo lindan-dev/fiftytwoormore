@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import EmojiSelector from "./EmojiSelector";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   startOfMonth, 
   endOfMonth, 
@@ -27,6 +28,11 @@ interface Activity {
   notes?: string;
 }
 
+interface Profile {
+  user_id: string;
+  name: string;
+}
+
 interface CalendarViewProps {
   activities: Activity[];
   currentUserId?: string;
@@ -43,6 +49,29 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
   const [editTime, setEditTime] = useState("");
   const [editEmoji, setEditEmoji] = useState("");
   const [editNotes, setEditNotes] = useState("");
+  const [profiles, setProfiles] = useState<Record<string, Profile>>({});
+
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      const userIds = [...new Set(activities.map(a => a.user_id))];
+      if (userIds.length === 0) return;
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id, name")
+        .in("user_id", userIds);
+
+      if (data && !error) {
+        const profileMap: Record<string, Profile> = {};
+        data.forEach((profile: Profile) => {
+          profileMap[profile.user_id] = profile;
+        });
+        setProfiles(profileMap);
+      }
+    };
+
+    fetchProfiles();
+  }, [activities]);
 
   // Group activities by date
   const activitiesByDate = useMemo(() => {
@@ -225,6 +254,8 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
           <div className="space-y-3 max-h-[60vh] overflow-y-auto">
             {selectedActivities.map((activity) => {
               const isCurrentUser = currentUserId === activity.user_id;
+              const profile = profiles[activity.user_id];
+              const loggedBy = profile?.name || "Unknown";
               return (
                 <Card key={activity.id} className="p-3 border-2">
                   <div className="flex items-start gap-3">
@@ -234,6 +265,7 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-muted-foreground">
                         {new Date(activity.activity_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {" (by "}{isCurrentUser ? "you" : loggedBy}{")"}
                       </p>
                       {activity.notes && (
                         <p className="text-sm mt-1 italic">{activity.notes}</p>

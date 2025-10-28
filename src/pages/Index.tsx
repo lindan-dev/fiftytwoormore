@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import Auth from "@/components/Auth";
+import Onboarding from "@/components/Onboarding";
 import EmojiSelector from "@/components/EmojiSelector";
 import { Button } from "@/components/ui/button";
 import { Heart, Plus, BarChart3, List, LogOut, Copy, Loader2, User, Download, X, Info } from "lucide-react";
@@ -57,12 +58,24 @@ const Index = () => {
   const [disconnecting, setDisconnecting] = useState(false);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingStartSlide, setOnboardingStartSlide] = useState(0);
+  const [isJoiningViaInvite, setIsJoiningViaInvite] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
+    // Check if user has seen onboarding
+    const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding') === 'true';
+    
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
+      
+      // Show onboarding for first-time visitors without a session
+      if (!session && !hasSeenOnboarding) {
+        setShowOnboarding(true);
+        setOnboardingStartSlide(0);
+      }
     });
 
     const {
@@ -402,6 +415,9 @@ const Index = () => {
         description: "You and your partner are now connected.",
       });
 
+      // Mark as joining via invite for onboarding
+      setIsJoiningViaInvite(true);
+
       checkPartnerStatus();
     } catch (error: any) {
       toast({
@@ -412,6 +428,11 @@ const Index = () => {
     } finally {
       setSendingInvitation(false);
     }
+  };
+
+  const handleOnboardingComplete = () => {
+    localStorage.setItem('hasSeenOnboarding', 'true');
+    setShowOnboarding(false);
   };
 
   const copyInvitationCode = () => {
@@ -632,8 +653,18 @@ const Index = () => {
     );
   }
 
+  // Show onboarding for first-time visitors or invited users
+  if (showOnboarding) {
+    return <Onboarding onComplete={handleOnboardingComplete} startSlide={onboardingStartSlide} />;
+  }
+
   if (!session) {
     return <Auth />;
+  }
+
+  // Show onboarding for new partners (last 2 slides only)
+  if (isJoiningViaInvite && !localStorage.getItem('hasSeenOnboarding')) {
+    return <Onboarding onComplete={handleOnboardingComplete} startSlide={3} />;
   }
 
   if (checkingPartner) {

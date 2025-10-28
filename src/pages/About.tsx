@@ -6,6 +6,12 @@ import { Heart, ArrowLeft } from "lucide-react";
 const About = () => {
   const navigate = useNavigate();
 
+  const handleViewOnboarding = () => {
+    localStorage.removeItem('hasSeenOnboarding');
+    navigate("/");
+    window.location.reload();
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-3 sm:p-4">
       <Card className="w-full max-w-2xl shadow-soft border-2 border-primary/20 animate-scale-in">
@@ -37,6 +43,18 @@ const About = () => {
             <p className="text-muted-foreground">
               Privately and secure, this is for the two of you. No one else. Unless you want to.
             </p>
+
+            <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">
+              What's fiftytwoormore?
+            </h3>
+            <p className="text-muted-foreground mb-3">
+              Want to see the welcome flow again? View the onboarding to remind yourself what this app is all about.
+            </p>
+            <div className="text-center mb-6">
+              <Button onClick={handleViewOnboarding} variant="outline" className="w-full sm:w-auto border-primary text-primary hover:bg-primary hover:text-primary-foreground">
+                View Onboarding
+              </Button>
+            </div>
 
             <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">
               Cheaper than therapy ❤️

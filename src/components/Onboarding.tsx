@@ -98,15 +98,18 @@ const Onboarding = ({ onComplete, startSlide = 0 }: OnboardingProps) => {
         </Card>
 
           {/* Navigation */}
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 min-h-[120px]">
           {currentSlideData.isFinal ? (
-            <Button
-              onClick={onComplete}
-              size="lg"
-              className="w-full text-base sm:text-lg h-12 sm:h-14"
-            >
-              Get Streaky
-            </Button>
+            <>
+              <Button
+                onClick={onComplete}
+                size="lg"
+                className="w-full text-base sm:text-lg h-12 sm:h-14"
+              >
+                Get Streaky
+              </Button>
+              <div className="h-11" />
+            </>
           ) : (
             <>
               <Button

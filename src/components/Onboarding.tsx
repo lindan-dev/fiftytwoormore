@@ -32,8 +32,7 @@ const slides = [
   {
     icon: Heart,
     title: "Cheaper than therapy ❤️",
-    subtitle: "Should fiftytwoormore bring a little more laughter, closeness, or \"well… that was nice\" into your week — consider backing the project with €5. It helps us make it even more fun.",
-    supportLink: "https://buy.stripe.com/14AbJ34zR6ofcci1fJ5EY00",
+    subtitle: "Making time for each other — intimately — will save you hours (and money) with a therapist. And honestly, it's a lot more fun.",
   },
   {
     icon: Flame,
@@ -79,7 +78,7 @@ const Onboarding = ({ onComplete, startSlide = 0 }: OnboardingProps) => {
         </div>
 
         {/* Main content card */}
-        <Card className="p-8 sm:p-12 text-center space-y-6 animate-scale-in shadow-[var(--shadow-soft)]">
+        <Card className="p-8 sm:p-12 text-center space-y-6 animate-scale-in shadow-[var(--shadow-soft)] min-h-[400px] flex flex-col justify-center">
           {/* Icon */}
           <div className="flex justify-center">
             <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-primary/10 flex items-center justify-center">
@@ -108,30 +107,6 @@ const Onboarding = ({ onComplete, startSlide = 0 }: OnboardingProps) => {
             >
               Get Streaky
             </Button>
-          ) : currentSlideData.supportLink ? (
-            <>
-              <a 
-                href={currentSlideData.supportLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full"
-              >
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="w-full text-base sm:text-lg h-12 sm:h-14 border-2"
-                >
-                  Support Project - €5 ❤️
-                </Button>
-              </a>
-              <Button
-                onClick={handleNext}
-                size="lg"
-                className="w-full text-base sm:text-lg h-12 sm:h-14"
-              >
-                Next
-              </Button>
-            </>
           ) : (
             <>
               <Button

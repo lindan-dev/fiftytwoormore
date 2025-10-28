@@ -56,13 +56,15 @@ export default function StatsView({ activities, compact = false }: StatsViewProp
     }
 
     // Calculate current streak from today
+    // Streak remains active until a full day has passed without activity
     const today = startOfDay(new Date());
     let currentStreak = 0;
     
     for (let i = uniqueDays.length - 1; i >= 0; i--) {
       const daysDiff = differenceInDays(today, uniqueDays[i]);
       
-      if (daysDiff === currentStreak) {
+      // Allow streak to continue if last activity was today or yesterday
+      if (daysDiff === currentStreak || (currentStreak === 0 && daysDiff === 1)) {
         currentStreak++;
       } else {
         break;

@@ -37,17 +37,24 @@ export default function StatsView({ activities, compact = false }: StatsViewProp
       new Date(a.activity_date).getTime() - new Date(b.activity_date).getTime()
     );
 
-    const uniqueDays = Array.from(
-      new Set(sortedActivities.map(a => startOfDay(new Date(a.activity_date)).getTime()))
-    ).map(time => new Date(time));
+    // Group activities by week (Monday-Sunday)
+    const uniqueWeeks = Array.from(
+      new Set(sortedActivities.map(a => {
+        const weekStart = startOfWeek(new Date(a.activity_date), { weekStartsOn: 1 });
+        return weekStart.getTime();
+      }))
+    ).map(time => new Date(time)).sort((a, b) => a.getTime() - b.getTime());
 
+    if (uniqueWeeks.length === 0) return { currentStreak: 0, longestStreak: 0 };
+
+    // Calculate longest streak - consecutive weeks
     let longestStreak = 1;
     let currentStreakCount = 1;
 
-    for (let i = 1; i < uniqueDays.length; i++) {
-      const daysDiff = differenceInDays(uniqueDays[i], uniqueDays[i - 1]);
+    for (let i = 1; i < uniqueWeeks.length; i++) {
+      const weeksDiff = Math.round(differenceInDays(uniqueWeeks[i], uniqueWeeks[i - 1]) / 7);
       
-      if (daysDiff === 1) {
+      if (weeksDiff === 1) {
         currentStreakCount++;
         longestStreak = Math.max(longestStreak, currentStreakCount);
       } else {
@@ -55,16 +62,16 @@ export default function StatsView({ activities, compact = false }: StatsViewProp
       }
     }
 
-    // Calculate current streak from today
-    // Streak remains active until a full day has passed without activity
-    const today = startOfDay(new Date());
+    // Calculate current streak from this week
+    // Streak remains active until a full week (Mon-Sun) has passed without activity
+    const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
     let currentStreak = 0;
     
-    for (let i = uniqueDays.length - 1; i >= 0; i--) {
-      const daysDiff = differenceInDays(today, uniqueDays[i]);
+    for (let i = uniqueWeeks.length - 1; i >= 0; i--) {
+      const weeksDiff = Math.round(differenceInDays(currentWeekStart, uniqueWeeks[i]) / 7);
       
-      // Allow streak to continue if last activity was today or yesterday
-      if (daysDiff === currentStreak || (currentStreak === 0 && daysDiff === 1)) {
+      // Streak continues if weeks are consecutive
+      if (weeksDiff === currentStreak) {
         currentStreak++;
       } else {
         break;

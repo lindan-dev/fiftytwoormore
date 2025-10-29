@@ -27,12 +27,12 @@ const slides = [
   {
     icon: Lock,
     title: "Private. Always. 🔐",
-    subtitle: "Only you and your partner can see your streak. No tracking, no ads, no awkward data.",
+    subtitle: "Only you and your partner can see your data. No tracking, no ads, no nothing.",
   },
   {
     icon: Heart,
     title: "Cheaper than therapy 💰",
-    subtitle: "Save time and money, while having much more fun.",
+    subtitle: "Making time for each other, intimately, will save you time and money with a therapist. And honestly, it's a lot more fun.",
   },
   {
     icon: Flame,

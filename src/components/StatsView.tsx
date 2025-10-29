@@ -338,18 +338,6 @@ export default function StatsView({ activities, compact = false }: StatsViewProp
           value={calculateStreaks.longestStreak}
           color="text-primary"
         />
-        <SimpleStatCard
-          icon={Zap}
-          title="Double Days"
-          value={calculateMultipleDays.doubleDays}
-          color="text-blue-500"
-        />
-        <SimpleStatCard
-          icon={Zap}
-          title="Triple Days"
-          value={calculateMultipleDays.tripleDays}
-          color="text-purple-500"
-        />
       </div>
     );
   }
@@ -438,6 +426,31 @@ export default function StatsView({ activities, compact = false }: StatsViewProp
                   </div>
                 </CardContent>
               </Card>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Bunny Days Section */}
+      {(calculateMultipleDays.doubleDays > 0 || calculateMultipleDays.tripleDays > 0) && (
+        <>
+          <h3 className="text-lg sm:text-xl font-semibold mt-4">Bunny Days</h3>
+          <div className="grid grid-cols-2 gap-2 sm:gap-3">
+            {calculateMultipleDays.doubleDays > 0 && (
+              <SimpleStatCard
+                icon={Zap}
+                title="Double Days"
+                value={calculateMultipleDays.doubleDays}
+                color="text-blue-500"
+              />
+            )}
+            {calculateMultipleDays.tripleDays > 0 && (
+              <SimpleStatCard
+                icon={Zap}
+                title="Triple Days"
+                value={calculateMultipleDays.tripleDays}
+                color="text-purple-500"
+              />
             )}
           </div>
         </>

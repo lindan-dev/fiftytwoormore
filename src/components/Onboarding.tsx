@@ -32,7 +32,7 @@ const slides = [
   {
     icon: Heart,
     title: "Cheaper than therapy 💰",
-    subtitle: "Making time for each other, intimately, will save you time and money with a therapist. And honestly, it's a lot more fun.",
+    subtitle: "Save time and money, while having so much more fun.",
   },
   {
     icon: Flame,
@@ -69,9 +69,7 @@ const Onboarding = ({ onComplete, startSlide = 0 }: OnboardingProps) => {
             <div
               key={index}
               className={`h-2 rounded-full transition-all duration-300 ${
-                index === currentSlide - startSlide
-                  ? "w-8 bg-primary"
-                  : "w-2 bg-muted"
+                index === currentSlide - startSlide ? "w-8 bg-primary" : "w-2 bg-muted"
               }`}
             />
           ))}
@@ -87,44 +85,27 @@ const Onboarding = ({ onComplete, startSlide = 0 }: OnboardingProps) => {
           </div>
 
           {/* Title */}
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-            {currentSlideData.title}
-          </h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{currentSlideData.title}</h1>
 
           {/* Subtitle */}
-          <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
-            {currentSlideData.subtitle}
-          </p>
+          <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">{currentSlideData.subtitle}</p>
         </Card>
 
-          {/* Navigation */}
+        {/* Navigation */}
         <div className="flex flex-col gap-3 min-h-[120px]">
           {currentSlideData.isFinal ? (
             <>
-              <Button
-                onClick={onComplete}
-                size="lg"
-                className="w-full text-base sm:text-lg h-12 sm:h-14"
-              >
+              <Button onClick={onComplete} size="lg" className="w-full text-base sm:text-lg h-12 sm:h-14">
                 Get Streaky
               </Button>
               <div className="h-11" />
             </>
           ) : (
             <>
-              <Button
-                onClick={handleNext}
-                size="lg"
-                className="w-full text-base sm:text-lg h-12 sm:h-14"
-              >
+              <Button onClick={handleNext} size="lg" className="w-full text-base sm:text-lg h-12 sm:h-14">
                 Next
               </Button>
-              <Button
-                onClick={handleSkip}
-                variant="ghost"
-                size="lg"
-                className="w-full"
-              >
+              <Button onClick={handleSkip} variant="ghost" size="lg" className="w-full">
                 Skip
               </Button>
             </>

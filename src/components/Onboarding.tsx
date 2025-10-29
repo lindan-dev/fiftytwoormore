@@ -16,7 +16,7 @@ const slides = [
   },
   {
     icon: Clock,
-    title: "Make time. 😍",
+    title: "Make time for each other. 😍",
     subtitle: "Life gets busy. This tiny app helps you actually make time for intimacy.",
   },
   {
@@ -27,7 +27,7 @@ const slides = [
   {
     icon: Lock,
     title: "Private. Always. 🔐",
-    subtitle: "Only you and your partner can see your streak. No tracking, no ads, no awkward data.",
+    subtitle: "Only you and your partner can see your data. No tracking, no ads, no nothing.",
   },
   {
     icon: Heart,

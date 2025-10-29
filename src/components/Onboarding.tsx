@@ -16,7 +16,7 @@ const slides = [
   },
   {
     icon: Clock,
-    title: "Make time for each other. 😍",
+    title: "Make time. 😍",
     subtitle: "Life gets busy. This tiny app helps you actually make time for intimacy.",
   },
   {

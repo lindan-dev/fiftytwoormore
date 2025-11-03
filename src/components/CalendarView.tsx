@@ -129,18 +129,24 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
     return activitiesByDate[dateKey] || [];
   };
 
-  const getSpecialEvent = (day: Date): { emoji: string; message: string } | null => {
+  const getSpecialEvent = (day: Date): { 
+    isBirthday: boolean; 
+    isAnniversary: boolean; 
+    birthdayName?: string;
+    message: string;
+  } => {
     const monthDay = format(day, 'MM-dd');
+    let isBirthday = false;
+    let isAnniversary = false;
+    let birthdayName = '';
     
     // Check for birthdays
     for (const profile of Object.values(profiles)) {
       if (profile.birthday) {
         const birthdayMonthDay = format(new Date(profile.birthday), 'MM-dd');
         if (birthdayMonthDay === monthDay) {
-          return {
-            emoji: '🎂',
-            message: `Happy birthday ${profile.user_id === currentUserId ? 'to you' : profile.name}!`
-          };
+          isBirthday = true;
+          birthdayName = profile.user_id === currentUserId ? 'you' : profile.name;
         }
       }
     }
@@ -149,20 +155,46 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
     if (anniversary) {
       const anniversaryMonthDay = format(new Date(anniversary), 'MM-dd');
       if (anniversaryMonthDay === monthDay) {
-        return {
-          emoji: '🫶',
-          message: 'Happy anniversary'
-        };
+        isAnniversary = true;
       }
     }
     
-    return null;
+    let message = '';
+    if (isBirthday && isAnniversary) {
+      message = `🎂 Happy birthday ${birthdayName}! 🫶 Happy anniversary`;
+    } else if (isBirthday) {
+      message = `🎂 Happy birthday ${birthdayName}!`;
+    } else if (isAnniversary) {
+      message = '🫶 Happy anniversary';
+    }
+    
+    return { isBirthday, isAnniversary, birthdayName, message };
   };
+
+  // Get highlights for the month
+  const monthHighlights = useMemo(() => {
+    const highlights: Array<{ date: Date; type: 'birthday' | 'anniversary'; name?: string }> = [];
+    
+    calendarDays.forEach(day => {
+      if (isSameMonth(day, currentMonth)) {
+        const special = getSpecialEvent(day);
+        if (special.isBirthday) {
+          highlights.push({ date: day, type: 'birthday', name: special.birthdayName });
+        }
+        if (special.isAnniversary) {
+          highlights.push({ date: day, type: 'anniversary' });
+        }
+      }
+    });
+    
+    return highlights;
+  }, [calendarDays, currentMonth, profiles, anniversary]);
 
   const handleDayClick = (day: Date) => {
     if (!isSameMonth(day, currentMonth)) return;
     const dayActivities = getDayActivities(day);
-    if (dayActivities.length > 0) {
+    const special = getSpecialEvent(day);
+    if (dayActivities.length > 0 || special.isBirthday || special.isAnniversary) {
       setSelectedDay(day);
       setSelectedActivities(dayActivities);
     }
@@ -224,6 +256,31 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
         </Button>
       </div>
 
+      {/* Highlights Section */}
+      {monthHighlights.length > 0 && (
+        <div className="mb-4 p-3 rounded-lg bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+          <p className="text-sm font-medium text-muted-foreground mb-1">This month:</p>
+          <div className="flex flex-wrap gap-2">
+            {monthHighlights.map((highlight, idx) => (
+              <button
+                key={idx}
+                onClick={() => {
+                  setCurrentMonth(highlight.date);
+                  handleDayClick(highlight.date);
+                }}
+                className="text-sm px-2 py-1 rounded-md bg-white/50 hover:bg-white transition-colors"
+              >
+                {highlight.type === 'birthday' ? '🎂' : '💍'}{' '}
+                {highlight.type === 'birthday' 
+                  ? `Birthday ${highlight.name ? `(${highlight.name})` : ''} on ${format(highlight.date, 'MMM d')}`
+                  : `Anniversary on ${format(highlight.date, 'MMM d')}`
+                }
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Weekday Headers */}
       <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-2">
         {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => (
@@ -241,20 +298,24 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
         {calendarDays.map((day, index) => {
           const dayActivities = getDayActivities(day);
           const hasActivities = dayActivities.length > 0;
-          const hasMultiple = dayActivities.length > 1;
+          const activityCount = dayActivities.length;
           const isCurrentMonth = isSameMonth(day, currentMonth);
-          const firstEmoji = hasActivities ? dayActivities[0].emoji : null;
+          const lastEmoji = hasActivities ? dayActivities[dayActivities.length - 1].emoji : null;
           const specialEvent = getSpecialEvent(day);
-          const displayEmoji = specialEvent?.emoji || firstEmoji;
-          const isClickable = hasActivities || specialEvent;
+          const isClickable = hasActivities || specialEvent.isBirthday || specialEvent.isAnniversary;
 
           return (
             <button
               key={index}
               onClick={() => handleDayClick(day)}
               disabled={!isCurrentMonth || !isClickable}
+              title={
+                hasActivities 
+                  ? `${activityCount} ${activityCount === 1 ? 'activity' : 'activities'} logged this day`
+                  : specialEvent.message || undefined
+              }
               className={`
-                aspect-square flex items-center justify-center relative rounded-lg
+                aspect-square flex flex-col items-center justify-center relative rounded-lg
                 transition-all duration-200
                 ${!isCurrentMonth ? 'opacity-30' : ''}
                 ${isClickable 
@@ -263,28 +324,35 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
                 }
               `}
             >
-              {displayEmoji ? (
-                <div className="relative w-full h-full flex items-center justify-center">
-                  {/* Rings for multiple activities */}
-                  {dayActivities.length >= 5 && (
-                    <div className="absolute inset-0 rounded-full border-2 border-primary/30" />
+              {/* Anniversary ring (coral) */}
+              {specialEvent.isAnniversary && (
+                <div className="absolute inset-1 rounded-full border-[1.5px] border-[#FF6B6B]/40" />
+              )}
+              
+              {/* Birthday ring (lavender) */}
+              {specialEvent.isBirthday && (
+                <div 
+                  className={`absolute rounded-full border-[1.5px] border-[#D9C6F0]/50 ${
+                    specialEvent.isAnniversary ? 'inset-[6px]' : 'inset-1'
+                  }`} 
+                />
+              )}
+
+              {lastEmoji ? (
+                <div className="flex flex-col items-center justify-center gap-0.5">
+                  <span className="text-lg sm:text-2xl">
+                    {lastEmoji}
+                  </span>
+                  {activityCount > 1 && (
+                    <div className="flex gap-0.5">
+                      {Array.from({ length: Math.min(activityCount, 5) }).map((_, i) => (
+                        <div 
+                          key={i} 
+                          className="w-1 h-1 rounded-full bg-[#FF6B6B]/50"
+                        />
+                      ))}
+                    </div>
                   )}
-                  {dayActivities.length >= 4 && (
-                    <div className="absolute inset-[3px] sm:inset-[4px] rounded-full border-2 border-primary/40" />
-                  )}
-                  {dayActivities.length >= 3 && (
-                    <div className="absolute inset-[6px] sm:inset-[8px] rounded-full border-2 border-primary/50" />
-                  )}
-                  {dayActivities.length >= 2 && (
-                    <div className="absolute inset-[9px] sm:inset-[12px] rounded-full border-2 border-primary/60" />
-                  )}
-                  
-                  {/* White circle background with emoji */}
-                  <div className="absolute inset-[12px] sm:inset-[16px] bg-white rounded-full shadow-sm flex items-center justify-center">
-                    <span className="text-lg sm:text-xl">
-                      {displayEmoji}
-                    </span>
-                  </div>
                 </div>
               ) : (
                 <span className={`text-sm sm:text-base ${isCurrentMonth ? 'text-foreground' : 'text-muted-foreground'}`}>
@@ -305,14 +373,11 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-            {selectedDay && getSpecialEvent(selectedDay) && (
+            {selectedDay && (getSpecialEvent(selectedDay).isBirthday || getSpecialEvent(selectedDay).isAnniversary) && (
               <Card className="p-3 border-2 border-primary/50 bg-primary/5">
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl">{getSpecialEvent(selectedDay)?.emoji}</span>
-                  <p className="text-base font-semibold text-primary">
-                    {getSpecialEvent(selectedDay)?.message}
-                  </p>
-                </div>
+                <p className="text-base font-semibold text-primary">
+                  {getSpecialEvent(selectedDay).message}
+                </p>
               </Card>
             )}
             {selectedActivities.map((activity) => {

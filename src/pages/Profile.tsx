@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, User, Heart, Trash2, Loader2, UserX } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { DatePicker } from "@/components/DatePicker";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -427,12 +428,10 @@ const Profile = () => {
                 <span>🎂</span>
                 <span>Birthday</span>
               </Label>
-              <Input
-                id="birthday"
-                type="date"
-                value={birthday}
-                onChange={(e) => setBirthday(e.target.value)}
-                className="border-2 focus:border-primary text-xs sm:text-sm h-8 sm:h-10 py-1 sm:py-2"
+              <DatePicker
+                date={birthday}
+                onDateChange={setBirthday}
+                placeholder="Select your birthday"
               />
             </div>
             {partner && (
@@ -441,12 +440,10 @@ const Profile = () => {
                   <span>🫶</span>
                   <span>Anniversary</span>
                 </Label>
-                <Input
-                  id="anniversary"
-                  type="date"
-                  value={anniversary}
-                  onChange={(e) => setAnniversary(e.target.value)}
-                  className="border-2 focus:border-primary text-xs sm:text-sm h-8 sm:h-10 py-1 sm:py-2"
+                <DatePicker
+                  date={anniversary}
+                  onDateChange={setAnniversary}
+                  placeholder="Select anniversary date"
                 />
               </div>
             )}

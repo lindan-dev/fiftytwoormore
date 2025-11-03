@@ -432,7 +432,7 @@ const Profile = () => {
                 type="date"
                 value={birthday}
                 onChange={(e) => setBirthday(e.target.value)}
-                className="border-2 focus:border-primary"
+                className="border-2 focus:border-primary text-sm sm:text-base"
               />
             </div>
             {partner && (
@@ -446,7 +446,7 @@ const Profile = () => {
                   type="date"
                   value={anniversary}
                   onChange={(e) => setAnniversary(e.target.value)}
-                  className="border-2 focus:border-primary"
+                  className="border-2 focus:border-primary text-sm sm:text-base"
                 />
               </div>
             )}
@@ -478,6 +478,22 @@ const Profile = () => {
                 </p>
               </div>
             </div>
+
+            {partner.birthday && (
+              <div className="mb-4 p-3 bg-muted rounded-lg">
+                <Label className="flex items-center gap-2 text-xs sm:text-sm">
+                  <span>🎂</span>
+                  <span>Partner's Birthday</span>
+                </Label>
+                <p className="text-sm font-medium mt-1">
+                  {new Date(partner.birthday + 'T00:00:00').toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}
+                </p>
+              </div>
+            )}
 
             <AlertDialog>
               <AlertDialogTrigger asChild>

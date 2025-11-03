@@ -85,7 +85,7 @@ const Onboarding = ({ onComplete, startSlide = 0 }: OnboardingProps) => {
           </div>
 
           {/* Title - Fixed height for 2 lines */}
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground h-[80px] sm:h-[96px] flex items-center justify-center mb-6">{currentSlideData.title}</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground h-[80px] sm:h-[96px] flex items-start justify-center mb-6">{currentSlideData.title}</h1>
 
           {/* Subtitle - Fixed starting position */}
           <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">{currentSlideData.subtitle}</p>

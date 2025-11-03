@@ -1152,6 +1152,22 @@ const Index = () => {
             Support our project - cheaper than therapy
           </a>
         </div>
+
+        {/* Copyright Footer */}
+        <div className="text-center py-4 border-t border-border/50 mt-4">
+          <p className="text-xs text-muted-foreground">
+            © {new Date().getFullYear()} Lindan AB. All rights reserved.
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Contact:{" "}
+            <a 
+              href="mailto:hi@lindaninc.com" 
+              className="hover:text-primary transition-colors underline"
+            >
+              hi@lindaninc.com
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );

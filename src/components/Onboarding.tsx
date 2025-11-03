@@ -16,7 +16,7 @@ const slides = [
   },
   {
     icon: Clock,
-    title: "Make time for each other. 😍",
+    title: "Make time for<br/>each other. 😍",
     subtitle: "Life gets busy. This tiny app helps you actually make time for intimacy.",
   },
   {
@@ -85,7 +85,9 @@ const Onboarding = ({ onComplete, startSlide = 0 }: OnboardingProps) => {
           </div>
 
           {/* Title - Fixed height for 2 lines */}
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground h-[80px] sm:h-[96px] flex items-start justify-center mb-6">{currentSlideData.title}</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground h-[80px] sm:h-[96px] flex items-start justify-center mb-6">
+            {currentSlideData.title}
+          </h1>
 
           {/* Subtitle - Fixed starting position */}
           <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">{currentSlideData.subtitle}</p>

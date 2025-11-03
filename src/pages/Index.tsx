@@ -725,35 +725,38 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Install Prompt Banner */}
-      {showInstallPrompt && (
-        <Alert className="max-w-2xl mx-auto my-4 sm:my-6 p-6 sm:p-8 bg-card border-2 border-border shadow-[var(--shadow-soft)] mx-3 sm:mx-auto">
-          <Download className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
-          <AlertDescription className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <span className="text-sm sm:text-base flex-1 leading-relaxed font-medium">Install app for offline access & better experience</span>
-            <div className="flex gap-3 flex-shrink-0 w-full sm:w-auto">
-              <Button 
-                size="lg" 
-                onClick={handleInstallClick}
-                className="flex-1 sm:flex-initial text-sm sm:text-base px-6 sm:px-8 h-11 sm:h-12"
-              >
-                Install
-              </Button>
-              <Button 
-                size="lg" 
-                variant="ghost" 
-                onClick={dismissInstallPrompt}
-                className="h-11 w-11 sm:h-12 sm:w-12 p-0 flex-shrink-0"
-              >
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
-
       {/* Content */}
       <div className="max-w-2xl mx-auto p-3 sm:p-4 space-y-3 sm:space-y-4 animate-fade-in">
+        {/* Install Prompt Banner */}
+        {showInstallPrompt && (
+          <div className="bg-card p-3 sm:p-4 rounded-xl border-2 border-primary/20 shadow-sm">
+            <div className="flex items-start sm:items-center gap-3">
+              <Download className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0 mt-0.5 sm:mt-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm sm:text-base leading-tight font-medium">
+                  Install app for offline access & better experience
+                </p>
+              </div>
+              <div className="flex gap-2 flex-shrink-0">
+                <Button 
+                  size="default"
+                  onClick={handleInstallClick}
+                  className="text-sm sm:text-base px-4 sm:px-6"
+                >
+                  Install
+                </Button>
+                <Button 
+                  size="icon"
+                  variant="ghost" 
+                  onClick={dismissInstallPrompt}
+                  className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Connection Section */}
         {hasPartner ? (
           <>

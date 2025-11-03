@@ -10,7 +10,12 @@ export function DateInput({ date, onDateChange, placeholder = "Select date" }: D
   const parseDate = (dateStr: string) => {
     if (!dateStr) return { day: "", month: "", year: "" };
     const [year, month, day] = dateStr.split('-');
-    return { day, month, year };
+    // Remove leading zeros to match SelectItem values
+    return { 
+      day: day ? String(parseInt(day, 10)) : "", 
+      month: month ? String(parseInt(month, 10)) : "", 
+      year 
+    };
   };
 
   const { day, month, year } = parseDate(date || "");

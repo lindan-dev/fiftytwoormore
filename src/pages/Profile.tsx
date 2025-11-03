@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, User, Heart, Trash2, Loader2, UserX } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { DatePicker } from "@/components/DatePicker";
+import { DateInput } from "@/components/DateInput";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -424,26 +424,24 @@ const Profile = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="birthday" className="flex items-center gap-2">
+              <Label className="flex items-center gap-2">
                 <span>🎂</span>
                 <span>Birthday</span>
               </Label>
-              <DatePicker
+              <DateInput
                 date={birthday}
                 onDateChange={setBirthday}
-                placeholder="Select your birthday"
               />
             </div>
             {partner && (
               <div className="space-y-2">
-                <Label htmlFor="anniversary" className="flex items-center gap-2">
+                <Label className="flex items-center gap-2">
                   <span>🫶</span>
                   <span>Anniversary</span>
                 </Label>
-                <DatePicker
+                <DateInput
                   date={anniversary}
                   onDateChange={setAnniversary}
-                  placeholder="Select anniversary date"
                 />
               </div>
             )}

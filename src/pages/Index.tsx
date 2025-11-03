@@ -567,21 +567,74 @@ const Index = () => {
 
   const handleSignOut = async () => {
     try {
+      // Get current session to check if it exists
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
+      if (!currentSession) {
+        // No active session - just clear local state
+        console.log('No active session found, clearing local state');
+        setSession(null);
+        setActivities([]);
+        setHasPartner(false);
+        setPartnerName("");
+        toast({
+          title: "Signed out",
+          description: "You have been signed out.",
+        });
+        return;
+      }
+
+      // Attempt server-side logout
       const { error } = await supabase.auth.signOut();
+      
       if (error) {
         console.error('Sign out error:', error);
+        
+        // If error is "session_not_found", treat it as success
+        // The session is already invalid on the server
+        if (error.message?.includes('session') || error.message?.includes('Session')) {
+          console.log('Session already invalid on server, clearing local state');
+          // Force clear the session locally
+          setSession(null);
+          setActivities([]);
+          setHasPartner(false);
+          setPartnerName("");
+          
+          // Clear any stale data from localStorage
+          localStorage.removeItem('supabase.auth.token');
+          
+          toast({
+            title: "Signed out",
+            description: "You have been signed out.",
+          });
+          return;
+        }
+        
+        // For other errors, show error message
         toast({
           title: "Error",
           description: "Failed to sign out. Please try again.",
           variant: "destructive",
         });
+      } else {
+        // Successful logout
+        toast({
+          title: "Signed out",
+          description: "You have been signed out.",
+        });
       }
     } catch (error) {
       console.error('Sign out error:', error);
+      
+      // On any error, force clear local session
+      setSession(null);
+      setActivities([]);
+      setHasPartner(false);
+      setPartnerName("");
+      
       toast({
-        title: "Error",
-        description: "Failed to sign out. Please try again.",
-        variant: "destructive",
+        title: "Signed out",
+        description: "You have been signed out.",
       });
     }
   };

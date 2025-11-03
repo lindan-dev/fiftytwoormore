@@ -11,22 +11,22 @@ interface OnboardingProps {
 const slides = [
   {
     icon: Heart,
-    title: "Because done is better than perfect. ❤️",
+    title: "Because done is better than perfect ❤️",
     subtitle: "Relationships aren't about perfection. They're about showing up, again and again.",
   },
   {
     icon: Clock,
-    title: "Make time for each other. 😍",
+    title: "Make time for each other 😍",
     subtitle: "Life gets busy. This tiny app helps you actually make time for intimacy.",
   },
   {
     icon: Calendar,
-    title: "52 or more. 📆",
+    title: "52 or more 📆",
     subtitle: "Once a week, every week. Just log it, keep your streak, and celebrate consistency.",
   },
   {
     icon: Lock,
-    title: "Private. Always. 🔐",
+    title: "Private. Always 🔐",
     subtitle: "Only you and your partner can see your data. No tracking, no ads, no nothing.",
   },
   {

@@ -66,15 +66,25 @@ export default function StatsView({ activities, compact = false }: StatsViewProp
     // Streak remains active until a full week (Mon-Sun) has passed without activity
     const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
     let currentStreak = 0;
-    
-    for (let i = uniqueWeeks.length - 1; i >= 0; i--) {
-      const weeksDiff = Math.round(differenceInDays(currentWeekStart, uniqueWeeks[i]) / 7);
+
+    // Check if there's activity in current or previous week
+    const lastActivityWeek = uniqueWeeks[uniqueWeeks.length - 1];
+    const weeksFromLastActivity = Math.round(differenceInDays(currentWeekStart, lastActivityWeek) / 7);
+
+    // If last activity is in current week (0) or previous week (1), streak is active
+    if (weeksFromLastActivity <= 1) {
+      // Start counting from the last activity week
+      currentStreak = 1;
       
-      // Streak continues if weeks are consecutive
-      if (weeksDiff === currentStreak) {
-        currentStreak++;
-      } else {
-        break;
+      // Count consecutive weeks backwards
+      for (let i = uniqueWeeks.length - 2; i >= 0; i--) {
+        const weeksDiff = Math.round(differenceInDays(uniqueWeeks[i + 1], uniqueWeeks[i]) / 7);
+        
+        if (weeksDiff === 1) {
+          currentStreak++;
+        } else {
+          break;
+        }
       }
     }
 

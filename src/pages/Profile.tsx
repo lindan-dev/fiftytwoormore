@@ -432,7 +432,7 @@ const Profile = () => {
                 type="date"
                 value={birthday}
                 onChange={(e) => setBirthday(e.target.value)}
-                className="border-2 focus:border-primary text-sm sm:text-base"
+                className="border-2 focus:border-primary text-sm h-10 max-h-10"
               />
             </div>
             {partner && (
@@ -446,7 +446,7 @@ const Profile = () => {
                   type="date"
                   value={anniversary}
                   onChange={(e) => setAnniversary(e.target.value)}
-                  className="border-2 focus:border-primary text-sm sm:text-base"
+                  className="border-2 focus:border-primary text-sm h-10 max-h-10"
                 />
               </div>
             )}

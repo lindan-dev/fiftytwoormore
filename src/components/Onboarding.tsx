@@ -76,18 +76,18 @@ const Onboarding = ({ onComplete, startSlide = 0 }: OnboardingProps) => {
         </div>
 
         {/* Main content card */}
-        <Card className="p-8 sm:p-12 text-center space-y-6 animate-scale-in shadow-[var(--shadow-soft)] h-[450px] flex flex-col justify-between">
+        <Card className="p-8 sm:p-12 text-center animate-scale-in shadow-[var(--shadow-soft)] h-[450px] flex flex-col">
           {/* Icon */}
-          <div className="flex justify-center">
+          <div className="flex justify-center mb-8">
             <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-primary/10 flex items-center justify-center">
               <Icon className="w-10 h-10 sm:w-12 sm:h-12 text-primary" />
             </div>
           </div>
 
-          {/* Title */}
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{currentSlideData.title}</h1>
+          {/* Title - Fixed height for 2 lines */}
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground h-[80px] sm:h-[96px] flex items-center justify-center mb-6">{currentSlideData.title}</h1>
 
-          {/* Subtitle */}
+          {/* Subtitle - Fixed starting position */}
           <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">{currentSlideData.subtitle}</p>
         </Card>
 

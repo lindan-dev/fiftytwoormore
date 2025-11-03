@@ -727,25 +727,25 @@ const Index = () => {
 
       {/* Install Prompt Banner */}
       {showInstallPrompt && (
-        <Alert className="max-w-2xl mx-2 sm:mx-auto my-2 sm:m-4 p-2 sm:p-4 border-2 border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10">
-          <Download className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0 mt-0.5" />
-          <AlertDescription className="flex items-start sm:items-center justify-between gap-1.5 sm:gap-2">
-            <span className="text-xs sm:text-sm flex-1 leading-tight pr-1">Install app for offline access & better experience</span>
-            <div className="flex gap-1 sm:gap-2 flex-shrink-0">
+        <Alert className="max-w-2xl mx-2 sm:mx-auto my-4 sm:my-6 p-6 sm:p-8 bg-card border-2 border-border shadow-[var(--shadow-soft)]">
+          <Download className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+          <AlertDescription className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <span className="text-sm sm:text-base flex-1 leading-relaxed font-medium">Install app for offline access & better experience</span>
+            <div className="flex gap-3 flex-shrink-0 w-full sm:w-auto">
               <Button 
-                size="sm" 
+                size="lg" 
                 onClick={handleInstallClick}
-                className="h-7 sm:h-8 text-xs px-2 sm:px-3 whitespace-nowrap"
+                className="flex-1 sm:flex-initial text-sm sm:text-base px-6 sm:px-8 h-11 sm:h-12"
               >
                 Install
               </Button>
               <Button 
-                size="sm" 
+                size="lg" 
                 variant="ghost" 
                 onClick={dismissInstallPrompt}
-                className="h-7 w-7 sm:h-8 sm:w-8 p-0 flex-shrink-0"
+                className="h-11 w-11 sm:h-12 sm:w-12 p-0 flex-shrink-0"
               >
-                <X className="h-3 w-3 sm:h-4 sm:w-4" />
+                <X className="h-5 w-5" />
               </Button>
             </div>
           </AlertDescription>

@@ -400,11 +400,12 @@ const Index = () => {
 
       if (updateError) throw updateError;
 
-      // Create couple relationship
+      // Create couple relationship with ordered IDs (user1_id must be < user2_id)
+      const ids = [matchingInvite.sender_id, session.user.id].sort();
       const { error: coupleError } = await supabase.from("couples").insert([
         {
-          user1_id: matchingInvite.sender_id,
-          user2_id: session.user.id,
+          user1_id: ids[0],
+          user2_id: ids[1],
         },
       ]);
 

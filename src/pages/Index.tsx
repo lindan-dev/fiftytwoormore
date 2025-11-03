@@ -727,7 +727,7 @@ const Index = () => {
 
       {/* Install Prompt Banner */}
       {showInstallPrompt && (
-        <Alert className="max-w-xl mx-2 sm:mx-auto my-4 sm:my-6 p-6 sm:p-8 bg-card border-2 border-border shadow-[var(--shadow-soft)]">
+        <Alert className="max-w-2xl mx-auto my-4 sm:my-6 p-6 sm:p-8 bg-card border-2 border-border shadow-[var(--shadow-soft)] mx-3 sm:mx-auto">
           <Download className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
           <AlertDescription className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <span className="text-sm sm:text-base flex-1 leading-relaxed font-medium">Install app for offline access & better experience</span>

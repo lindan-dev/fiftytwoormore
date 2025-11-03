@@ -30,6 +30,12 @@ interface Profile {
 interface Partner {
   id: string;
   name: string;
+  birthday?: string;
+}
+
+interface Couple {
+  id: string;
+  anniversary?: string;
 }
 
 const Profile = () => {
@@ -37,8 +43,10 @@ const Profile = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [partner, setPartner] = useState<Partner | null>(null);
+  const [couple, setCouple] = useState<Couple | null>(null);
   const [name, setName] = useState("");
   const [birthday, setBirthday] = useState("");
+  const [anniversary, setAnniversary] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
@@ -145,6 +153,13 @@ const Profile = () => {
     if (coupleData) {
       const partnerId = coupleData.user1_id === userId ? coupleData.user2_id : coupleData.user1_id;
       
+      // Store couple data
+      setCouple({
+        id: coupleData.id,
+        anniversary: coupleData.anniversary || undefined,
+      });
+      setAnniversary(coupleData.anniversary || "");
+      
       // Get partner's profile
       const { data: partnerProfile } = await supabase
         .from("profiles")
@@ -156,6 +171,7 @@ const Profile = () => {
         setPartner({
           id: partnerId,
           name: partnerProfile.name || "Partner",
+          birthday: partnerProfile.birthday || undefined,
         });
       }
     }
@@ -174,7 +190,8 @@ const Profile = () => {
     setSaving(true);
 
     try {
-      const { error } = await supabase
+      // Update profile
+      const { error: profileError } = await supabase
         .from("profiles")
         .update({ 
           name: name.trim(),
@@ -182,7 +199,17 @@ const Profile = () => {
         })
         .eq("user_id", session.user.id);
 
-      if (error) throw error;
+      if (profileError) throw profileError;
+
+      // Update anniversary in couples table if exists
+      if (couple) {
+        const { error: coupleError } = await supabase
+          .from("couples")
+          .update({ anniversary: anniversary || null })
+          .eq("id", couple.id);
+
+        if (coupleError) throw coupleError;
+      }
 
       toast({
         title: "Success",
@@ -396,7 +423,10 @@ const Profile = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="birthday">Birthday</Label>
+              <Label htmlFor="birthday" className="flex items-center gap-2">
+                <span>🎂</span>
+                <span>Birthday</span>
+              </Label>
               <Input
                 id="birthday"
                 type="date"
@@ -405,6 +435,21 @@ const Profile = () => {
                 className="border-2 focus:border-primary"
               />
             </div>
+            {partner && (
+              <div className="space-y-2">
+                <Label htmlFor="anniversary" className="flex items-center gap-2">
+                  <span>🫶</span>
+                  <span>Anniversary</span>
+                </Label>
+                <Input
+                  id="anniversary"
+                  type="date"
+                  value={anniversary}
+                  onChange={(e) => setAnniversary(e.target.value)}
+                  className="border-2 focus:border-primary"
+                />
+              </div>
+            )}
             <Button
               onClick={handleSave}
               disabled={saving}

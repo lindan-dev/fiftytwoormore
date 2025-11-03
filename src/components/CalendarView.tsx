@@ -31,6 +31,7 @@ interface Activity {
 interface Profile {
   user_id: string;
   name: string;
+  birthday?: string;
 }
 
 interface CalendarViewProps {
@@ -50,6 +51,7 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
   const [editEmoji, setEditEmoji] = useState("");
   const [editNotes, setEditNotes] = useState("");
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
+  const [anniversary, setAnniversary] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -58,7 +60,7 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("user_id, name")
+        .select("user_id, name, birthday")
         .in("user_id", userIds);
 
       if (data && !error) {
@@ -72,6 +74,24 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
 
     fetchProfiles();
   }, [activities]);
+
+  useEffect(() => {
+    const fetchAnniversary = async () => {
+      if (!currentUserId) return;
+      
+      const { data } = await supabase
+        .from("couples")
+        .select("anniversary")
+        .or(`user1_id.eq.${currentUserId},user2_id.eq.${currentUserId}`)
+        .maybeSingle();
+
+      if (data?.anniversary) {
+        setAnniversary(data.anniversary);
+      }
+    };
+
+    fetchAnniversary();
+  }, [currentUserId]);
 
   // Group activities by date
   const activitiesByDate = useMemo(() => {
@@ -107,6 +127,36 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
   const getDayActivities = (day: Date) => {
     const dateKey = format(day, 'yyyy-MM-dd');
     return activitiesByDate[dateKey] || [];
+  };
+
+  const getSpecialEvent = (day: Date): { emoji: string; message: string } | null => {
+    const monthDay = format(day, 'MM-dd');
+    
+    // Check for birthdays
+    for (const profile of Object.values(profiles)) {
+      if (profile.birthday) {
+        const birthdayMonthDay = format(new Date(profile.birthday), 'MM-dd');
+        if (birthdayMonthDay === monthDay) {
+          return {
+            emoji: '🎂',
+            message: `Happy birthday ${profile.user_id === currentUserId ? 'to you' : profile.name}!`
+          };
+        }
+      }
+    }
+    
+    // Check for anniversary
+    if (anniversary) {
+      const anniversaryMonthDay = format(new Date(anniversary), 'MM-dd');
+      if (anniversaryMonthDay === monthDay) {
+        return {
+          emoji: '🫶',
+          message: 'Happy anniversary'
+        };
+      }
+    }
+    
+    return null;
   };
 
   const handleDayClick = (day: Date) => {
@@ -194,23 +244,26 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
           const hasMultiple = dayActivities.length > 1;
           const isCurrentMonth = isSameMonth(day, currentMonth);
           const firstEmoji = hasActivities ? dayActivities[0].emoji : null;
+          const specialEvent = getSpecialEvent(day);
+          const displayEmoji = specialEvent?.emoji || firstEmoji;
+          const isClickable = hasActivities || specialEvent;
 
           return (
             <button
               key={index}
               onClick={() => handleDayClick(day)}
-              disabled={!isCurrentMonth || !hasActivities}
+              disabled={!isCurrentMonth || !isClickable}
               className={`
                 aspect-square flex items-center justify-center relative rounded-lg
                 transition-all duration-200
                 ${!isCurrentMonth ? 'opacity-30' : ''}
-                ${hasActivities 
+                ${isClickable 
                   ? 'hover:scale-105 cursor-pointer' 
                   : 'cursor-default'
                 }
               `}
             >
-              {hasActivities && firstEmoji ? (
+              {displayEmoji ? (
                 <div className="relative w-full h-full flex items-center justify-center">
                   {/* Rings for multiple activities */}
                   {dayActivities.length >= 5 && (
@@ -229,7 +282,7 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
                   {/* White circle background with emoji */}
                   <div className="absolute inset-[12px] sm:inset-[16px] bg-white rounded-full shadow-sm flex items-center justify-center">
                     <span className="text-lg sm:text-xl">
-                      {firstEmoji}
+                      {displayEmoji}
                     </span>
                   </div>
                 </div>
@@ -252,6 +305,16 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+            {selectedDay && getSpecialEvent(selectedDay) && (
+              <Card className="p-3 border-2 border-primary/50 bg-primary/5">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">{getSpecialEvent(selectedDay)?.emoji}</span>
+                  <p className="text-base font-semibold text-primary">
+                    {getSpecialEvent(selectedDay)?.message}
+                  </p>
+                </div>
+              </Card>
+            )}
             {selectedActivities.map((activity) => {
               const isCurrentUser = currentUserId === activity.user_id;
               const profile = profiles[activity.user_id];

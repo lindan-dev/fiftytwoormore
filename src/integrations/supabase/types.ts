@@ -67,18 +67,21 @@ export type Database = {
       }
       couples: {
         Row: {
+          anniversary: string | null
           created_at: string
           id: string
           user1_id: string
           user2_id: string
         }
         Insert: {
+          anniversary?: string | null
           created_at?: string
           id?: string
           user1_id: string
           user2_id: string
         }
         Update: {
+          anniversary?: string | null
           created_at?: string
           id?: string
           user1_id?: string

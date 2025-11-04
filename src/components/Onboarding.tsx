@@ -113,6 +113,11 @@ const Onboarding = ({ onComplete, startSlide = 0 }: OnboardingProps) => {
             </>
           )}
         </div>
+
+        {/* Copyright */}
+        <div className="text-center text-sm text-muted-foreground">
+          © {new Date().getFullYear()} Lindan AB. <a href="mailto:hi@lindaninc.com" className="hover:underline">hi@lindaninc.com</a>
+        </div>
       </div>
     </div>
   );

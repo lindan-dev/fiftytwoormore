@@ -65,12 +65,12 @@ const Index = () => {
 
   useEffect(() => {
     // Check if user has seen onboarding
-    const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding') === 'true';
-    
+    const hasSeenOnboarding = localStorage.getItem("hasSeenOnboarding") === "true";
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
-      
+
       // Show onboarding for first-time visitors without a session
       if (!session && !hasSeenOnboarding) {
         setShowOnboarding(true);
@@ -96,13 +96,13 @@ const Index = () => {
   useEffect(() => {
     // Only show on mobile devices
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    
+
     // Check if already installed
-    const isInstalled = window.matchMedia('(display-mode: standalone)').matches;
-    
+    const isInstalled = window.matchMedia("(display-mode: standalone)").matches;
+
     // Check if user dismissed the prompt
-    const isDismissed = localStorage.getItem('installPromptDismissed') === 'true';
-    
+    const isDismissed = localStorage.getItem("installPromptDismissed") === "true";
+
     if (isMobile && !isInstalled && !isDismissed) {
       setShowInstallPrompt(true);
     }
@@ -113,10 +113,10 @@ const Index = () => {
       setDeferredPrompt(e);
     };
 
-    window.addEventListener('beforeinstallprompt', handler);
+    window.addEventListener("beforeinstallprompt", handler);
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener("beforeinstallprompt", handler);
     };
   }, []);
 
@@ -132,10 +132,7 @@ const Index = () => {
   // Moved after function declarations to avoid TS error
 
   const fetchActivities = useCallback(async () => {
-    const { data, error } = await supabase
-      .from("activities")
-      .select("*")
-      .order("activity_date", { ascending: false });
+    const { data, error } = await supabase.from("activities").select("*").order("activity_date", { ascending: false });
 
     if (error) {
       toast({
@@ -169,7 +166,7 @@ const Index = () => {
       setCheckingPartner(false);
       return;
     }
-    
+
     setCheckingPartner(true);
     try {
       const { data, error } = await supabase
@@ -191,27 +188,27 @@ const Index = () => {
       if (data) {
         setHasPartner(true);
         setConnectedDate(data.created_at);
-        
+
         // Get partner's ID
         const partnerId = data.user1_id === session.user.id ? data.user2_id : data.user1_id;
-        
+
         // Fetch partner's profile
         const { data: partnerProfile, error: profileError } = await supabase
           .from("profiles")
           .select("name")
           .eq("user_id", partnerId)
           .maybeSingle();
-        
+
         if (profileError) {
           console.error("Error fetching partner profile:", profileError);
         }
-        
+
         if (partnerProfile) {
           setPartnerName(partnerProfile.name || "Partner");
         } else {
           setPartnerName("Partner");
         }
-        
+
         fetchActivities();
       } else {
         setHasPartner(false);
@@ -234,17 +231,17 @@ const Index = () => {
     if (!hasPartner) return;
 
     const channel = supabase
-      .channel('activities-changes')
+      .channel("activities-changes")
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: '*',
-          schema: 'public',
-          table: 'activities',
+          event: "*",
+          schema: "public",
+          table: "activities",
         },
         () => {
           fetchActivities();
-        }
+        },
       )
       .subscribe();
 
@@ -258,13 +255,13 @@ const Index = () => {
     if (!session?.user?.id) return;
 
     const channel = supabase
-      .channel('couple-changes')
+      .channel("couple-changes")
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'couples',
+          event: "INSERT",
+          schema: "public",
+          table: "couples",
         },
         (payload) => {
           // Check if the inserted couple involves this user
@@ -272,40 +269,39 @@ const Index = () => {
           if (newCouple.user1_id === session.user.id || newCouple.user2_id === session.user.id) {
             checkPartnerStatus();
           }
-        }
+        },
       )
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'couples',
+          event: "DELETE",
+          schema: "public",
+          table: "couples",
         },
         async (payload) => {
           // Check if the deleted couple involves this user
           const deletedCouple = payload.old as { user1_id: string; user2_id: string };
           if (deletedCouple.user1_id === session.user.id || deletedCouple.user2_id === session.user.id) {
             // Get partner name before they disconnect
-            const partnerId = deletedCouple.user1_id === session.user.id 
-              ? deletedCouple.user2_id 
-              : deletedCouple.user1_id;
-            
+            const partnerId =
+              deletedCouple.user1_id === session.user.id ? deletedCouple.user2_id : deletedCouple.user1_id;
+
             // Fetch partner's profile
             const { data: partnerProfile } = await supabase
               .from("profiles")
               .select("name")
               .eq("user_id", partnerId)
               .maybeSingle();
-            
+
             const disconnectedPartnerName = partnerProfile?.name || "Your partner";
-            
+
             toast({
               title: "Partner Disconnected",
               description: `${disconnectedPartnerName} has disconnected from you and all your data is gone. Better luck next time.`,
               variant: "destructive",
               duration: 10000,
             });
-            
+
             // Reset state
             setHasPartner(false);
             setPartnerName("");
@@ -314,7 +310,7 @@ const Index = () => {
             setMyInvitationCode(null);
             checkInvitations();
           }
-        }
+        },
       )
       .subscribe();
 
@@ -374,12 +370,9 @@ const Index = () => {
 
     try {
       // Validate invitation code via secure edge function
-      const { data, error: validateError } = await supabase.functions.invoke(
-        "validate-invitation-code",
-        {
-          body: { code: enterCode },
-        }
-      );
+      const { data, error: validateError } = await supabase.functions.invoke("validate-invitation-code", {
+        body: { code: enterCode },
+      });
 
       if (validateError || !data?.success) {
         toast({
@@ -432,7 +425,7 @@ const Index = () => {
   };
 
   const handleOnboardingComplete = () => {
-    localStorage.setItem('hasSeenOnboarding', 'true');
+    localStorage.setItem("hasSeenOnboarding", "true");
     setShowOnboarding(false);
     setIsJoiningViaInvite(false);
   };
@@ -451,7 +444,6 @@ const Index = () => {
       });
     }
   };
-
 
   const handleLogActivity = async (activityDate?: Date, emoji?: string, notes?: string) => {
     if (!session?.user) return;
@@ -521,7 +513,6 @@ const Index = () => {
     setSelectedNotes("");
   };
 
-
   const handleUpdateActivity = async (id: string, activityDate: Date, emoji: string, notes?: string) => {
     const { error } = await supabase
       .from("activities")
@@ -568,11 +559,13 @@ const Index = () => {
   const handleSignOut = async () => {
     try {
       // Get current session to check if it exists
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      
+      const {
+        data: { session: currentSession },
+      } = await supabase.auth.getSession();
+
       if (!currentSession) {
         // No active session - just clear local state
-        console.log('No active session found, clearing local state');
+        console.log("No active session found, clearing local state");
         setSession(null);
         setActivities([]);
         setHasPartner(false);
@@ -586,30 +579,30 @@ const Index = () => {
 
       // Attempt server-side logout
       const { error } = await supabase.auth.signOut();
-      
+
       if (error) {
-        console.error('Sign out error:', error);
-        
+        console.error("Sign out error:", error);
+
         // If error is "session_not_found", treat it as success
         // The session is already invalid on the server
-        if (error.message?.includes('session') || error.message?.includes('Session')) {
-          console.log('Session already invalid on server, clearing local state');
+        if (error.message?.includes("session") || error.message?.includes("Session")) {
+          console.log("Session already invalid on server, clearing local state");
           // Force clear the session locally
           setSession(null);
           setActivities([]);
           setHasPartner(false);
           setPartnerName("");
-          
+
           // Clear any stale data from localStorage
-          localStorage.removeItem('supabase.auth.token');
-          
+          localStorage.removeItem("supabase.auth.token");
+
           toast({
             title: "Signed out",
             description: "You have been signed out.",
           });
           return;
         }
-        
+
         // For other errors, show error message
         toast({
           title: "Error",
@@ -624,14 +617,14 @@ const Index = () => {
         });
       }
     } catch (error) {
-      console.error('Sign out error:', error);
-      
+      console.error("Sign out error:", error);
+
       // On any error, force clear local session
       setSession(null);
       setActivities([]);
       setHasPartner(false);
       setPartnerName("");
-      
+
       toast({
         title: "Signed out",
         description: "You have been signed out.",
@@ -653,15 +646,10 @@ const Index = () => {
         .single();
 
       if (coupleData) {
-        const partnerId = coupleData.user1_id === session.user.id 
-          ? coupleData.user2_id 
-          : coupleData.user1_id;
+        const partnerId = coupleData.user1_id === session.user.id ? coupleData.user2_id : coupleData.user1_id;
 
         // Delete all activities for both users
-        await supabase
-          .from("activities")
-          .delete()
-          .in("user_id", [session.user.id, partnerId]);
+        await supabase.from("activities").delete().in("user_id", [session.user.id, partnerId]);
 
         // Delete all invitations for both users
         await supabase
@@ -704,11 +692,11 @@ const Index = () => {
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      
-      if (outcome === 'accepted') {
+
+      if (outcome === "accepted") {
         setShowInstallPrompt(false);
       }
-      
+
       setDeferredPrompt(null);
     } else {
       navigate("/install");
@@ -717,7 +705,7 @@ const Index = () => {
 
   const dismissInstallPrompt = () => {
     setShowInstallPrompt(false);
-    localStorage.setItem('installPromptDismissed', 'true');
+    localStorage.setItem("installPromptDismissed", "true");
   };
 
   if (loading) {
@@ -740,7 +728,7 @@ const Index = () => {
   }
 
   // Show onboarding for new partners (last 2 slides only)
-  if (isJoiningViaInvite && !localStorage.getItem('hasSeenOnboarding')) {
+  if (isJoiningViaInvite && !localStorage.getItem("hasSeenOnboarding")) {
     return <Onboarding onComplete={handleOnboardingComplete} startSlide={3} />;
   }
 
@@ -753,7 +741,6 @@ const Index = () => {
       </div>
     );
   }
-
 
   return (
     <div className="min-h-screen bg-background pb-16">
@@ -808,16 +795,12 @@ const Index = () => {
                 </p>
               </div>
               <div className="flex gap-2 flex-shrink-0">
-                <Button 
-                  size="default"
-                  onClick={handleInstallClick}
-                  className="text-sm sm:text-base px-4 sm:px-6"
-                >
+                <Button size="default" onClick={handleInstallClick} className="text-sm sm:text-base px-4 sm:px-6">
                   Install
                 </Button>
-                <Button 
+                <Button
                   size="icon"
-                  variant="ghost" 
+                  variant="ghost"
                   onClick={dismissInstallPrompt}
                   className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0"
                 >
@@ -837,10 +820,21 @@ const Index = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm sm:text-base leading-tight">
-                    Doing it with <span className="font-semibold">{partnerName}</span> since {activities.length > 0 ? new Date(activities[activities.length - 1].activity_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : new Date(connectedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    Doing it with <span className="font-semibold">{partnerName}</span> since{" "}
+                    {activities.length > 0
+                      ? new Date(activities[activities.length - 1].activity_date).toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })
+                      : new Date(connectedDate).toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
                   </p>
                   <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                    {activities.length} {activities.length === 1 ? 'activity' : 'activities'} and counting 🔥
+                    {activities.length} {activities.length === 1 ? "activity" : "activities"} and counting 🔥
                   </p>
                 </div>
               </div>
@@ -853,15 +847,15 @@ const Index = () => {
                   const now = new Date();
                   const yearStart = startOfYear(now);
                   const yearEnd = endOfYear(now);
-                  
-                  const yearActivities = activities.filter(activity => {
+
+                  const yearActivities = activities.filter((activity) => {
                     const activityDate = parseISO(activity.activity_date);
                     return activityDate >= yearStart && activityDate <= yearEnd;
                   });
-                  
+
                   const yearCount = yearActivities.length;
                   const weeksLeft = Math.max(0, differenceInWeeks(yearEnd, now));
-                  
+
                   // Calculate which goal tier we're on (52, 104, 156, etc.)
                   const currentGoal = Math.ceil(yearCount / 52) * 52;
                   const previousGoal = currentGoal - 52;
@@ -869,14 +863,16 @@ const Index = () => {
                   const progressPercentage = (progressInCurrentTier / 52) * 100;
                   const multiplier = Math.floor(yearCount / 52) + 1;
                   const completedTiers = Math.floor(yearCount / 52);
-                  
+
                   return (
                     <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-3 sm:p-4 rounded-xl border-2 border-primary/20 shadow-sm space-y-2">
                       <div className="flex justify-between items-center text-xs sm:text-sm">
-                        <span className="font-medium">{yearCount}/{currentGoal} this year</span>
+                        <span className="font-medium">
+                          {yearCount}/{currentGoal} this year
+                        </span>
                         <div className="flex items-center gap-1.5">
                           {Array.from({ length: completedTiers }).map((_, i) => (
-                            <span 
+                            <span
                               key={i}
                               className="px-2 py-0.5 bg-primary/30 text-primary-foreground/80 font-bold text-xs rounded-full line-through"
                             >
@@ -890,10 +886,9 @@ const Index = () => {
                       </div>
                       <Progress value={progressPercentage} className="h-3" />
                       <p className="text-xs sm:text-sm text-center text-muted-foreground">
-                        {yearCount < 52 
-                          ? `${52 - yearCount} more to reach your goal with ${weeksLeft} ${weeksLeft === 1 ? 'week' : 'weeks'} left!`
-                          : `Crushing it! ${yearCount - previousGoal} of 52 towards ${currentGoal} 🔥`
-                        }
+                        {yearCount < 52
+                          ? `${52 - yearCount} more to reach your goal with ${weeksLeft} ${weeksLeft === 1 ? "week" : "weeks"} left!`
+                          : `Crushing it! ${yearCount - previousGoal} of 52 towards ${currentGoal} 🔥`}
                       </p>
                     </div>
                   );
@@ -936,16 +931,8 @@ const Index = () => {
                     </Button>
                   </div>
                 ) : (
-                  <Button
-                    onClick={generateInvitationCode}
-                    disabled={sendingInvitation}
-                    className="w-full"
-                  >
-                    {sendingInvitation ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      "Generate Code"
-                    )}
+                  <Button onClick={generateInvitationCode} disabled={sendingInvitation} className="w-full">
+                    {sendingInvitation ? <Loader2 className="w-4 h-4 animate-spin" /> : "Generate Code"}
                   </Button>
                 )}
                 {myInvitationCode && (
@@ -986,11 +973,7 @@ const Index = () => {
                   onClick={handleConnectWithCode}
                   disabled={sendingInvitation || !enterCode || enterCode.length < 8}
                 >
-                  {sendingInvitation ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    "Connect"
-                  )}
+                  {sendingInvitation ? <Loader2 className="w-4 h-4 animate-spin" /> : "Connect"}
                 </Button>
               </div>
             </div>
@@ -1012,10 +995,7 @@ const Index = () => {
                 <DialogTitle>Choose an Activity</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
-                <EmojiSelector
-                  onSelect={setSelectedEmoji}
-                  selectedEmoji={selectedEmoji}
-                />
+                <EmojiSelector onSelect={setSelectedEmoji} selectedEmoji={selectedEmoji} />
                 <div className="space-y-2">
                   <Label htmlFor="quick-notes">Notes (optional)</Label>
                   <Input
@@ -1054,28 +1034,15 @@ const Index = () => {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="date">Date</Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={customDate}
-                    onChange={(e) => setCustomDate(e.target.value)}
-                  />
+                  <Input id="date" type="date" value={customDate} onChange={(e) => setCustomDate(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="time">Time</Label>
-                  <Input
-                    id="time"
-                    type="time"
-                    value={customTime}
-                    onChange={(e) => setCustomTime(e.target.value)}
-                  />
+                  <Input id="time" type="time" value={customTime} onChange={(e) => setCustomTime(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label>Activity Type</Label>
-                  <EmojiSelector
-                    onSelect={setSelectedEmoji}
-                    selectedEmoji={selectedEmoji}
-                  />
+                  <EmojiSelector onSelect={setSelectedEmoji} selectedEmoji={selectedEmoji} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="custom-notes">Notes (optional)</Label>
@@ -1104,11 +1071,7 @@ const Index = () => {
         <div className="flex gap-1 sm:gap-2 bg-card p-1 rounded-xl border-2 border-primary/10">
           <Button
             variant={view === "log" ? "default" : "ghost"}
-            className={`flex-1 text-sm sm:text-base ${
-              view === "log"
-                ? "bg-primary text-white"
-                : "hover:bg-primary/5"
-            }`}
+            className={`flex-1 text-sm sm:text-base ${view === "log" ? "bg-primary text-white" : "hover:bg-primary/5"}`}
             onClick={() => setView("log")}
           >
             <List className="w-4 h-4 mr-1.5 sm:mr-2" />
@@ -1117,9 +1080,7 @@ const Index = () => {
           <Button
             variant={view === "stats" ? "default" : "ghost"}
             className={`flex-1 text-sm sm:text-base ${
-              view === "stats"
-                ? "bg-primary text-white"
-                : "hover:bg-primary/5"
+              view === "stats" ? "bg-primary text-white" : "hover:bg-primary/5"
             }`}
             onClick={() => setView("stats")}
           >
@@ -1142,7 +1103,7 @@ const Index = () => {
 
         {/* Support Link */}
         <div className="text-center mt-6 pb-4">
-          <a 
+          <a
             href="https://buy.stripe.com/14AbJ34zR6ofcci1fJ5EY00"
             target="_blank"
             rel="noopener noreferrer"
@@ -1155,16 +1116,11 @@ const Index = () => {
 
         {/* Copyright Footer */}
         <div className="text-center py-4 border-t border-border/50 mt-4">
-          <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Lindan AB. All rights reserved.
-          </p>
+          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} Lindan AB. All rights reserved.</p>
           <p className="text-xs text-muted-foreground mt-1">
             Contact:{" "}
-            <a 
-              href="mailto:hi@lindaninc.com" 
-              className="hover:text-primary transition-colors underline"
-            >
-              hi@lindaninc.com
+            <a href="mailto:fiftytwoormore@lindaninc.com" className="hover:text-primary transition-colors underline">
+              fiftytwoormore@lindaninc.com
             </a>
           </p>
         </div>

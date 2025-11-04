@@ -114,9 +114,15 @@ const Onboarding = ({ onComplete, startSlide = 0 }: OnboardingProps) => {
           )}
         </div>
 
-        {/* Copyright */}
-        <div className="text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} Lindan AB. <a href="mailto:hi@lindaninc.com" className="hover:underline">hi@lindaninc.com</a>
+        {/* Copyright Footer */}
+        <div className="text-center py-4 border-t border-border/50 mt-4">
+          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} Lindan AB. All rights reserved.</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Contact:{" "}
+            <a href="mailto:fiftytwoormore@lindaninc.com" className="hover:text-primary transition-colors underline">
+              fiftytwoormore@lindaninc.com
+            </a>
+          </p>
         </div>
       </div>
     </div>

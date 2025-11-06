@@ -67,14 +67,40 @@ export default function InvitationFlow({ userEmail, userId, onConnected }: Invit
     setLoading(true);
 
     try {
-      const { error } = await supabase.from("couple_invitations").insert([
-        {
-          sender_id: userId,
-          receiver_email: partnerEmail.toLowerCase().trim(),
-        },
-      ]);
+      const { data: newInvitation, error } = await supabase
+        .from("couple_invitations")
+        .insert([
+          {
+            sender_id: userId,
+            receiver_email: partnerEmail.toLowerCase().trim(),
+          },
+        ])
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Get sender name for email
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("user_id", userId)
+        .single();
+
+      // Send invitation email
+      if (newInvitation) {
+        try {
+          await supabase.functions.invoke('send-invitation-email', {
+            body: { 
+              receiverEmail: partnerEmail.toLowerCase().trim(),
+              senderName: profile?.name || 'Your partner',
+              invitationId: newInvitation.id
+            }
+          });
+        } catch (emailError) {
+          console.error('Error sending invitation email:', emailError);
+        }
+      }
 
       toast({
         title: "Invitation sent!",
@@ -116,6 +142,18 @@ export default function InvitationFlow({ userEmail, userId, onConnected }: Invit
       ]);
 
       if (coupleError) throw coupleError;
+
+      // Send partner joined notification via edge function
+      try {
+        await supabase.functions.invoke('handle-partner-accepted', {
+          body: { 
+            senderId: receivedInvitation.sender_id,
+            receiverId: userId
+          }
+        });
+      } catch (emailError) {
+        console.error('Error sending partner joined email:', emailError);
+      }
 
       toast({
         title: "Connected!",

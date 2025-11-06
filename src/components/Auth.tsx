@@ -85,6 +85,19 @@ export default function Auth() {
             }
           });
           if (error) throw error;
+          
+          // Send welcome email
+          try {
+            await supabase.functions.invoke('send-welcome-email', {
+              body: { 
+                email: result.data.email,
+                name: result.data.name || 'there'
+              }
+            });
+          } catch (emailError) {
+            console.error('Error sending welcome email:', emailError);
+          }
+          
           toast({
             title: "Account created!",
             description: "You can now sign in with your credentials."

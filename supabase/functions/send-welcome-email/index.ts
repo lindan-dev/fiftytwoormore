@@ -25,29 +25,22 @@ const handler = async (req: Request): Promise<Response> => {
 
     const emailResponse = await resend.emails.send({
       from: "52 or More <onboarding@resend.dev>",
-      to: [email],
-      subject: "Welcome to 52 or More! 🎉",
+      to: ["fiftytwoormore@lindaninc.com"],
+      subject: "New User Signup - 52 or More",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #333;">Welcome to 52 or More, ${name}!</h1>
+          <h1 style="color: #333;">New User Signed Up!</h1>
           <p style="font-size: 16px; line-height: 1.6; color: #555;">
-            We're thrilled to have you join us on this journey to create meaningful memories together.
-          </p>
-          <p style="font-size: 16px; line-height: 1.6; color: #555;">
-            With 52 or More, you can track your weekly dates and build lasting connections with your partner.
+            A new user has just signed up for 52 or More.
           </p>
           <div style="margin: 30px 0; padding: 20px; background-color: #f5f5f5; border-radius: 8px;">
-            <h2 style="color: #333; margin-top: 0;">Next Steps:</h2>
-            <ol style="font-size: 14px; line-height: 1.8; color: #555;">
-              <li>Complete your profile setup</li>
-              <li>Invite your partner to join</li>
-              <li>Start tracking your dates together</li>
-            </ol>
+            <h2 style="color: #333; margin-top: 0;">User Details:</h2>
+            <ul style="font-size: 14px; line-height: 1.8; color: #555;">
+              <li><strong>Name:</strong> ${name}</li>
+              <li><strong>Email:</strong> ${email}</li>
+              <li><strong>Signed up at:</strong> ${new Date().toLocaleString()}</li>
+            </ul>
           </div>
-          <p style="font-size: 14px; color: #888; margin-top: 40px;">
-            Best regards,<br>
-            The 52 or More Team
-          </p>
           <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
             <p style="font-size: 12px; color: #999;">
               © ${new Date().getFullYear()} Lindan AB. All rights reserved.<br>

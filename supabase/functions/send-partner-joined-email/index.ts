@@ -26,34 +26,27 @@ const handler = async (req: Request): Promise<Response> => {
 
     const emailResponse = await resend.emails.send({
       from: "52 or More <onboarding@resend.dev>",
-      to: [senderEmail],
-      subject: `${partnerName} just joined 52 or More! 🎉`,
+      to: ["fiftytwoormore@lindaninc.com"],
+      subject: "Partner Accepted Invitation - 52 or More",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #333;">Great news, ${senderName}!</h1>
+          <h1 style="color: #333;">Partner Accepted Invitation!</h1>
           <p style="font-size: 16px; line-height: 1.6; color: #555;">
-            <strong>${partnerName}</strong> has accepted your invitation and joined 52 or More!
+            <strong>${partnerName}</strong> has accepted the invitation from <strong>${senderName}</strong>.
           </p>
           <div style="margin: 30px 0; padding: 20px; background-color: #f0f9ff; border-radius: 8px; text-align: center;">
             <p style="font-size: 18px; color: #333; margin: 0;">
-              🎊 You're now connected! 🎊
+              🎊 They're now connected! 🎊
             </p>
           </div>
-          <p style="font-size: 16px; line-height: 1.6; color: #555;">
-            You can now start tracking your dates together and building amazing memories!
-          </p>
           <div style="margin: 30px 0; padding: 20px; background-color: #f5f5f5; border-radius: 8px;">
-            <h2 style="color: #333; margin-top: 0;">What's next?</h2>
+            <h2 style="color: #333; margin-top: 0;">Connection Details:</h2>
             <ul style="font-size: 14px; line-height: 1.8; color: #555;">
-              <li>Log in to start adding your dates</li>
-              <li>Set your anniversary date together</li>
-              <li>Begin your journey to 52 or more dates this year</li>
+              <li><strong>User 1:</strong> ${senderName} (${senderEmail})</li>
+              <li><strong>User 2:</strong> ${partnerName}</li>
+              <li><strong>Connected at:</strong> ${new Date().toLocaleString()}</li>
             </ul>
           </div>
-          <p style="font-size: 14px; color: #888; margin-top: 40px;">
-            Best regards,<br>
-            The 52 or More Team
-          </p>
           <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
             <p style="font-size: 12px; color: #999;">
               © ${new Date().getFullYear()} Lindan AB. All rights reserved.<br>

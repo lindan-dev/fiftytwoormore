@@ -52,29 +52,23 @@ const handler = async (req: Request): Promise<Response> => {
 
         const emailResponse = await resend.emails.send({
           from: "52 or More <onboarding@resend.dev>",
-          to: [invitation.receiver_email],
-          subject: `Reminder: ${senderName} is waiting for you on 52 or More`,
+          to: ["fiftytwoormore@lindaninc.com"],
+          subject: "Pending Invitation Reminder - 52 or More",
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h1 style="color: #333;">Don't forget your invitation!</h1>
+              <h1 style="color: #333;">Pending Invitation Reminder</h1>
               <p style="font-size: 16px; line-height: 1.6; color: #555;">
-                <strong>${senderName}</strong> is waiting for you to join them on 52 or More.
+                An invitation has been pending for over 24 hours.
               </p>
-              <p style="font-size: 16px; line-height: 1.6; color: #555;">
-                Start creating meaningful memories together - it only takes a minute to get started!
-              </p>
-              <div style="margin: 30px 0; padding: 20px; background-color: #f5f5f5; border-radius: 8px; text-align: center;">
-                <a href="${signupLink}" style="display: inline-block; padding: 12px 30px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
-                  Join Now
-                </a>
+              <div style="margin: 30px 0; padding: 20px; background-color: #f5f5f5; border-radius: 8px;">
+                <h2 style="color: #333; margin-top: 0;">Invitation Details:</h2>
+                <ul style="font-size: 14px; line-height: 1.8; color: #555;">
+                  <li><strong>Sender:</strong> ${senderName}</li>
+                  <li><strong>Recipient Email:</strong> ${invitation.receiver_email}</li>
+                  <li><strong>Created:</strong> ${new Date(invitation.created_at).toLocaleString()}</li>
+                  <li><strong>Days pending:</strong> ${Math.floor((Date.now() - new Date(invitation.created_at).getTime()) / (1000 * 60 * 60 * 24))} days</li>
+                </ul>
               </div>
-              <p style="font-size: 14px; line-height: 1.6; color: #777;">
-                52 or More helps couples track their dates and build lasting connections. Don't miss out on this journey!
-              </p>
-              <p style="font-size: 14px; color: #888; margin-top: 40px;">
-                Best regards,<br>
-                The 52 or More Team
-              </p>
               <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
                 <p style="font-size: 12px; color: #999;">
                   © ${new Date().getFullYear()} Lindan AB. All rights reserved.<br>

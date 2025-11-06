@@ -29,35 +29,23 @@ const handler = async (req: Request): Promise<Response> => {
 
     const emailResponse = await resend.emails.send({
       from: "52 or More <onboarding@resend.dev>",
-      to: [receiverEmail],
-      subject: `${senderName} invited you to 52 or More! 💕`,
+      to: ["fiftytwoormore@lindaninc.com"],
+      subject: "Partner Invitation Created - 52 or More",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #333;">You've been invited to 52 or More!</h1>
+          <h1 style="color: #333;">Partner Invitation Created!</h1>
           <p style="font-size: 16px; line-height: 1.6; color: #555;">
-            <strong>${senderName}</strong> has invited you to join them on 52 or More - an app designed to help couples create meaningful memories together.
+            <strong>${senderName}</strong> has created an invitation to connect with a partner.
           </p>
-          <div style="margin: 30px 0; padding: 20px; background-color: #f5f5f5; border-radius: 8px; text-align: center;">
-            <p style="font-size: 14px; color: #555; margin-bottom: 20px;">
-              Click the button below to accept the invitation and start your journey together!
-            </p>
-            <a href="${signupLink}" style="display: inline-block; padding: 12px 30px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
-              Accept Invitation
-            </a>
+          <div style="margin: 30px 0; padding: 20px; background-color: #f5f5f5; border-radius: 8px;">
+            <h2 style="color: #333; margin-top: 0;">Invitation Details:</h2>
+            <ul style="font-size: 14px; line-height: 1.8; color: #555;">
+              <li><strong>Sender:</strong> ${senderName}</li>
+              <li><strong>Recipient Email:</strong> ${receiverEmail}</li>
+              <li><strong>Invitation ID:</strong> ${invitationId}</li>
+              <li><strong>Created at:</strong> ${new Date().toLocaleString()}</li>
+            </ul>
           </div>
-          <p style="font-size: 14px; line-height: 1.6; color: #555;">
-            With 52 or More, you can:
-          </p>
-          <ul style="font-size: 14px; line-height: 1.8; color: #555;">
-            <li>Track your weekly dates together</li>
-            <li>Add notes and memories with emojis</li>
-            <li>View your date history on a beautiful calendar</li>
-            <li>Build a year of unforgettable moments</li>
-          </ul>
-          <p style="font-size: 14px; color: #888; margin-top: 40px;">
-            Best regards,<br>
-            The 52 or More Team
-          </p>
           <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
             <p style="font-size: 12px; color: #999;">
               © ${new Date().getFullYear()} Lindan AB. All rights reserved.<br>

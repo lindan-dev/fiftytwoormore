@@ -90,7 +90,7 @@ export default function InvitationFlow({ userEmail, userId, onConnected }: Invit
       // Send invitation email
       if (newInvitation) {
         try {
-          await supabase.functions.invoke('send-invitation-email', {
+          await supabase.functions.invoke('notify-invitation-created', {
             body: { 
               receiverEmail: partnerEmail.toLowerCase().trim(),
               senderName: profile?.name || 'Your partner',
@@ -145,7 +145,7 @@ export default function InvitationFlow({ userEmail, userId, onConnected }: Invit
 
       // Send partner joined notification via edge function
       try {
-        await supabase.functions.invoke('handle-partner-accepted', {
+        await supabase.functions.invoke('notify-partner-connected', {
           body: { 
             senderId: receivedInvitation.sender_id,
             receiverId: userId

@@ -88,7 +88,7 @@ export default function Auth() {
           
           // Send welcome email
           try {
-            await supabase.functions.invoke('send-welcome-email', {
+            await supabase.functions.invoke('notify-user-signup', {
               body: { 
                 email: result.data.email,
                 name: result.data.name || 'there'

@@ -74,7 +74,8 @@ export default function Auth() {
         }
         if (isSignUp) {
           const {
-            error
+            error,
+            data: signUpData
           } = await supabase.auth.signUp({
             email: result.data.email,
             password: result.data.password,
@@ -85,6 +86,36 @@ export default function Auth() {
             }
           });
           if (error) throw error;
+          
+          // Check beta status
+          if (signUpData.user) {
+            try {
+              const betaResponse = await fetch('https://jirxaotwaifkdpzinbdb.supabase.co/functions/v1/check-beta-status', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email: result.data.email }),
+              });
+
+              const betaData = await betaResponse.json();
+              
+              if (betaData.isBetaUser) {
+                // Update profile with beta info
+                await supabase
+                  .from('profiles')
+                  .update({
+                    is_beta_user: true,
+                    beta_signup_date: betaData.signupDate,
+                    beta_partner_name: betaData.partnerName,
+                    name: betaData.name || result.data.name
+                  })
+                  .eq('user_id', signUpData.user.id);
+              }
+            } catch (betaError) {
+              console.error('Error checking beta status:', betaError);
+            }
+          }
           
           // Send welcome email
           try {
@@ -105,12 +136,58 @@ export default function Auth() {
           setIsSignUp(false);
         } else {
           const {
-            error
+            error,
+            data: signInData
           } = await supabase.auth.signInWithPassword({
             email: result.data.email,
             password: result.data.password
           });
           if (error) throw error;
+
+          // Check beta status on sign in
+          if (signInData.user) {
+            try {
+              const betaResponse = await fetch('https://jirxaotwaifkdpzinbdb.supabase.co/functions/v1/check-beta-status', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email: result.data.email }),
+              });
+
+              const betaData = await betaResponse.json();
+              
+              if (betaData.isBetaUser) {
+                // Fetch current profile to check if already updated
+                const { data: profile } = await supabase
+                  .from('profiles')
+                  .select('is_beta_user')
+                  .eq('user_id', signInData.user.id)
+                  .single();
+
+                // Update profile with beta info if not already done
+                if (!profile?.is_beta_user) {
+                  await supabase
+                    .from('profiles')
+                    .update({
+                      is_beta_user: true,
+                      beta_signup_date: betaData.signupDate,
+                      beta_partner_name: betaData.partnerName,
+                      name: betaData.name
+                    })
+                    .eq('user_id', signInData.user.id);
+                }
+
+                toast({
+                  title: "Welcome back, Beta Tester! 🎉",
+                  description: `Thank you for being part of our beta program${betaData.name ? ', ' + betaData.name : ''}!`,
+                  duration: 6000,
+                });
+              }
+            } catch (betaError) {
+              console.error('Error checking beta status:', betaError);
+            }
+          }
         }
       }
     } catch (error: any) {

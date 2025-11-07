@@ -91,25 +91,34 @@ export type Database = {
       }
       profiles: {
         Row: {
+          beta_partner_name: string | null
+          beta_signup_date: string | null
           birthday: string | null
           created_at: string
           id: string
+          is_beta_user: boolean | null
           name: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          beta_partner_name?: string | null
+          beta_signup_date?: string | null
           birthday?: string | null
           created_at?: string
           id?: string
+          is_beta_user?: boolean | null
           name?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          beta_partner_name?: string | null
+          beta_signup_date?: string | null
           birthday?: string | null
           created_at?: string
           id?: string
+          is_beta_user?: boolean | null
           name?: string | null
           updated_at?: string
           user_id?: string

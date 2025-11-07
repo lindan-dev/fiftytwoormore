@@ -6,6 +6,7 @@ import Auth from "@/components/Auth";
 import Onboarding from "@/components/Onboarding";
 import EmojiSelector from "@/components/EmojiSelector";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Heart, Plus, BarChart3, List, LogOut, Copy, Loader2, User, Download, X, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ActivityLog from "@/components/ActivityLog";
@@ -61,6 +62,7 @@ const Index = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingStartSlide, setOnboardingStartSlide] = useState(0);
   const [isJoiningViaInvite, setIsJoiningViaInvite] = useState(false);
+  const [isBetaUser, setIsBetaUser] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -195,21 +197,28 @@ const Index = () => {
         // Fetch partner's profile
         const { data: partnerProfile, error: profileError } = await supabase
           .from("profiles")
-          .select("name")
+          .select("name, is_beta_user")
           .eq("user_id", partnerId)
           .maybeSingle();
 
         if (profileError) {
           console.error("Error fetching partner profile:", profileError);
+        } else if (partnerProfile) {
+          setPartnerName(partnerProfile.name || "Your Partner");
         }
 
-        if (partnerProfile) {
-          setPartnerName(partnerProfile.name || "Partner");
-        } else {
-          setPartnerName("Partner");
+        // Fetch current user's profile to check beta status
+        const { data: myProfile } = await supabase
+          .from("profiles")
+          .select("is_beta_user")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+
+        if (myProfile?.is_beta_user) {
+          setIsBetaUser(true);
         }
 
-        fetchActivities();
+        await fetchActivities();
       } else {
         setHasPartner(false);
         setPartnerName("");
@@ -752,6 +761,11 @@ const Index = () => {
               <Heart className="w-4 h-4 sm:w-6 sm:h-6" fill="white" />
             </div>
             <h1 className="text-lg sm:text-2xl font-bold truncate">fiftytwoormore</h1>
+            {isBetaUser && (
+              <Badge variant="secondary" className="hidden sm:inline-flex bg-white/20 text-white border-white/30 hover:bg-white/30">
+                Beta Tester
+              </Badge>
+            )}
           </div>
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             <Button

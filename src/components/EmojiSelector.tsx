@@ -20,6 +20,7 @@ const EMOJI_PRESETS = [
   { emoji: "🔥", label: "Hot" },
   { emoji: "💦", label: "Cum" },
   { emoji: "🌶️", label: "Spicy" },
+  { emoji: "🍦", label: "Vanilla" },
   { emoji: "🌽", label: "Porn" },
   { emoji: "🍒", label: "Tits" },
   { emoji: "🍌", label: "Dick" },

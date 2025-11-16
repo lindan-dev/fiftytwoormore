@@ -97,7 +97,7 @@ export default function SuperuserStats() {
           supabase
             .from("activities")
             .select("id", { count: "exact" })
-            .lt("created_at", nextDay),
+            .lt("activity_date", nextDay),
         ]);
 
         return {

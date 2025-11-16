@@ -240,9 +240,7 @@ const Index = () => {
           .eq("role", "superuser")
           .maybeSingle();
 
-        if (userRole) {
-          setIsSuperuser(true);
-        }
+        setIsSuperuser(!!userRole);
 
         await fetchActivities();
       } else {

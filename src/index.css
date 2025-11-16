@@ -40,6 +40,13 @@ All colors MUST be HSL.
     
     /* Shadow tokens */
     --shadow-soft: 0 4px 20px -4px hsl(10 50% 50% / 0.15);
+    
+    /* Chart colors */
+    --chart-1: 10 80% 65%;
+    --chart-2: 280 65% 60%;
+    --chart-3: 340 75% 65%;
+    --chart-4: 45 90% 60%;
+    --chart-5: 160 60% 50%;
   }
 
   .dark {
@@ -73,6 +80,13 @@ All colors MUST be HSL.
     
     /* Shadow tokens for dark mode */
     --shadow-soft: 0 4px 20px -4px hsl(10 50% 40% / 0.25);
+    
+    /* Chart colors for dark mode */
+    --chart-1: 10 80% 65%;
+    --chart-2: 280 70% 65%;
+    --chart-3: 340 80% 70%;
+    --chart-4: 45 95% 65%;
+    --chart-5: 160 65% 55%;
   }
 }
 

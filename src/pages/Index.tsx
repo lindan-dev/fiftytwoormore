@@ -159,7 +159,7 @@ const Index = () => {
     } else {
       setActivities(data || []);
     }
-  }, [toast]);
+  }, [session?.user?.id, toast]);
 
   const checkInvitations = useCallback(async () => {
     if (!session?.user) return;

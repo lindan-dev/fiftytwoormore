@@ -122,7 +122,7 @@ const Index = () => {
     return () => {
       window.removeEventListener("beforeinstallprompt", handler);
     };
-  }, []);
+  }, [session?.user?.id]);
 
   // Check partner status when session changes
   useEffect(() => {
@@ -136,7 +136,19 @@ const Index = () => {
   // Moved after function declarations to avoid TS error
 
   const fetchActivities = useCallback(async () => {
-    const { data, error } = await supabase.from("activities").select("*").order("activity_date", { ascending: false });
+    if (!session?.user?.id) return;
+    
+    // Get partner ID
+    const { data: partnerId } = await supabase.rpc("get_partner_id", { user_id: session.user.id });
+    
+    // Filter activities to only show current user and partner's activities
+    const userIds = partnerId ? [session.user.id, partnerId] : [session.user.id];
+    
+    const { data, error } = await supabase
+      .from("activities")
+      .select("*")
+      .in("user_id", userIds)
+      .order("activity_date", { ascending: false });
 
     if (error) {
       toast({

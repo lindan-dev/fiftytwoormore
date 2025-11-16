@@ -7,11 +7,12 @@ import Onboarding from "@/components/Onboarding";
 import EmojiSelector from "@/components/EmojiSelector";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Plus, BarChart3, List, LogOut, Copy, Loader2, User, Download, X, Info } from "lucide-react";
+import { Heart, Plus, BarChart3, List, LogOut, Copy, Loader2, User, Download, X, Info, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ActivityLog from "@/components/ActivityLog";
 import CalendarView from "@/components/CalendarView";
 import StatsView from "@/components/StatsView";
+import SuperuserStats from "@/components/SuperuserStats";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
@@ -45,7 +46,7 @@ const Index = () => {
   const [partnerName, setPartnerName] = useState<string>("");
   const [connectedDate, setConnectedDate] = useState<string>("");
   const [checkingPartner, setCheckingPartner] = useState(true);
-  const [view, setView] = useState<"log" | "stats">("log");
+  const [view, setView] = useState<"log" | "stats" | "superuser">("log");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [quickLogOpen, setQuickLogOpen] = useState(false);
   const [customDate, setCustomDate] = useState("");
@@ -63,6 +64,7 @@ const Index = () => {
   const [onboardingStartSlide, setOnboardingStartSlide] = useState(0);
   const [isJoiningViaInvite, setIsJoiningViaInvite] = useState(false);
   const [isBetaUser, setIsBetaUser] = useState(false);
+  const [isSuperuser, setIsSuperuser] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -216,6 +218,18 @@ const Index = () => {
 
         if (myProfile?.is_beta_user) {
           setIsBetaUser(true);
+        }
+
+        // Check if user is a superuser
+        const { data: userRole } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id)
+          .eq("role", "superuser")
+          .maybeSingle();
+
+        if (userRole) {
+          setIsSuperuser(true);
         }
 
         await fetchActivities();
@@ -766,6 +780,12 @@ const Index = () => {
                 Beta Tester
               </Badge>
             )}
+            {isSuperuser && (
+              <Badge variant="secondary" className="hidden sm:inline-flex bg-white/20 text-white border-white/30 hover:bg-white/30">
+                <Shield className="h-3 w-3 mr-1" />
+                Superuser
+              </Badge>
+            )}
           </div>
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             <Button
@@ -1101,6 +1121,18 @@ const Index = () => {
             <BarChart3 className="w-4 h-4 mr-1.5 sm:mr-2" />
             Stats
           </Button>
+          {isSuperuser && (
+            <Button
+              variant={view === "superuser" ? "default" : "ghost"}
+              className={`flex-1 text-sm sm:text-base ${
+                view === "superuser" ? "bg-primary text-white" : "hover:bg-primary/5"
+              }`}
+              onClick={() => setView("superuser")}
+            >
+              <Shield className="w-4 h-4 mr-1.5 sm:mr-2" />
+              Admin
+            </Button>
+          )}
         </div>
 
         {/* Content Area */}
@@ -1111,9 +1143,11 @@ const Index = () => {
             onDelete={handleDeleteActivity}
             onUpdate={handleUpdateActivity}
           />
-        ) : (
+        ) : view === "stats" ? (
           <StatsView activities={activities} compact={false} />
-        )}
+        ) : view === "superuser" && isSuperuser ? (
+          <SuperuserStats />
+        ) : null}
 
         {/* Support Link */}
         <div className="text-center mt-6 pb-4">

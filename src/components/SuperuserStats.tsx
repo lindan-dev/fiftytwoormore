@@ -34,7 +34,7 @@ export default function SuperuserStats() {
         .from("superuser_last_check")
         .select("last_check_at")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
       const lastCheckTime = lastCheck?.last_check_at || new Date(0).toISOString();
 

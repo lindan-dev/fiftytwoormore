@@ -84,19 +84,19 @@ export default function SuperuserStats() {
         const [profiles, invitations, couples, activities] = await Promise.all([
           supabase
             .from("profiles")
-            .select("*", { count: "exact", head: true })
+            .select("id", { count: "exact" })
             .lt("created_at", nextDay),
           supabase
             .from("couple_invitations")
-            .select("*", { count: "exact", head: true })
+            .select("id", { count: "exact" })
             .lt("created_at", nextDay),
           supabase
             .from("couples")
-            .select("*", { count: "exact", head: true })
+            .select("id", { count: "exact" })
             .lt("created_at", nextDay),
           supabase
             .from("activities")
-            .select("*", { count: "exact", head: true })
+            .select("id", { count: "exact" })
             .lt("created_at", nextDay),
         ]);
 
@@ -110,6 +110,7 @@ export default function SuperuserStats() {
       });
 
       const stats = await Promise.all(statsPromises);
+      console.log("Stats data:", stats);
       setStatsData(stats);
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -133,8 +134,8 @@ export default function SuperuserStats() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+        <Card className="w-full">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
@@ -142,11 +143,17 @@ export default function SuperuserStats() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={250}>
               <LineChart data={statsData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="date" className="text-xs" />
-                <YAxis className="text-xs" />
+                <XAxis 
+                  dataKey="date" 
+                  tick={{ fontSize: 12 }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                />
+                <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "hsl(var(--background))",
@@ -165,7 +172,7 @@ export default function SuperuserStats() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="w-full">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Mail className="h-5 w-5" />
@@ -173,11 +180,17 @@ export default function SuperuserStats() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={250}>
               <LineChart data={statsData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="date" className="text-xs" />
-                <YAxis className="text-xs" />
+                <XAxis 
+                  dataKey="date" 
+                  tick={{ fontSize: 12 }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                />
+                <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "hsl(var(--background))",
@@ -196,7 +209,7 @@ export default function SuperuserStats() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="w-full">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Heart className="h-5 w-5" />
@@ -204,11 +217,17 @@ export default function SuperuserStats() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={250}>
               <LineChart data={statsData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="date" className="text-xs" />
-                <YAxis className="text-xs" />
+                <XAxis 
+                  dataKey="date" 
+                  tick={{ fontSize: 12 }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                />
+                <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "hsl(var(--background))",
@@ -227,7 +246,7 @@ export default function SuperuserStats() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="w-full">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Activity className="h-5 w-5" />
@@ -235,11 +254,17 @@ export default function SuperuserStats() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={250}>
               <LineChart data={statsData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="date" className="text-xs" />
-                <YAxis className="text-xs" />
+                <XAxis 
+                  dataKey="date" 
+                  tick={{ fontSize: 12 }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                />
+                <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "hsl(var(--background))",

@@ -87,7 +87,7 @@ export default function Auth() {
           });
           if (error) throw error;
           
-          // Check beta status
+          // Check beta status and add role if beta user
           if (signUpData.user) {
             try {
               const betaResponse = await fetch('https://jirxaotwaifkdpzinbdb.supabase.co/functions/v1/check-beta-status', {
@@ -101,16 +101,19 @@ export default function Auth() {
               const betaData = await betaResponse.json();
               
               if (betaData.isBetaUser) {
-                // Update profile with beta info
+                // Add beta_user role (requires service role, will be added via database trigger or admin action)
+                // Update profile with beta info for reference
                 await supabase
                   .from('profiles')
                   .update({
-                    is_beta_user: true,
                     beta_signup_date: betaData.signupDate,
                     beta_partner_name: betaData.partnerName,
                     name: betaData.name || result.data.name
                   })
                   .eq('user_id', signUpData.user.id);
+                
+                // Note: Beta user role should be added by an admin or via a secure edge function
+                // Users cannot insert their own roles due to RLS policies
               }
             } catch (betaError) {
               console.error('Error checking beta status:', betaError);

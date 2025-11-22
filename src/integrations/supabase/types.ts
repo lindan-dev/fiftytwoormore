@@ -89,6 +89,102 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_logs: {
+        Row: {
+          clicked: boolean
+          id: string
+          message: string
+          notification_type: string
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          clicked?: boolean
+          id?: string
+          message: string
+          notification_type: string
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          clicked?: boolean
+          id?: string
+          message?: string
+          notification_type?: string
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notification_preferences: {
+        Row: {
+          comeback_boosts: boolean
+          created_at: string
+          id: string
+          milestones: boolean
+          monthly_recap: boolean
+          push_token: string | null
+          quiet_hours_end: string
+          quiet_hours_start: string
+          streak_celebrations: boolean
+          updated_at: string
+          user_id: string
+          weekly_nudges: boolean
+        }
+        Insert: {
+          comeback_boosts?: boolean
+          created_at?: string
+          id?: string
+          milestones?: boolean
+          monthly_recap?: boolean
+          push_token?: string | null
+          quiet_hours_end?: string
+          quiet_hours_start?: string
+          streak_celebrations?: boolean
+          updated_at?: string
+          user_id: string
+          weekly_nudges?: boolean
+        }
+        Update: {
+          comeback_boosts?: boolean
+          created_at?: string
+          id?: string
+          milestones?: boolean
+          monthly_recap?: boolean
+          push_token?: string | null
+          quiet_hours_end?: string
+          quiet_hours_start?: string
+          streak_celebrations?: boolean
+          updated_at?: string
+          user_id?: string
+          weekly_nudges?: boolean
+        }
+        Relationships: []
+      }
+      notification_schedule: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          id: string
+          time: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          id?: string
+          time: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          id?: string
+          time?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           beta_partner_name: string | null

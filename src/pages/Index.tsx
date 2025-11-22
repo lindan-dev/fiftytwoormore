@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import Auth from "@/components/Auth";
 import Onboarding from "@/components/Onboarding";
+import NotificationOnboarding from "@/components/NotificationOnboarding";
 import EmojiSelector from "@/components/EmojiSelector";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -62,6 +63,7 @@ const Index = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingStartSlide, setOnboardingStartSlide] = useState(0);
+  const [showNotificationOnboarding, setShowNotificationOnboarding] = useState(false);
   const [isJoiningViaInvite, setIsJoiningViaInvite] = useState(false);
   const [isBetaUser, setIsBetaUser] = useState(false);
   const [isSuperuser, setIsSuperuser] = useState(false);
@@ -461,6 +463,16 @@ const Index = () => {
     localStorage.setItem("hasSeenOnboarding", "true");
     setShowOnboarding(false);
     setIsJoiningViaInvite(false);
+    
+    // Show notification onboarding for logged-in users who haven't seen it
+    if (session && !localStorage.getItem("hasSeenNotificationOnboarding")) {
+      setShowNotificationOnboarding(true);
+    }
+  };
+
+  const handleNotificationOnboardingComplete = () => {
+    localStorage.setItem("hasSeenNotificationOnboarding", "true");
+    setShowNotificationOnboarding(false);
   };
 
   const handleShowOnboarding = () => {
@@ -754,6 +766,11 @@ const Index = () => {
   // Show onboarding for first-time visitors or invited users
   if (showOnboarding) {
     return <Onboarding onComplete={handleOnboardingComplete} startSlide={onboardingStartSlide} />;
+  }
+
+  // Show notification onboarding after main onboarding
+  if (showNotificationOnboarding) {
+    return <NotificationOnboarding onComplete={handleNotificationOnboardingComplete} />;
   }
 
   if (!session) {

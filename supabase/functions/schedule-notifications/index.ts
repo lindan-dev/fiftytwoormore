@@ -96,32 +96,23 @@ serve(async (req) => {
 
     const now = new Date();
     const dayOfWeek = now.getDay();
-    const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    const currentHour = now.getHours();
+
+    // Only send notifications at 8pm (20:00)
+    if (currentHour !== 20) {
+      return new Response(
+        JSON.stringify({ message: 'Not time for notifications yet' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     let sentCount = 0;
 
     for (const user of users) {
       if (!user.weekly_nudges) continue;
 
-      // Check if user has a schedule for today at this time
-      const { data: schedules } = await supabase
-        .from('notification_schedule')
-        .select('*')
-        .eq('user_id', user.user_id)
-        .eq('day_of_week', dayOfWeek);
-
-      if (!schedules || schedules.length === 0) continue;
-
-      // Find matching time slot (within 5 minutes)
-      const matchingSlot = schedules.find(slot => {
-        const slotTime = slot.time.substring(0, 5);
-        return Math.abs(timeToMinutes(slotTime) - timeToMinutes(currentTime)) <= 5;
-      });
-
-      if (!matchingSlot) continue;
-
-      // Determine notification type based on day and time
-      const notifType = determineNotificationType(dayOfWeek, currentTime);
+      // Determine notification type based on day of week
+      const notifType = determineNotificationType(dayOfWeek);
       if (!notifType) continue;
 
       // Check if user has logged this week
@@ -157,36 +148,25 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error scheduling notifications:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error as Error).message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
 
-function determineNotificationType(dayOfWeek: number, time: string): string | null {
-  const hour = parseInt(time.split(':')[0]);
+function determineNotificationType(dayOfWeek: number): string | null {
+  // Mon (1) = weekly_kickoff
+  // Wed (3) = mid_week
+  // Sat (6) = weekend
+  // Sun (0) = last_call
   
-  // Monday morning (6-11)
-  if (dayOfWeek === 1 && hour >= 6 && hour <= 11) {
-    return 'weekly_kickoff';
+  switch (dayOfWeek) {
+    case 1: return 'weekly_kickoff';
+    case 3: return 'mid_week';
+    case 6: return 'weekend';
+    case 0: return 'last_call';
+    default: return null;
   }
-  
-  // Wednesday afternoon (13-17)
-  if (dayOfWeek === 3 && hour >= 13 && hour <= 17) {
-    return 'mid_week';
-  }
-  
-  // Saturday morning (8-12)
-  if (dayOfWeek === 6 && hour >= 8 && hour <= 12) {
-    return 'weekend';
-  }
-  
-  // Sunday evening (16-20)
-  if (dayOfWeek === 0 && hour >= 16 && hour <= 20) {
-    return 'last_call';
-  }
-  
-  return null;
 }
 
 async function hasLoggedThisWeek(supabase: any, userId: string): Promise<boolean> {
@@ -207,9 +187,4 @@ function getWeekStart(date: Date): Date {
   const day = d.getDay();
   const diff = d.getDate() - day;
   return new Date(d.setDate(diff));
-}
-
-function timeToMinutes(time: string): number {
-  const [hours, minutes] = time.split(':').map(Number);
-  return hours * 60 + minutes;
 }

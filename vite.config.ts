@@ -15,10 +15,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "prompt",
-      includeAssets: ["favicon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "sw.js"],
-      strategies: "injectManifest",
-      srcDir: "public",
-      filename: "sw.js",
+      includeAssets: ["favicon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png"],
       manifest: {
         name: "fiftytwoormore - doing it since 2025",
         short_name: "fiftytwoormore",

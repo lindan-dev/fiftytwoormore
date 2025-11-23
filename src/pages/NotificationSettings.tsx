@@ -5,7 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Bell, BellOff, Clock } from "lucide-react";
+import { Bell, BellOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface NotificationPreferences {
@@ -14,8 +14,6 @@ interface NotificationPreferences {
   milestones: boolean;
   monthly_recap: boolean;
   comeback_boosts: boolean;
-  quiet_hours_start: string;
-  quiet_hours_end: string;
   push_token: string | null;
 }
 
@@ -40,8 +38,6 @@ export default function NotificationSettings() {
     milestones: true,
     monthly_recap: false,
     comeback_boosts: true,
-    quiet_hours_start: "21:00",
-    quiet_hours_end: "08:00",
     push_token: null,
   });
   const [schedule, setSchedule] = useState<ScheduleSlot[]>(DEFAULT_SCHEDULE);
@@ -78,8 +74,6 @@ export default function NotificationSettings() {
           milestones: prefs.milestones,
           monthly_recap: prefs.monthly_recap,
           comeback_boosts: prefs.comeback_boosts,
-          quiet_hours_start: prefs.quiet_hours_start,
-          quiet_hours_end: prefs.quiet_hours_end,
           push_token: prefs.push_token,
         });
       }
@@ -342,47 +336,6 @@ export default function NotificationSettings() {
                 savePreferences({ ...preferences, comeback_boosts: checked })
               }
             />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Quiet Hours Card */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="w-5 h-5" />
-            Quiet Hours
-          </CardTitle>
-          <CardDescription>
-            No notifications during these hours (queued to next 08:00)
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="quiet_hours_start">Start</Label>
-              <input
-                id="quiet_hours_start"
-                type="time"
-                className="w-full px-3 py-2 border rounded-md"
-                value={preferences.quiet_hours_start}
-                onChange={(e) =>
-                  savePreferences({ ...preferences, quiet_hours_start: e.target.value })
-                }
-              />
-            </div>
-            <div>
-              <Label htmlFor="quiet_hours_end">End</Label>
-              <input
-                id="quiet_hours_end"
-                type="time"
-                className="w-full px-3 py-2 border rounded-md"
-                value={preferences.quiet_hours_end}
-                onChange={(e) =>
-                  savePreferences({ ...preferences, quiet_hours_end: e.target.value })
-                }
-              />
-            </div>
           </div>
         </CardContent>
       </Card>

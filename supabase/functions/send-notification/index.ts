@@ -146,18 +146,6 @@ async function checkFallbackRules(supabase: any, userId: string, type: string, p
     return { allowed: false, reason: 'user_preference_disabled' };
   }
 
-  // Rule 4: Quiet hours check
-  const now = new Date();
-  const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-  
-  const quietStart = prefs.quiet_hours_start;
-  const quietEnd = prefs.quiet_hours_end;
-  
-  if (isInQuietHours(currentTime, quietStart, quietEnd)) {
-    // Queue to next 08:00
-    return { allowed: false, reason: 'quiet_hours' };
-  }
-
   return { allowed: true };
 }
 
@@ -170,13 +158,4 @@ function getWeekStart(date: Date): Date {
   const day = d.getDay();
   const diff = d.getDate() - day;
   return new Date(d.setDate(diff));
-}
-
-function isInQuietHours(currentTime: string, start: string, end: string): boolean {
-  if (start < end) {
-    return currentTime >= start && currentTime <= end;
-  } else {
-    // Quiet hours span midnight
-    return currentTime >= start || currentTime <= end;
-  }
 }

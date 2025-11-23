@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.76.1";
-import { Resend } from "npm:resend@4.0.0";
+import { Resend } from "https://esm.sh/resend@4.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -46,7 +46,8 @@ const handler = async (req: Request): Promise<Response> => {
     
     for (const invitation of pendingInvitations || []) {
       try {
-        const senderName = invitation.profiles?.name || "Your partner";
+        const profile = Array.isArray(invitation.profiles) ? invitation.profiles[0] : invitation.profiles;
+        const senderName = profile?.name || "Your partner";
         const appUrl = supabaseUrl.replace(".supabase.co", "") || "";
         const signupLink = `${appUrl}?invitation=${invitation.id}`;
 

@@ -17,18 +17,7 @@ interface NotificationPreferences {
   push_token: string | null;
 }
 
-interface ScheduleSlot {
-  day_of_week: number;
-  time: string;
-}
-
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-const DEFAULT_SCHEDULE = [
-  { day_of_week: 1, time: "09:00" }, // Mon 09:00
-  { day_of_week: 3, time: "15:00" }, // Wed 15:00
-  { day_of_week: 6, time: "10:30" }, // Sat 10:30
-  { day_of_week: 0, time: "18:00" }, // Sun 18:00
-];
 
 export default function NotificationSettings() {
   const navigate = useNavigate();
@@ -40,7 +29,6 @@ export default function NotificationSettings() {
     comeback_boosts: true,
     push_token: null,
   });
-  const [schedule, setSchedule] = useState<ScheduleSlot[]>(DEFAULT_SCHEDULE);
   const [loading, setLoading] = useState(true);
   const [permissionState, setPermissionState] = useState<NotificationPermission>("default");
 
@@ -76,20 +64,6 @@ export default function NotificationSettings() {
           comeback_boosts: prefs.comeback_boosts,
           push_token: prefs.push_token,
         });
-      }
-
-      // Load schedule
-      const { data: scheduleData } = await supabase
-        .from("notification_schedule")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("day_of_week");
-
-      if (scheduleData && scheduleData.length > 0) {
-        setSchedule(scheduleData.map(s => ({
-          day_of_week: s.day_of_week,
-          time: s.time,
-        })));
       }
     } catch (error) {
       console.error("Error loading preferences:", error);
@@ -153,56 +127,6 @@ export default function NotificationSettings() {
     }
   };
 
-  const saveSchedule = async (newSchedule: ScheduleSlot[]) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Delete existing schedule
-      await supabase
-        .from("notification_schedule")
-        .delete()
-        .eq("user_id", user.id);
-
-      // Insert new schedule
-      const { error } = await supabase
-        .from("notification_schedule")
-        .insert(
-          newSchedule.map(slot => ({
-            user_id: user.id,
-            day_of_week: slot.day_of_week,
-            time: slot.time,
-          }))
-        );
-
-      if (error) throw error;
-      setSchedule(newSchedule);
-      toast.success("Schedule saved");
-    } catch (error) {
-      console.error("Error saving schedule:", error);
-      toast.error("Failed to save schedule");
-    }
-  };
-
-  const updateScheduleSlot = (index: number, field: "day_of_week" | "time", value: number | string) => {
-    const newSchedule = [...schedule];
-    newSchedule[index] = { ...newSchedule[index], [field]: value };
-    setSchedule(newSchedule);
-  };
-
-  const addScheduleSlot = () => {
-    if (schedule.length >= 7) {
-      toast.error("Maximum 7 schedule slots allowed");
-      return;
-    }
-    setSchedule([...schedule, { day_of_week: 1, time: "09:00" }]);
-  };
-
-  const removeScheduleSlot = (index: number) => {
-    const newSchedule = schedule.filter((_, i) => i !== index);
-    setSchedule(newSchedule);
-  };
-
   if (loading) {
     return (
       <div className="container mx-auto p-6 flex items-center justify-center min-h-screen">
@@ -264,7 +188,7 @@ export default function NotificationSettings() {
             <Label htmlFor="weekly_nudges" className="flex-1">
               <div className="font-medium">Weekly nudges</div>
               <div className="text-sm text-muted-foreground">
-                Gentle reminders throughout the week
+                Gentle reminders at 8pm each evening
               </div>
             </Label>
             <Switch
@@ -341,56 +265,6 @@ export default function NotificationSettings() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Schedule Card */}
-      {preferences.weekly_nudges && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Weekly Schedule</CardTitle>
-            <CardDescription>
-              Choose when you want to receive weekly nudges
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {schedule.map((slot, index) => (
-              <div key={index} className="flex items-center gap-4">
-                <select
-                  className="flex-1 px-3 py-2 border rounded-md"
-                  value={slot.day_of_week}
-                  onChange={(e) =>
-                    updateScheduleSlot(index, "day_of_week", parseInt(e.target.value))
-                  }
-                >
-                  {DAYS.map((day, i) => (
-                    <option key={i} value={i}>
-                      {day}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="time"
-                  className="flex-1 px-3 py-2 border rounded-md"
-                  value={slot.time}
-                  onChange={(e) => updateScheduleSlot(index, "time", e.target.value)}
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => removeScheduleSlot(index)}
-                >
-                  Remove
-                </Button>
-              </div>
-            ))}
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={addScheduleSlot}>
-                Add Slot
-              </Button>
-              <Button onClick={() => saveSchedule(schedule)}>Save Schedule</Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

@@ -124,8 +124,6 @@ export type Database = {
           milestones: boolean
           monthly_recap: boolean
           push_token: string | null
-          quiet_hours_end: string
-          quiet_hours_start: string
           streak_celebrations: boolean
           updated_at: string
           user_id: string
@@ -138,8 +136,6 @@ export type Database = {
           milestones?: boolean
           monthly_recap?: boolean
           push_token?: string | null
-          quiet_hours_end?: string
-          quiet_hours_start?: string
           streak_celebrations?: boolean
           updated_at?: string
           user_id: string
@@ -152,8 +148,6 @@ export type Database = {
           milestones?: boolean
           monthly_recap?: boolean
           push_token?: string | null
-          quiet_hours_end?: string
-          quiet_hours_start?: string
           streak_celebrations?: boolean
           updated_at?: string
           user_id?: string

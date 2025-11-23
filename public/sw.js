@@ -1,5 +1,8 @@
 // Service Worker for Push Notifications
 
+// Workbox precache manifest injection point
+self.__WB_MANIFEST;
+
 self.addEventListener('install', (event) => {
   console.log('Service Worker installing...');
   self.skipWaiting();

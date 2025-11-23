@@ -140,6 +140,8 @@ export default function NotificationSettings() {
         .upsert({
           user_id: user.id,
           ...newPrefs,
+        }, {
+          onConflict: 'user_id'
         });
 
       if (error) throw error;

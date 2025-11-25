@@ -53,7 +53,7 @@ export default function NotificationSettings() {
         .from("notification_preferences")
         .select("*")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
       if (prefs) {
         setPreferences({
@@ -109,11 +109,15 @@ export default function NotificationSettings() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Get user's timezone
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
       const { error } = await supabase
         .from("notification_preferences")
         .upsert({
           user_id: user.id,
           ...newPrefs,
+          timezone,
         }, {
           onConflict: 'user_id'
         });
@@ -188,7 +192,7 @@ export default function NotificationSettings() {
             <Label htmlFor="weekly_nudges" className="flex-1">
               <div className="font-medium">Weekly nudges</div>
               <div className="text-sm text-muted-foreground">
-                Gentle reminders at 8pm each evening
+                Gentle reminders at 8pm your local time
               </div>
             </Label>
             <Switch

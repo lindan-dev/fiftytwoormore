@@ -125,6 +125,7 @@ export type Database = {
           monthly_recap: boolean
           push_token: string | null
           streak_celebrations: boolean
+          timezone: string | null
           updated_at: string
           user_id: string
           weekly_nudges: boolean
@@ -137,6 +138,7 @@ export type Database = {
           monthly_recap?: boolean
           push_token?: string | null
           streak_celebrations?: boolean
+          timezone?: string | null
           updated_at?: string
           user_id: string
           weekly_nudges?: boolean
@@ -149,6 +151,7 @@ export type Database = {
           monthly_recap?: boolean
           push_token?: string | null
           streak_celebrations?: boolean
+          timezone?: string | null
           updated_at?: string
           user_id?: string
           weekly_nudges?: boolean

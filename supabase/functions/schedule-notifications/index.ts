@@ -84,7 +84,7 @@ serve(async (req) => {
 
     const { data: users } = await supabase
       .from('notification_preferences')
-      .select('user_id, push_token, weekly_nudges')
+      .select('user_id, push_token, weekly_nudges, timezone')
       .not('push_token', 'is', null);
 
     if (!users) {
@@ -94,22 +94,20 @@ serve(async (req) => {
       );
     }
 
-    const now = new Date();
-    const dayOfWeek = now.getDay();
-    const currentHour = now.getHours();
-
-    // Only send notifications at 8pm (20:00)
-    if (currentHour !== 20) {
-      return new Response(
-        JSON.stringify({ message: 'Not time for notifications yet' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     let sentCount = 0;
 
     for (const user of users) {
       if (!user.weekly_nudges) continue;
+
+      // Get user's local time based on their timezone
+      const userTimezone = user.timezone || 'UTC';
+      const now = new Date();
+      const userLocalTime = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }));
+      const currentHour = userLocalTime.getHours();
+      const dayOfWeek = userLocalTime.getDay();
+
+      // Only send notifications at 8pm (20:00) in user's local time
+      if (currentHour !== 20) continue;
 
       // Determine notification type based on day of week
       const notifType = determineNotificationType(dayOfWeek);

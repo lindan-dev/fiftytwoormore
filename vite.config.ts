@@ -14,7 +14,8 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     VitePWA({
-      registerType: "prompt",
+      registerType: "autoUpdate",
+      injectRegister: false, // Don't auto-register, we handle it manually
       includeAssets: ["favicon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png"],
       manifest: {
         name: "fiftytwoormore - doing it since 2025",

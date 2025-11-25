@@ -78,21 +78,40 @@ export default function NotificationSettings() {
       return;
     }
 
+    if (!("serviceWorker" in navigator)) {
+      toast.error("Service workers are not supported in this browser");
+      return;
+    }
+
     try {
+      console.log("Requesting notification permission...");
       const permission = await Notification.requestPermission();
+      console.log("Permission result:", permission);
       setPermissionState(permission);
 
       if (permission === "granted") {
+        console.log("Permission granted, registering service worker...");
+        
+        // Check if VAPID key exists
+        const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+        if (!vapidKey) {
+          console.error("VAPID public key not found");
+          toast.error("Push notifications not configured. Please contact support.");
+          return;
+        }
+
         // Register service worker and get push token
         const registration = await navigator.serviceWorker.ready;
+        console.log("Service worker ready:", registration);
+        
         const subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(
-            import.meta.env.VITE_VAPID_PUBLIC_KEY || ""
-          ),
+          applicationServerKey: urlBase64ToUint8Array(vapidKey),
         });
+        console.log("Push subscription created:", subscription);
 
         const pushToken = JSON.stringify(subscription);
+        console.log("Saving push token...");
         await savePreferences({ ...preferences, push_token: pushToken });
         toast.success("Notifications enabled!");
       } else {
@@ -100,7 +119,8 @@ export default function NotificationSettings() {
       }
     } catch (error) {
       console.error("Error requesting permission:", error);
-      toast.error("Failed to enable notifications");
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      toast.error(`Failed to enable notifications: ${errorMessage}`);
     }
   };
 

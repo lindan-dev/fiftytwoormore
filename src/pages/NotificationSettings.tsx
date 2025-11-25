@@ -48,7 +48,7 @@ export default function NotificationSettings() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Load preferences
+      // Load current user's preferences
       const { data: prefs } = await supabase
         .from("notification_preferences")
         .select("*")
@@ -132,19 +132,59 @@ export default function NotificationSettings() {
       // Get user's timezone
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-      const { error } = await supabase
+      // Get partner's user_id
+      const { data: partnerId } = await supabase.rpc('get_partner_id', {
+        user_id: user.id
+      });
+
+      // Prepare preferences update (excluding push_token which is user-specific)
+      const sharedPrefs = {
+        weekly_nudges: newPrefs.weekly_nudges,
+        streak_celebrations: newPrefs.streak_celebrations,
+        milestones: newPrefs.milestones,
+        monthly_recap: newPrefs.monthly_recap,
+        comeback_boosts: newPrefs.comeback_boosts,
+      };
+
+      // Update current user's preferences (with their push_token)
+      const { error: userError } = await supabase
         .from("notification_preferences")
         .upsert({
           user_id: user.id,
-          ...newPrefs,
+          ...sharedPrefs,
+          push_token: newPrefs.push_token,
           timezone,
         }, {
           onConflict: 'user_id'
         });
 
-      if (error) throw error;
+      if (userError) throw userError;
+
+      // If partner exists, update their preferences too (keeping their push_token)
+      if (partnerId) {
+        const { data: partnerPrefs } = await supabase
+          .from("notification_preferences")
+          .select("push_token, timezone")
+          .eq("user_id", partnerId)
+          .maybeSingle();
+
+        await supabase
+          .from("notification_preferences")
+          .upsert({
+            user_id: partnerId,
+            ...sharedPrefs,
+            push_token: partnerPrefs?.push_token || null,
+            timezone: partnerPrefs?.timezone || timezone,
+          }, {
+            onConflict: 'user_id'
+          });
+      }
+
       setPreferences(newPrefs);
-      toast.success("Preferences saved");
+      toast.success(partnerId 
+        ? "Preferences saved for both partners" 
+        : "Preferences saved"
+      );
     } catch (error) {
       console.error("Error saving preferences:", error);
       toast.error("Failed to save preferences");
@@ -205,7 +245,9 @@ export default function NotificationSettings() {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Notification Preferences</CardTitle>
-          <CardDescription>Choose which types of notifications you want to receive</CardDescription>
+          <CardDescription>
+            These settings apply to both you and your partner
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">

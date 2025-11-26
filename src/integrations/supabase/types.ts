@@ -158,30 +158,6 @@ export type Database = {
         }
         Relationships: []
       }
-      notification_schedule: {
-        Row: {
-          created_at: string
-          day_of_week: number
-          id: string
-          time: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          day_of_week: number
-          id?: string
-          time: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          day_of_week?: number
-          id?: string
-          time?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           beta_partner_name: string | null

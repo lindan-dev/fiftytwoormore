@@ -136,56 +136,27 @@ export default function NotificationSettings() {
       // Get user's timezone
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-      // Get partner's user_id
-      const { data: partnerId } = await supabase.rpc('get_partner_id', {
-        user_id: user.id
-      });
-
-      // Prepare preferences update (excluding push_token which is user-specific)
-      const sharedPrefs = {
-        weekly_nudges: newPrefs.weekly_nudges,
-        streak_celebrations: newPrefs.streak_celebrations,
-        milestones: newPrefs.milestones,
-        monthly_recap: newPrefs.monthly_recap,
-        comeback_boosts: newPrefs.comeback_boosts,
-      };
-
-      // Update current user's preferences (with their push_token)
-      const { error: userError } = await supabase
-        .from("notification_preferences")
-        .upsert({
-          user_id: user.id,
-          ...sharedPrefs,
+      // Use edge function to sync preferences (bypasses RLS for partner sync)
+      const { data, error } = await supabase.functions.invoke('sync-partner-preferences', {
+        body: {
+          weekly_nudges: newPrefs.weekly_nudges,
+          streak_celebrations: newPrefs.streak_celebrations,
+          milestones: newPrefs.milestones,
+          monthly_recap: newPrefs.monthly_recap,
+          comeback_boosts: newPrefs.comeback_boosts,
           push_token: newPrefs.push_token,
           timezone,
-        }, {
-          onConflict: 'user_id'
-        });
+        }
+      });
 
-      if (userError) throw userError;
-
-      // If partner exists, update their preferences too (keeping their push_token)
-      if (partnerId) {
-        const { data: partnerPrefs } = await supabase
-          .from("notification_preferences")
-          .select("push_token, timezone")
-          .eq("user_id", partnerId)
-          .maybeSingle();
-
-        await supabase
-          .from("notification_preferences")
-          .upsert({
-            user_id: partnerId,
-            ...sharedPrefs,
-            push_token: partnerPrefs?.push_token || null,
-            timezone: partnerPrefs?.timezone || timezone,
-          }, {
-            onConflict: 'user_id'
-          });
+      if (error) {
+        console.error("Edge function error:", error);
+        throw error;
       }
 
+      console.log("Preferences synced:", data);
       setPreferences(newPrefs);
-      toast.success(partnerId 
+      toast.success(data?.partnerSynced 
         ? "Preferences saved for both partners" 
         : "Preferences saved"
       );

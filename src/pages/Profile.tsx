@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, User, Heart, Trash2, Loader2, UserX, Bell } from "lucide-react";
+import { ArrowLeft, User, Heart, Trash2, Loader2, UserX } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { DateInput } from "@/components/DateInput";
 import {
@@ -524,30 +524,6 @@ const Profile = () => {
             </AlertDialog>
           </Card>
         )}
-
-        {/* Notification Settings Card */}
-        <Card className="p-3 sm:p-4 border-2 border-primary/20 shadow-sm">
-          <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-5">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-              <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="font-semibold text-sm sm:text-base truncate">Notifications</h3>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                Manage your reminder preferences
-              </p>
-            </div>
-          </div>
-
-          <Button
-            onClick={() => navigate("/notifications")}
-            className="w-full"
-            variant="outline"
-          >
-            <Bell className="w-4 h-4 mr-2" />
-            Notification Settings
-          </Button>
-        </Card>
 
         {/* Delete Account Card */}
         <Card className="p-3 sm:p-4 border-2 border-destructive/20 shadow-sm">

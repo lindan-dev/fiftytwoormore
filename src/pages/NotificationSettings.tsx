@@ -90,15 +90,19 @@ export default function NotificationSettings() {
       setPermissionState(permission);
 
       if (permission === "granted") {
-        console.log("Permission granted, registering service worker...");
+        console.log("Permission granted, fetching VAPID key...");
         
-        // Check if VAPID key exists
-        const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-        if (!vapidKey) {
-          console.error("VAPID public key not found");
+        // Fetch VAPID key from edge function
+        const { data: vapidData, error: vapidError } = await supabase.functions.invoke('get-vapid-key');
+        
+        if (vapidError || !vapidData?.vapidPublicKey) {
+          console.error("Failed to get VAPID key:", vapidError);
           toast.error("Push notifications not configured. Please contact support.");
           return;
         }
+        
+        const vapidKey = vapidData.vapidPublicKey;
+        console.log("VAPID key retrieved, registering service worker...");
 
         // Register service worker and get push token
         const registration = await navigator.serviceWorker.ready;
@@ -111,7 +115,7 @@ export default function NotificationSettings() {
         console.log("Push subscription created:", subscription);
 
         const pushToken = JSON.stringify(subscription);
-        console.log("Saving push token...");
+        console.log("Saving push token to database...");
         await savePreferences({ ...preferences, push_token: pushToken });
         toast.success("Notifications enabled!");
       } else {

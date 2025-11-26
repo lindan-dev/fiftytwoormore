@@ -232,7 +232,17 @@ export default function NotificationSettings() {
               Notifications are blocked. Please enable them in your browser settings.
             </p>
           )}
-          {permissionState === "granted" && (
+          {permissionState === "granted" && !preferences.push_token && (
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Browser permission granted but push token not saved. Click to re-register.
+              </p>
+              <Button onClick={requestNotificationPermission}>
+                Re-enable notifications
+              </Button>
+            </div>
+          )}
+          {permissionState === "granted" && preferences.push_token && (
             <p className="text-sm text-muted-foreground flex items-center gap-2">
               <Bell className="w-4 h-4" />
               Notifications enabled

@@ -3,6 +3,9 @@ project_id = "uuijigmwkpmakltymkqe"
 [functions.get-vapid-key]
 verify_jwt = false
 
+[functions.sync-partner-preferences]
+verify_jwt = false
+
 [functions.schedule-notifications]
 verify_jwt = false
 

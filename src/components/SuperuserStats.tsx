@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Users, Heart, Mail, Activity } from "lucide-react";
+import { Users, Heart, Mail, Activity, Bell, Loader2 } from "lucide-react";
 import { format, subDays, startOfDay } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 
 interface StatsData {
   date: string;
@@ -17,6 +21,10 @@ interface StatsData {
 export default function SuperuserStats() {
   const [statsData, setStatsData] = useState<StatsData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [testEmail, setTestEmail] = useState("");
+  const [testMessage, setTestMessage] = useState("");
+  const [sendingTest, setSendingTest] = useState(false);
+  const [testDialogOpen, setTestDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -124,6 +132,62 @@ export default function SuperuserStats() {
     }
   };
 
+  const handleTestNotification = async () => {
+    if (!testEmail) {
+      toast({
+        title: "Error",
+        description: "Please enter an email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSendingTest(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('test-notification', {
+        body: { 
+          targetEmail: testEmail,
+          message: testMessage || undefined,
+          type: 'test'
+        }
+      });
+
+      console.log('Test notification response:', data, error);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (data?.error) {
+        toast({
+          title: "Test Failed",
+          description: `${data.error}: ${data.details || ''}`,
+          variant: "destructive",
+        });
+        if (data.diagnostics) {
+          console.log('Diagnostics:', data.diagnostics);
+        }
+      } else {
+        toast({
+          title: "Test Notification Sent",
+          description: data?.message || "Notification sent successfully",
+        });
+        setTestDialogOpen(false);
+        setTestEmail("");
+        setTestMessage("");
+      }
+    } catch (error: any) {
+      console.error("Error sending test notification:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send test notification",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -134,6 +198,75 @@ export default function SuperuserStats() {
 
   return (
     <div className="space-y-6">
+      {/* Test Notification Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-5 w-5" />
+            Notification Testing
+          </CardTitle>
+          <CardDescription>
+            Send test notifications to users (bypasses all fallback rules)
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Dialog open={testDialogOpen} onOpenChange={setTestDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Bell className="w-4 h-4 mr-2" />
+                Send Test Notification
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Send Test Notification</DialogTitle>
+                <DialogDescription>
+                  Send a push notification to any user for testing purposes.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="testEmail">User Email</Label>
+                  <Input
+                    id="testEmail"
+                    type="email"
+                    placeholder="user@example.com"
+                    value={testEmail}
+                    onChange={(e) => setTestEmail(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="testMessage">Custom Message (optional)</Label>
+                  <Input
+                    id="testMessage"
+                    placeholder="Leave empty for default test message"
+                    value={testMessage}
+                    onChange={(e) => setTestMessage(e.target.value)}
+                  />
+                </div>
+                <Button 
+                  onClick={handleTestNotification} 
+                  disabled={sendingTest}
+                  className="w-full"
+                >
+                  {sendingTest ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Bell className="w-4 h-4 mr-2" />
+                      Send Test
+                    </>
+                  )}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
         <Card className="w-full">
           <CardHeader>

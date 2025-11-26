@@ -528,6 +528,17 @@ const Index = () => {
       setQuickLogOpen(false);
       setSelectedEmoji("");
       setSelectedNotes("");
+      
+      // Trigger instant notification for streak celebrations/milestones
+      try {
+        await supabase.functions.invoke('trigger-instant-notification', {
+          body: { userId: session.user.id }
+        });
+        console.log('Triggered instant notification after activity log');
+      } catch (notifError) {
+        console.error('Failed to trigger notification:', notifError);
+        // Don't show error to user - notification is secondary
+      }
     }
   };
 

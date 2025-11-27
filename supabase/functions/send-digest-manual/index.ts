@@ -241,10 +241,18 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Get all couples
-    const { data: couples, error: couplesError } = await supabase
-      .from('couples')
-      .select('id, user1_id, user2_id');
+    // Check if specific couple_id is requested
+    const body = req.method === "POST" ? await req.json() : {};
+    const requestedCoupleId = body?.couple_id;
+    
+    // Get couples (either specific one or all)
+    let couplesQuery = supabase.from('couples').select('id, user1_id, user2_id');
+    
+    if (requestedCoupleId) {
+      couplesQuery = couplesQuery.eq('id', requestedCoupleId);
+    }
+    
+    const { data: couples, error: couplesError } = await couplesQuery;
     
     if (couplesError) throw couplesError;
     
@@ -373,13 +381,14 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
     
-    // Process uncoupled users
-    const { data: allProfiles, error: allProfilesError } = await supabase
-      .from('profiles')
-      .select('user_id, timezone, email_digest_enabled, signup_at')
-      .eq('email_digest_enabled', true);
-    
-    if (!allProfilesError && allProfiles) {
+    // Process uncoupled users (only if not requesting a specific couple)
+    if (!requestedCoupleId) {
+      const { data: allProfiles, error: allProfilesError } = await supabase
+        .from('profiles')
+        .select('user_id, timezone, email_digest_enabled, signup_at')
+        .eq('email_digest_enabled', true);
+      
+      if (!allProfilesError && allProfiles) {
       for (const profile of allProfiles) {
         // Skip if already processed as part of a couple
         if (processedUserIds.has(profile.user_id)) continue;
@@ -462,14 +471,19 @@ const handler = async (req: Request): Promise<Response> => {
           });
         }
       }
+      }
     }
     
     const successful = results.filter(r => r.success);
     const failed = results.filter(r => !r.success);
     
+    const message = requestedCoupleId 
+      ? `Sent digest to ${successful.length > 0 ? 'selected couple' : 'no one (check logs)'}`
+      : `Processed ${couples?.length || 0} couples and ${results.length} total: ${successful.length} sent, ${failed.length} failed`;
+    
     return new Response(
       JSON.stringify({ 
-        message: `Processed ${couples?.length || 0} couples and ${allProfiles?.length || 0} total profiles: ${successful.length} sent, ${failed.length} failed`,
+        message,
         sent: successful.length,
         failed: failed.length,
         results 

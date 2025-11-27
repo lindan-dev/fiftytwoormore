@@ -6,6 +6,7 @@ import { Users, Heart, Mail, Activity, Send } from "lucide-react";
 import { format, subDays, startOfDay } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface StatsData {
   date: string;
@@ -15,16 +16,55 @@ interface StatsData {
   activities: number;
 }
 
+interface Couple {
+  id: string;
+  user1_email: string;
+  user2_email: string;
+}
+
 export default function SuperuserStats() {
   const [statsData, setStatsData] = useState<StatsData[]>([]);
   const [loading, setLoading] = useState(true);
   const [sendingDigest, setSendingDigest] = useState(false);
+  const [couples, setCouples] = useState<Couple[]>([]);
+  const [selectedCouple, setSelectedCouple] = useState<string>("");
   const { toast } = useToast();
 
   useEffect(() => {
     fetchStats();
+    fetchCouples();
     checkForNewSignups();
   }, []);
+
+  const fetchCouples = async () => {
+    try {
+      const { data: couplesData, error } = await supabase
+        .from('couples')
+        .select('id, user1_id, user2_id');
+      
+      if (error) throw error;
+      
+      // Get emails for each couple
+      const couplesWithEmails = await Promise.all(
+        (couplesData || []).map(async (couple) => {
+          const [user1, user2] = await Promise.all([
+            supabase.auth.admin.getUserById(couple.user1_id),
+            supabase.auth.admin.getUserById(couple.user2_id),
+          ]);
+          
+          return {
+            id: couple.id,
+            user1_email: user1.data.user?.email || 'Unknown',
+            user2_email: user2.data.user?.email || 'Unknown',
+          };
+        })
+      );
+      
+      setCouples(couplesWithEmails);
+    } catch (error) {
+      console.error("Error fetching couples:", error);
+    }
+  };
 
   const checkForNewSignups = async () => {
     try {
@@ -130,13 +170,16 @@ export default function SuperuserStats() {
     try {
       setSendingDigest(true);
       
-      const { data, error } = await supabase.functions.invoke("send-digest-manual");
+      const body = selectedCouple ? { couple_id: selectedCouple } : undefined;
+      const { data, error } = await supabase.functions.invoke("send-digest-manual", { body });
       
       if (error) throw error;
       
       toast({
         title: "Digest Sent",
-        description: `Successfully sent ${data?.sent || 0} digest emails`,
+        description: selectedCouple 
+          ? `Successfully sent digest to selected couple`
+          : `Successfully sent ${data?.sent || 0} digest emails`,
       });
       
       console.log("Digest result:", data);
@@ -169,15 +212,29 @@ export default function SuperuserStats() {
             Weekly Digest Email
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
-            Send digest emails immediately to all users with email digest enabled, regardless of timezone or day.
-          </p>
+        <CardContent className="space-y-4">
+          <div>
+            <label className="text-sm font-medium mb-2 block">Select Couple (optional)</label>
+            <Select value={selectedCouple} onValueChange={setSelectedCouple}>
+              <SelectTrigger>
+                <SelectValue placeholder="All couples" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All couples</SelectItem>
+                {couples.map((couple) => (
+                  <SelectItem key={couple.id} value={couple.id}>
+                    {couple.user1_email} & {couple.user2_email}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <Button 
             onClick={handleSendDigest}
             disabled={sendingDigest}
+            className="w-full"
           >
-            {sendingDigest ? "Sending..." : "Send Digest Emails Now"}
+            {sendingDigest ? "Sending..." : selectedCouple ? "Send to Selected Couple" : "Send to All"}
           </Button>
         </CardContent>
       </Card>

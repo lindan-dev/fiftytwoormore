@@ -18,8 +18,8 @@ interface StatsData {
 
 interface Couple {
   id: string;
-  user1_email: string;
-  user2_email: string;
+  user1_name: string;
+  user2_name: string;
 }
 
 export default function SuperuserStats() {
@@ -38,29 +38,34 @@ export default function SuperuserStats() {
 
   const fetchCouples = async () => {
     try {
+      // Get couples with user IDs
       const { data: couplesData, error } = await supabase
         .from('couples')
         .select('id, user1_id, user2_id');
       
       if (error) throw error;
       
-      // Get emails for each couple
-      const couplesWithEmails = await Promise.all(
-        (couplesData || []).map(async (couple) => {
-          const [user1, user2] = await Promise.all([
-            supabase.auth.admin.getUserById(couple.user1_id),
-            supabase.auth.admin.getUserById(couple.user2_id),
-          ]);
-          
-          return {
-            id: couple.id,
-            user1_email: user1.data.user?.email || 'Unknown',
-            user2_email: user2.data.user?.email || 'Unknown',
-          };
-        })
+      // Get all profile data (including names from profiles)
+      const userIds = (couplesData || []).flatMap(c => [c.user1_id, c.user2_id]);
+      
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, name')
+        .in('user_id', userIds);
+      
+      // Map profiles by user_id for quick lookup
+      const profileMap = new Map(
+        (profiles || []).map(p => [p.user_id, p.name || 'Unknown'])
       );
       
-      setCouples(couplesWithEmails);
+      // Build couples list with names
+      const couplesWithNames = (couplesData || []).map(couple => ({
+        id: couple.id,
+        user1_name: profileMap.get(couple.user1_id) || 'Unknown',
+        user2_name: profileMap.get(couple.user2_id) || 'Unknown',
+      }));
+      
+      setCouples(couplesWithNames);
     } catch (error) {
       console.error("Error fetching couples:", error);
     }
@@ -223,7 +228,7 @@ export default function SuperuserStats() {
                 <SelectItem value="">All couples</SelectItem>
                 {couples.map((couple) => (
                   <SelectItem key={couple.id} value={couple.id}>
-                    {couple.user1_email} & {couple.user2_email}
+                    {couple.user1_name} & {couple.user2_name}
                   </SelectItem>
                 ))}
               </SelectContent>

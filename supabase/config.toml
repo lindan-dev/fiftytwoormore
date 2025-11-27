@@ -3,6 +3,9 @@ project_id = "uuijigmwkpmakltymkqe"
 [functions.send-weekly-digest]
 verify_jwt = false
 
+[functions.send-digest-manual]
+verify_jwt = false
+
 [functions.get-vapid-key]
 verify_jwt = false
 

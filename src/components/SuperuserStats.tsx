@@ -130,13 +130,13 @@ export default function SuperuserStats() {
     try {
       setSendingDigest(true);
       
-      const { data, error } = await supabase.functions.invoke("send-weekly-digest");
+      const { data, error } = await supabase.functions.invoke("send-digest-manual");
       
       if (error) throw error;
       
       toast({
         title: "Digest Sent",
-        description: `Processed ${data?.sent || 0} digest emails`,
+        description: `Successfully sent ${data?.sent || 0} digest emails`,
       });
       
       console.log("Digest result:", data);
@@ -171,7 +171,7 @@ export default function SuperuserStats() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-4">
-            Manually trigger the weekly digest email system. It will check all users and send digest emails to those where it's Saturday 10:00 in their local timezone.
+            Send digest emails immediately to all users with email digest enabled, regardless of timezone or day.
           </p>
           <Button 
             onClick={handleSendDigest}

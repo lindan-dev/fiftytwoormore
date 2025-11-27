@@ -271,7 +271,7 @@ const handler = async (req: Request): Promise<Response> => {
         
         // Send email
         const emailResponse = await resend.emails.send({
-          from: "fiftytwoormore <digest@resend.dev>",
+          from: "fiftytwoormore <digest@updates.lindaninc.com>",
           to: [authUser.user.email],
           subject,
           text: plainText,
@@ -280,22 +280,37 @@ const handler = async (req: Request): Promise<Response> => {
         
         console.log(`Email sent to ${authUser.user.email}:`, emailResponse);
         
-        // Log to database
-        await supabase
-          .from('email_digest_log')
-          .insert({
-            user_id: profile.user_id,
-            type: isNystart ? 'digest-nystart' : 'digest',
-            week_number: weekNumber,
-            year
+        // Check for errors
+        if (emailResponse.error) {
+          console.error(`Failed to send to ${authUser.user.email}:`, emailResponse.error);
+          results.push({ 
+            userId: profile.user_id, 
+            email: authUser.user.email,
+            type: isNystart ? 'nystart' : 'standard',
+            success: false, 
+            error: emailResponse.error.message 
           });
+        } else {
+          // Only log successful sends to database
+          await supabase
+            .from('email_digest_log')
+            .insert({
+              user_id: profile.user_id,
+              type: isNystart ? 'digest-nystart' : 'digest',
+              week_number: weekNumber,
+              year
+            });
+          
+          results.push({ 
+            userId: profile.user_id, 
+            email: authUser.user.email,
+            type: isNystart ? 'nystart' : 'standard',
+            success: true 
+          });
+        }
         
-        results.push({ 
-          userId: profile.user_id, 
-          email: authUser.user.email,
-          type: isNystart ? 'nystart' : 'standard',
-          success: true 
-        });
+        // Add delay to avoid rate limiting (Resend allows 2 req/sec)
+        await new Promise(resolve => setTimeout(resolve, 600));
         
       } catch (userError) {
         console.error(`Error for user ${profile.user_id}:`, userError);
@@ -307,10 +322,14 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
     
+    const successful = results.filter(r => r.success);
+    const failed = results.filter(r => !r.success);
+    
     return new Response(
       JSON.stringify({ 
-        message: `Processed ${profiles?.length || 0} users`,
-        sent: results.filter(r => r.success).length,
+        message: `Processed ${profiles?.length || 0} users: ${successful.length} sent, ${failed.length} failed`,
+        sent: successful.length,
+        failed: failed.length,
         results 
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Users, Heart, Mail, Activity } from "lucide-react";
+import { Users, Heart, Mail, Activity, Send } from "lucide-react";
 import { format, subDays, startOfDay } from "date-fns";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
 interface StatsData {
@@ -17,6 +18,7 @@ interface StatsData {
 export default function SuperuserStats() {
   const [statsData, setStatsData] = useState<StatsData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sendingDigest, setSendingDigest] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -124,6 +126,32 @@ export default function SuperuserStats() {
     }
   };
 
+  const handleSendDigest = async () => {
+    try {
+      setSendingDigest(true);
+      
+      const { data, error } = await supabase.functions.invoke("send-weekly-digest");
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Digest Sent",
+        description: `Processed ${data?.sent || 0} digest emails`,
+      });
+      
+      console.log("Digest result:", data);
+    } catch (error) {
+      console.error("Error sending digest:", error);
+      toast({
+        title: "Error",
+        description: "Failed to send digest emails",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingDigest(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -134,6 +162,26 @@ export default function SuperuserStats() {
 
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Send className="h-5 w-5" />
+            Weekly Digest Email
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            Manually trigger the weekly digest email system. It will check all users and send digest emails to those where it's Saturday 10:00 in their local timezone.
+          </p>
+          <Button 
+            onClick={handleSendDigest}
+            disabled={sendingDigest}
+          >
+            {sendingDigest ? "Sending..." : "Send Digest Emails Now"}
+          </Button>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
         <Card className="w-full">
           <CardHeader>

@@ -89,39 +89,87 @@ export type Database = {
         }
         Relationships: []
       }
+      email_digest_log: {
+        Row: {
+          created_at: string | null
+          id: string
+          sent_at: string | null
+          type: string
+          user_id: string
+          week_number: number
+          year: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          sent_at?: string | null
+          type: string
+          user_id: string
+          week_number: number
+          year: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          sent_at?: string | null
+          type?: string
+          user_id?: string
+          week_number?: number
+          year?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           beta_partner_name: string | null
           beta_signup_date: string | null
           birthday: string | null
           created_at: string
+          email_digest_enabled: boolean | null
           id: string
           is_beta_user: boolean | null
+          last_log_at: string | null
           name: string | null
+          signup_at: string | null
+          streak_weeks: number | null
+          timezone: string | null
           updated_at: string
           user_id: string
+          year_total: number | null
         }
         Insert: {
           beta_partner_name?: string | null
           beta_signup_date?: string | null
           birthday?: string | null
           created_at?: string
+          email_digest_enabled?: boolean | null
           id?: string
           is_beta_user?: boolean | null
+          last_log_at?: string | null
           name?: string | null
+          signup_at?: string | null
+          streak_weeks?: number | null
+          timezone?: string | null
           updated_at?: string
           user_id: string
+          year_total?: number | null
         }
         Update: {
           beta_partner_name?: string | null
           beta_signup_date?: string | null
           birthday?: string | null
           created_at?: string
+          email_digest_enabled?: boolean | null
           id?: string
           is_beta_user?: boolean | null
+          last_log_at?: string | null
           name?: string | null
+          signup_at?: string | null
+          streak_weeks?: number | null
+          timezone?: string | null
           updated_at?: string
           user_id?: string
+          year_total?: number | null
         }
         Relationships: []
       }

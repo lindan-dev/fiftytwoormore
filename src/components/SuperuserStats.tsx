@@ -27,7 +27,7 @@ export default function SuperuserStats() {
   const [loading, setLoading] = useState(true);
   const [sendingDigest, setSendingDigest] = useState(false);
   const [couples, setCouples] = useState<Couple[]>([]);
-  const [selectedCouple, setSelectedCouple] = useState<string>("");
+  const [selectedCouple, setSelectedCouple] = useState<string>("all");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -175,14 +175,14 @@ export default function SuperuserStats() {
     try {
       setSendingDigest(true);
       
-      const body = selectedCouple ? { couple_id: selectedCouple } : undefined;
+      const body = selectedCouple !== "all" ? { couple_id: selectedCouple } : undefined;
       const { data, error } = await supabase.functions.invoke("send-digest-manual", { body });
       
       if (error) throw error;
       
       toast({
         title: "Digest Sent",
-        description: selectedCouple 
+        description: selectedCouple !== "all"
           ? `Successfully sent digest to selected couple`
           : `Successfully sent ${data?.sent || 0} digest emails`,
       });
@@ -225,7 +225,7 @@ export default function SuperuserStats() {
                 <SelectValue placeholder="All couples" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All couples</SelectItem>
+                <SelectItem value="all">All couples</SelectItem>
                 {couples.map((couple) => (
                   <SelectItem key={couple.id} value={couple.id}>
                     {couple.user1_name} & {couple.user2_name}
@@ -239,7 +239,7 @@ export default function SuperuserStats() {
             disabled={sendingDigest}
             className="w-full"
           >
-            {sendingDigest ? "Sending..." : selectedCouple ? "Send to Selected Couple" : "Send to All"}
+            {sendingDigest ? "Sending..." : selectedCouple !== "all" ? "Send to Selected Couple" : "Send to All"}
           </Button>
         </CardContent>
       </Card>

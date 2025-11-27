@@ -11,17 +11,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface User {
-  user_id: string;
-  email: string;
-  name: string | null;
-  timezone: string;
-  email_digest_enabled: boolean;
-  signup_at: string;
-  streak_weeks: number;
-  year_total: number;
-}
-
 function getLocalDate(timezone: string): Date {
   const now = new Date();
   const formatter = new Intl.DateTimeFormat('en-US', {
@@ -62,13 +51,13 @@ function getMondayOfWeek(timezone: string): Date {
   return monday;
 }
 
-async function getLogsThisWeek(supabase: any, userId: string, timezone: string): Promise<number> {
+async function getLogsThisWeek(supabase: any, userIds: string[], timezone: string): Promise<number> {
   const monday = getMondayOfWeek(timezone);
   
   const { data, error } = await supabase
     .from('activities')
     .select('id')
-    .eq('user_id', userId)
+    .in('user_id', userIds)
     .gte('activity_date', monday.toISOString());
   
   if (error) {
@@ -79,11 +68,11 @@ async function getLogsThisWeek(supabase: any, userId: string, timezone: string):
   return data?.length || 0;
 }
 
-async function getLastLogRelative(supabase: any, userId: string): Promise<string> {
+async function getLastLogRelative(supabase: any, userIds: string[]): Promise<string> {
   const { data, error } = await supabase
     .from('activities')
     .select('activity_date')
-    .eq('user_id', userId)
+    .in('user_id', userIds)
     .order('activity_date', { ascending: false })
     .limit(1)
     .single();
@@ -97,6 +86,67 @@ async function getLastLogRelative(supabase: any, userId: string): Promise<string
   if (diffHours < 24) return "Last night";
   if (diffHours < 168) return "Earlier this week";
   return `${Math.floor(diffHours / 24)} days ago`;
+}
+
+async function getYearTotal(supabase: any, userIds: string[]): Promise<number> {
+  const yearStart = new Date(new Date().getFullYear(), 0, 1).toISOString();
+  const { data, error } = await supabase
+    .from('activities')
+    .select('id')
+    .in('user_id', userIds)
+    .gte('activity_date', yearStart);
+  
+  if (error) {
+    console.error('Error fetching year total:', error);
+    return 0;
+  }
+  
+  return data?.length || 0;
+}
+
+async function getStreakWeeks(supabase: any, userIds: string[]): Promise<number> {
+  const { data, error } = await supabase
+    .from('activities')
+    .select('activity_date')
+    .in('user_id', userIds)
+    .order('activity_date', { ascending: false });
+  
+  if (error || !data || data.length === 0) return 0;
+  
+  // Group activities by ISO week
+  const weekSet = new Set<string>();
+  data.forEach((activity: any) => {
+    const date = new Date(activity.activity_date);
+    const year = date.getFullYear();
+    const week = getWeekNumber(date);
+    weekSet.add(`${year}-W${week}`);
+  });
+  
+  const weeks = Array.from(weekSet).sort().reverse();
+  
+  // Count consecutive weeks from current week backwards
+  const now = new Date();
+  let currentYear = now.getFullYear();
+  let currentWeek = getWeekNumber(now);
+  let streak = 0;
+  
+  for (let i = 0; i < 52; i++) {
+    const weekKey = `${currentYear}-W${currentWeek}`;
+    if (weeks.includes(weekKey)) {
+      streak++;
+    } else {
+      break;
+    }
+    
+    // Move to previous week
+    currentWeek--;
+    if (currentWeek < 1) {
+      currentYear--;
+      currentWeek = getWeekNumber(new Date(currentYear, 11, 31));
+    }
+  }
+  
+  return streak;
 }
 
 function getPaceLabel(yearTotal: number): string {
@@ -200,64 +250,99 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Get all users with digest enabled
-    const { data: profiles, error: profilesError } = await supabase
-      .from('profiles')
-      .select('user_id, timezone, email_digest_enabled, signup_at, streak_weeks, year_total')
-      .eq('email_digest_enabled', true);
+    // Get all couples
+    const { data: couples, error: couplesError } = await supabase
+      .from('couples')
+      .select('id, user1_id, user2_id');
     
-    if (profilesError) throw profilesError;
+    if (couplesError) throw couplesError;
     
     const results = [];
+    const processedUserIds = new Set<string>();
     
-    for (const profile of profiles || []) {
+    // Process couples first
+    for (const couple of couples || []) {
       try {
-        // Check if it's Saturday 10:00 in user's timezone
-        const localDate = getLocalDate(profile.timezone || 'Europe/Stockholm');
+        // Get both partners' profiles
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, timezone, email_digest_enabled, signup_at')
+          .in('user_id', [couple.user1_id, couple.user2_id]);
+        
+        if (profilesError || !profiles || profiles.length === 0) {
+          console.log(`No profiles found for couple ${couple.id}`);
+          continue;
+        }
+        
+        // Check if at least one partner has digest enabled
+        const hasDigestEnabled = profiles.some(p => p.email_digest_enabled);
+        if (!hasDigestEnabled) {
+          console.log(`No digest enabled for couple ${couple.id}`);
+          continue;
+        }
+        
+        // Use first partner's timezone
+        const timezone = profiles[0].timezone || 'Europe/Stockholm';
+        
+        // Check if it's Saturday 10:00 in their timezone
+        const localDate = getLocalDate(timezone);
         const isSaturday = localDate.getDay() === 6;
         const isTargetHour = localDate.getHours() === 10;
         
         if (!isSaturday || !isTargetHour) {
-          console.log(`Skipping ${profile.user_id}: Not Saturday 10:00 in their timezone`);
+          console.log(`Skipping couple ${couple.id}: Not Saturday 10:00 in their timezone`);
           continue;
         }
         
         const weekNumber = getWeekNumber(localDate);
         const year = localDate.getFullYear();
         
-        // Check if already sent this week
+        // Check if already sent this week (check for first user)
         const { data: existingLog } = await supabase
           .from('email_digest_log')
           .select('id')
-          .eq('user_id', profile.user_id)
+          .eq('user_id', couple.user1_id)
           .eq('week_number', weekNumber)
           .eq('year', year)
           .single();
         
         if (existingLog) {
-          console.log(`Already sent to ${profile.user_id} for week ${weekNumber}`);
+          console.log(`Already sent to couple ${couple.id} for week ${weekNumber}`);
           continue;
         }
         
-        // Get user email
-        const { data: authUser } = await supabase.auth.admin.getUserById(profile.user_id);
-        if (!authUser?.user?.email) continue;
+        // Get both partners' emails
+        const emails: string[] = [];
+        for (const profile of profiles) {
+          const { data: authUser } = await supabase.auth.admin.getUserById(profile.user_id);
+          if (authUser?.user?.email) {
+            emails.push(authUser.user.email);
+          }
+          processedUserIds.add(profile.user_id);
+        }
         
-        // Calculate if in onboarding period
-        const signupDate = new Date(profile.signup_at || new Date());
+        if (emails.length === 0) {
+          console.log(`No emails found for couple ${couple.id}`);
+          continue;
+        }
+        
+        // Calculate combined stats
+        const signupDate = new Date(profiles[0].signup_at || new Date());
         const daysSinceSignup = (Date.now() - signupDate.getTime()) / (1000 * 60 * 60 * 24);
         const isNystart = daysSinceSignup < 28;
         
-        // Get stats
-        const logsThisWeek = await getLogsThisWeek(supabase, profile.user_id, profile.timezone || 'Europe/Stockholm');
-        const lastLogRelative = await getLastLogRelative(supabase, profile.user_id);
-        const paceLabel = getPaceLabel(profile.year_total || 0);
+        const userIds = [couple.user1_id, couple.user2_id];
+        const logsThisWeek = await getLogsThisWeek(supabase, userIds, timezone);
+        const lastLogRelative = await getLastLogRelative(supabase, userIds);
+        const yearTotal = await getYearTotal(supabase, userIds);
+        const streakWeeks = await getStreakWeeks(supabase, userIds);
+        const paceLabel = getPaceLabel(yearTotal);
         
         const emailData = {
           logsThisWeek,
           lastLogRelative,
-          streakWeeks: profile.streak_weeks || 0,
-          yearTotal: profile.year_total || 0,
+          streakWeeks,
+          yearTotal,
           paceLabel
         };
         
@@ -269,56 +354,174 @@ const handler = async (req: Request): Promise<Response> => {
         const plainText = getPlainText(isNystart, emailData);
         const html = getHtml(plainText);
         
-        // Send email
+        // Send ONE email to BOTH partners
         const emailResponse = await resend.emails.send({
           from: "fiftytwoormore <digest@updates.lindaninc.com>",
-          to: [authUser.user.email],
+          to: emails,
           subject,
           text: plainText,
           html
         });
         
-        console.log(`Email sent to ${authUser.user.email}:`, emailResponse);
+        console.log(`Email sent to couple ${couple.id} (${emails.join(', ')}):`, emailResponse);
         
         // Check for errors
         if (emailResponse.error) {
-          console.error(`Failed to send to ${authUser.user.email}:`, emailResponse.error);
+          console.error(`Failed to send to couple ${couple.id}:`, emailResponse.error);
           results.push({ 
-            userId: profile.user_id, 
-            email: authUser.user.email,
+            coupleId: couple.id,
+            emails,
             type: isNystart ? 'nystart' : 'standard',
             success: false, 
             error: emailResponse.error.message 
           });
         } else {
-          // Only log successful sends to database
+          // Log successful send
           await supabase
             .from('email_digest_log')
             .insert({
-              user_id: profile.user_id,
+              user_id: couple.user1_id,
               type: isNystart ? 'digest-nystart' : 'digest',
               week_number: weekNumber,
               year
             });
           
           results.push({ 
-            userId: profile.user_id, 
-            email: authUser.user.email,
+            coupleId: couple.id,
+            emails,
             type: isNystart ? 'nystart' : 'standard',
             success: true 
           });
         }
         
-        // Add delay to avoid rate limiting (Resend allows 2 req/sec)
+        // Add delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 600));
         
-      } catch (userError) {
-        console.error(`Error for user ${profile.user_id}:`, userError);
+      } catch (coupleError) {
+        console.error(`Error for couple ${couple.id}:`, coupleError);
         results.push({ 
-          userId: profile.user_id, 
+          coupleId: couple.id,
           success: false, 
-          error: userError instanceof Error ? userError.message : String(userError)
+          error: coupleError instanceof Error ? coupleError.message : String(coupleError)
         });
+      }
+    }
+    
+    // Process uncoupled users
+    const { data: allProfiles, error: allProfilesError } = await supabase
+      .from('profiles')
+      .select('user_id, timezone, email_digest_enabled, signup_at')
+      .eq('email_digest_enabled', true);
+    
+    if (!allProfilesError && allProfiles) {
+      for (const profile of allProfiles) {
+        // Skip if already processed as part of a couple
+        if (processedUserIds.has(profile.user_id)) continue;
+        
+        try {
+          const timezone = profile.timezone || 'Europe/Stockholm';
+          const localDate = getLocalDate(timezone);
+          const isSaturday = localDate.getDay() === 6;
+          const isTargetHour = localDate.getHours() === 10;
+          
+          if (!isSaturday || !isTargetHour) {
+            console.log(`Skipping uncoupled user ${profile.user_id}: Not Saturday 10:00`);
+            continue;
+          }
+          
+          const weekNumber = getWeekNumber(localDate);
+          const year = localDate.getFullYear();
+          
+          // Check if already sent this week
+          const { data: existingLog } = await supabase
+            .from('email_digest_log')
+            .select('id')
+            .eq('user_id', profile.user_id)
+            .eq('week_number', weekNumber)
+            .eq('year', year)
+            .single();
+          
+          if (existingLog) {
+            console.log(`Already sent to ${profile.user_id} for week ${weekNumber}`);
+            continue;
+          }
+          
+          const { data: authUser } = await supabase.auth.admin.getUserById(profile.user_id);
+          if (!authUser?.user?.email) continue;
+          
+          const signupDate = new Date(profile.signup_at || new Date());
+          const daysSinceSignup = (Date.now() - signupDate.getTime()) / (1000 * 60 * 60 * 24);
+          const isNystart = daysSinceSignup < 28;
+          
+          // Calculate stats for single user
+          const userIds = [profile.user_id];
+          const logsThisWeek = await getLogsThisWeek(supabase, userIds, timezone);
+          const lastLogRelative = await getLastLogRelative(supabase, userIds);
+          const yearTotal = await getYearTotal(supabase, userIds);
+          const streakWeeks = await getStreakWeeks(supabase, userIds);
+          const paceLabel = getPaceLabel(yearTotal);
+          
+          const emailData = {
+            logsThisWeek,
+            lastLogRelative,
+            streakWeeks,
+            yearTotal,
+            paceLabel
+          };
+          
+          const subjects = isNystart ? subjectsNystart : subjectsStandard;
+          const subject = subjects[Math.floor(Math.random() * subjects.length)];
+          
+          const plainText = getPlainText(isNystart, emailData);
+          const html = getHtml(plainText);
+          
+          const emailResponse = await resend.emails.send({
+            from: "fiftytwoormore <digest@updates.lindaninc.com>",
+            to: [authUser.user.email],
+            subject,
+            text: plainText,
+            html
+          });
+          
+          console.log(`Email sent to uncoupled user ${authUser.user.email}:`, emailResponse);
+          
+          if (emailResponse.error) {
+            console.error(`Failed to send to ${authUser.user.email}:`, emailResponse.error);
+            results.push({ 
+              userId: profile.user_id, 
+              email: authUser.user.email,
+              type: isNystart ? 'nystart' : 'standard',
+              success: false, 
+              error: emailResponse.error.message 
+            });
+          } else {
+            await supabase
+              .from('email_digest_log')
+              .insert({
+                user_id: profile.user_id,
+                type: isNystart ? 'digest-nystart' : 'digest',
+                week_number: weekNumber,
+                year
+              });
+            
+            results.push({ 
+              userId: profile.user_id, 
+              email: authUser.user.email,
+              type: isNystart ? 'nystart' : 'standard',
+              success: true 
+            });
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, 600));
+          
+        } catch (userError) {
+          console.error(`Error for uncoupled user ${profile.user_id}:`, userError);
+          results.push({ 
+            userId: profile.user_id, 
+            success: false, 
+            error: userError instanceof Error ? userError.message : String(userError)
+          });
+        }
       }
     }
     
@@ -327,7 +530,7 @@ const handler = async (req: Request): Promise<Response> => {
     
     return new Response(
       JSON.stringify({ 
-        message: `Processed ${profiles?.length || 0} users: ${successful.length} sent, ${failed.length} failed`,
+        message: `Processed ${couples?.length || 0} couples and ${allProfiles?.length || 0} total profiles: ${successful.length} sent, ${failed.length} failed`,
         sent: successful.length,
         failed: failed.length,
         results 

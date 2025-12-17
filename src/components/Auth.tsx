@@ -87,38 +87,8 @@ export default function Auth() {
           });
           if (error) throw error;
           
-          // Check beta status and add role if beta user
-          if (signUpData.user) {
-            try {
-              const betaResponse = await fetch('https://jirxaotwaifkdpzinbdb.supabase.co/functions/v1/check-beta-status', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email: result.data.email }),
-              });
-
-              const betaData = await betaResponse.json();
-              
-              if (betaData.isBetaUser) {
-                // Add beta_user role (requires service role, will be added via database trigger or admin action)
-                // Update profile with beta info for reference
-                await supabase
-                  .from('profiles')
-                  .update({
-                    beta_signup_date: betaData.signupDate,
-                    beta_partner_name: betaData.partnerName,
-                    name: betaData.name || result.data.name
-                  })
-                  .eq('user_id', signUpData.user.id);
-                
-                // Note: Beta user role should be added by an admin or via a secure edge function
-                // Users cannot insert their own roles due to RLS policies
-              }
-            } catch (betaError) {
-              console.error('Error checking beta status:', betaError);
-            }
-          }
+          // Beta status is stored in profiles table and checked via authenticated queries
+          // No external unauthenticated API calls needed
           
           // Send welcome email
           try {
@@ -147,43 +117,19 @@ export default function Auth() {
           });
           if (error) throw error;
 
-          // Check beta status on sign in
+          // Check beta status from authenticated profile query
           if (signInData.user) {
             try {
-              const betaResponse = await fetch('https://jirxaotwaifkdpzinbdb.supabase.co/functions/v1/check-beta-status', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email: result.data.email }),
-              });
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('is_beta_user, name')
+                .eq('user_id', signInData.user.id)
+                .single();
 
-              const betaData = await betaResponse.json();
-              
-              if (betaData.isBetaUser) {
-                // Fetch current profile to check if already updated
-                const { data: profile } = await supabase
-                  .from('profiles')
-                  .select('is_beta_user')
-                  .eq('user_id', signInData.user.id)
-                  .single();
-
-                // Update profile with beta info if not already done
-                if (!profile?.is_beta_user) {
-                  await supabase
-                    .from('profiles')
-                    .update({
-                      is_beta_user: true,
-                      beta_signup_date: betaData.signupDate,
-                      beta_partner_name: betaData.partnerName,
-                      name: betaData.name
-                    })
-                    .eq('user_id', signInData.user.id);
-                }
-
+              if (profile?.is_beta_user) {
                 toast({
                   title: "Welcome back, Beta Tester! 🎉",
-                  description: `Thank you for being part of our beta program${betaData.name ? ', ' + betaData.name : ''}!`,
+                  description: `Thank you for being part of our beta program${profile.name ? ', ' + profile.name : ''}!`,
                   duration: 6000,
                 });
               }

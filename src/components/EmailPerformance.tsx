@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { RefreshCw, Mail, CheckCircle, MousePointer, AlertTriangle, Eye } from "lucide-react";
+import { RefreshCw, Mail, CheckCircle, MousePointer, AlertTriangle, Eye, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 
 interface Summary {
   totals: {
@@ -48,6 +49,14 @@ interface RecentEmail {
   clicked: boolean;
 }
 
+interface Couple {
+  id: string;
+  user1_name: string;
+  user2_name: string;
+}
+
+type SendEmailType = "weekly-digest" | "midweek-nudge";
+
 export default function EmailPerformance() {
   const [range, setRange] = useState("30d");
   const [emailType, setEmailType] = useState("all");
@@ -55,6 +64,10 @@ export default function EmailPerformance() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [recent, setRecent] = useState<RecentEmail[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [couples, setCouples] = useState<Couple[]>([]);
+  const [selectedCouple, setSelectedCouple] = useState<string>("all");
+  const [sendEmailType, setSendEmailType] = useState<SendEmailType>("weekly-digest");
   const { toast } = useToast();
 
   const fetchData = async () => {
@@ -97,7 +110,75 @@ export default function EmailPerformance() {
 
   useEffect(() => {
     fetchData();
+    fetchCouples();
   }, [range, emailType, variant]);
+
+  const fetchCouples = async () => {
+    try {
+      const { data: couplesData, error } = await supabase
+        .from('couples')
+        .select('id, user1_id, user2_id');
+      
+      if (error) throw error;
+      
+      const userIds = (couplesData || []).flatMap(c => [c.user1_id, c.user2_id]);
+      
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, name')
+        .in('user_id', userIds);
+      
+      const profileMap = new Map(
+        (profiles || []).map(p => [p.user_id, p.name || 'Unknown'])
+      );
+      
+      const couplesWithNames = (couplesData || []).map(couple => ({
+        id: couple.id,
+        user1_name: profileMap.get(couple.user1_id) || 'Unknown',
+        user2_name: profileMap.get(couple.user2_id) || 'Unknown',
+      }));
+      
+      setCouples(couplesWithNames);
+    } catch (error) {
+      console.error("Error fetching couples:", error);
+    }
+  };
+
+  const handleSendEmail = async () => {
+    try {
+      setSendingEmail(true);
+      
+      const functionName = sendEmailType === "weekly-digest" 
+        ? "send-digest-manual" 
+        : "send-midweek-nudge-manual";
+      
+      const body = selectedCouple !== "all" ? { couple_id: selectedCouple } : undefined;
+      const { data, error } = await supabase.functions.invoke(functionName, { body });
+      
+      if (error) throw error;
+      
+      const emailLabel = sendEmailType === "weekly-digest" ? "Weekly Digest" : "Mid-week Nudge";
+      
+      toast({
+        title: `${emailLabel} Sent`,
+        description: selectedCouple !== "all"
+          ? `Successfully sent ${emailLabel.toLowerCase()} to selected couple`
+          : `Successfully sent ${data?.successful || data?.sent || 0} ${emailLabel.toLowerCase()} emails`,
+      });
+      
+      console.log("Email result:", data);
+      fetchData(); // Refresh the data after sending
+    } catch (error) {
+      console.error("Error sending email:", error);
+      toast({
+        title: "Error",
+        description: `Failed to send ${sendEmailType === "weekly-digest" ? "digest" : "nudge"} emails`,
+        variant: "destructive",
+      });
+    } finally {
+      setSendingEmail(false);
+    }
+  };
 
   const formatPercent = (val: number) => `${(val * 100).toFixed(1)}%`;
   const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString();
@@ -121,6 +202,60 @@ export default function EmailPerformance() {
 
   return (
     <div className="space-y-6">
+      {/* Send Email Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Send className="h-5 w-5" />
+            Send Email
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <Label className="mb-2 block">Email Type</Label>
+              <Select value={sendEmailType} onValueChange={(v) => setSendEmailType(v as SendEmailType)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="weekly-digest">Weekly Digest (Saturday)</SelectItem>
+                  <SelectItem value="midweek-nudge">Mid-week Nudge (Wednesday)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="mb-2 block">Select Couple (optional)</Label>
+              <Select value={selectedCouple} onValueChange={setSelectedCouple}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All couples" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All couples</SelectItem>
+                  {couples.map((couple) => (
+                    <SelectItem key={couple.id} value={couple.id}>
+                      {couple.user1_name} & {couple.user2_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end">
+              <Button 
+                onClick={handleSendEmail}
+                disabled={sendingEmail}
+                className="w-full"
+              >
+                {sendingEmail 
+                  ? "Sending..." 
+                  : selectedCouple !== "all" 
+                    ? `Send ${sendEmailType === "weekly-digest" ? "Digest" : "Nudge"} to Selected` 
+                    : `Send ${sendEmailType === "weekly-digest" ? "Digest" : "Nudge"} to All`}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
       {/* Header Controls */}
       <div className="flex flex-wrap gap-4 items-center">
         <Select value={range} onValueChange={setRange}>

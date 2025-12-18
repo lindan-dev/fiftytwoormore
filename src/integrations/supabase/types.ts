@@ -94,8 +94,10 @@ export type Database = {
           created_at: string | null
           id: string
           sent_at: string | null
+          subject: string | null
           type: string
           user_id: string
+          variant_key: string | null
           week_number: number
           year: number
         }
@@ -103,8 +105,10 @@ export type Database = {
           created_at?: string | null
           id?: string
           sent_at?: string | null
+          subject?: string | null
           type: string
           user_id: string
+          variant_key?: string | null
           week_number: number
           year: number
         }
@@ -112,8 +116,10 @@ export type Database = {
           created_at?: string | null
           id?: string
           sent_at?: string | null
+          subject?: string | null
           type?: string
           user_id?: string
+          variant_key?: string | null
           week_number?: number
           year?: number
         }

@@ -232,14 +232,55 @@ fiftytwoormore
 Helping couples stay… consistent.`;
 }
 
-function getHtml(text: string): string {
+function getHtml(text: string, messageId?: string, userId?: string, emailType?: string, variantKey?: string): string {
+  // Build CTA link with click tracking if messageId provided
+  let ctaHtml = '';
+  if (messageId && userId) {
+    const trackingUrl = `https://uuijigmwkpmakltymkqe.supabase.co/functions/v1/email-click-tracker?mid=${encodeURIComponent(messageId)}&u=${encodeURIComponent(userId)}&type=${encodeURIComponent(emailType || 'digest')}&v=${encodeURIComponent(variantKey || '')}`;
+    ctaHtml = `<p style="margin-top: 24px;"><a href="${trackingUrl}" style="color: #2754C5; text-decoration: underline;">Open fiftytwoormore →</a></p>`;
+  }
+  
   return `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
   <pre style="white-space: pre-wrap; font-family: sans-serif;">${text}</pre>
+  ${ctaHtml}
 </body>
 </html>`;
+}
+
+async function logEmailSent(supabase: any, params: {
+  userId: string;
+  type: string;
+  variantKey?: string;
+  subject: string;
+  weekNumber: number;
+  year: number;
+  messageId: string;
+}) {
+  const { userId, type, variantKey, subject, weekNumber, year, messageId } = params;
+  
+  // Insert into email_digest_log
+  await supabase.from('email_digest_log').insert({
+    user_id: userId,
+    type,
+    variant_key: variantKey,
+    subject,
+    week_number: weekNumber,
+    year,
+    message_id: messageId
+  });
+  
+  // Insert sent event into email_events
+  await supabase.from('email_events').insert({
+    message_id: messageId,
+    user_id: userId,
+    type,
+    variant_key: variantKey,
+    event: 'sent',
+    event_at: new Date().toISOString()
+  });
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -349,10 +390,11 @@ const handler = async (req: Request): Promise<Response> => {
         // Select random subject
         const subjects = isNystart ? subjectsNystart : subjectsStandard;
         const subject = subjects[Math.floor(Math.random() * subjects.length)];
+        const emailType = isNystart ? 'digest-nystart' : 'digest';
         
-        // Generate email content
+        // Generate email content (without tracking link yet - need messageId first)
         const plainText = getPlainText(isNystart, emailData);
-        const html = getHtml(plainText);
+        const htmlWithoutTracking = getHtml(plainText);
         
         // Send ONE email to BOTH partners
         const emailResponse = await resend.emails.send({
@@ -360,7 +402,7 @@ const handler = async (req: Request): Promise<Response> => {
           to: emails,
           subject,
           text: plainText,
-          html
+          html: htmlWithoutTracking
         });
         
         console.log(`Email sent to couple ${couple.id} (${emails.join(', ')}):`, emailResponse);
@@ -371,25 +413,28 @@ const handler = async (req: Request): Promise<Response> => {
           results.push({ 
             coupleId: couple.id,
             emails,
-            type: isNystart ? 'nystart' : 'standard',
+            type: emailType,
             success: false, 
             error: emailResponse.error.message 
           });
         } else {
-          // Log successful send
-          await supabase
-            .from('email_digest_log')
-            .insert({
-              user_id: couple.user1_id,
-              type: isNystart ? 'digest-nystart' : 'digest',
-              week_number: weekNumber,
-              year
-            });
+          const messageId = emailResponse.data?.id;
+          
+          // Log successful send with messageId
+          await logEmailSent(supabase, {
+            userId: couple.user1_id,
+            type: emailType,
+            subject,
+            weekNumber,
+            year,
+            messageId: messageId || `manual-${Date.now()}`
+          });
           
           results.push({ 
             coupleId: couple.id,
             emails,
-            type: isNystart ? 'nystart' : 'standard',
+            type: emailType,
+            messageId,
             success: true 
           });
         }
@@ -471,6 +516,7 @@ const handler = async (req: Request): Promise<Response> => {
           
           const subjects = isNystart ? subjectsNystart : subjectsStandard;
           const subject = subjects[Math.floor(Math.random() * subjects.length)];
+          const emailType = isNystart ? 'digest-nystart' : 'digest';
           
           const plainText = getPlainText(isNystart, emailData);
           const html = getHtml(plainText);
@@ -490,24 +536,27 @@ const handler = async (req: Request): Promise<Response> => {
             results.push({ 
               userId: profile.user_id, 
               email: authUser.user.email,
-              type: isNystart ? 'nystart' : 'standard',
+              type: emailType,
               success: false, 
               error: emailResponse.error.message 
             });
           } else {
-            await supabase
-              .from('email_digest_log')
-              .insert({
-                user_id: profile.user_id,
-                type: isNystart ? 'digest-nystart' : 'digest',
-                week_number: weekNumber,
-                year
-              });
+            const messageId = emailResponse.data?.id;
+            
+            await logEmailSent(supabase, {
+              userId: profile.user_id,
+              type: emailType,
+              subject,
+              weekNumber,
+              year,
+              messageId: messageId || `manual-${Date.now()}`
+            });
             
             results.push({ 
               userId: profile.user_id, 
               email: authUser.user.email,
-              type: isNystart ? 'nystart' : 'standard',
+              type: emailType,
+              messageId,
               success: true 
             });
           }

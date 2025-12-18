@@ -254,14 +254,52 @@ function selectSubject(variant: NudgeVariant, weekNumber: number): string {
   return variant.subjects[subjectIndex];
 }
 
-function getHtml(text: string): string {
+function getHtml(text: string, messageId?: string, userId?: string, emailType?: string, variantKey?: string): string {
+  let ctaHtml = '';
+  if (messageId && userId) {
+    const trackingUrl = `https://uuijigmwkpmakltymkqe.supabase.co/functions/v1/email-click-tracker?mid=${encodeURIComponent(messageId)}&u=${encodeURIComponent(userId)}&type=${encodeURIComponent(emailType || 'midweek-nudge')}&v=${encodeURIComponent(variantKey || '')}`;
+    ctaHtml = `<p style="margin-top: 24px;"><a href="${trackingUrl}" style="color: #2754C5; text-decoration: underline;">Open fiftytwoormore →</a></p>`;
+  }
+  
   return `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
   <pre style="white-space: pre-wrap; font-family: sans-serif;">${text}</pre>
+  ${ctaHtml}
 </body>
 </html>`;
+}
+
+async function logEmailSent(supabase: any, params: {
+  userId: string;
+  type: string;
+  variantKey?: string;
+  subject: string;
+  weekNumber: number;
+  year: number;
+  messageId: string;
+}) {
+  const { userId, type, variantKey, subject, weekNumber, year, messageId } = params;
+  
+  await supabase.from('email_digest_log').insert({
+    user_id: userId,
+    type,
+    variant_key: variantKey,
+    subject,
+    week_number: weekNumber,
+    year,
+    message_id: messageId
+  });
+  
+  await supabase.from('email_events').insert({
+    message_id: messageId,
+    user_id: userId,
+    type,
+    variant_key: variantKey,
+    event: 'sent',
+    event_at: new Date().toISOString()
+  });
 }
 
 // ============ Main Handler ============
@@ -388,23 +426,25 @@ const handler = async (req: Request): Promise<Response> => {
             error: emailResponse.error.message 
           });
         } else {
+          const messageId = emailResponse.data?.id;
+          
           // Log successful send with variant info
-          await supabase
-            .from('email_digest_log')
-            .insert({
-              user_id: couple.user1_id,
-              type: 'midweek-nudge',
-              week_number: weekNumber,
-              year,
-              variant_key: variant.key,
-              subject
-            });
+          await logEmailSent(supabase, {
+            userId: couple.user1_id,
+            type: 'midweek-nudge',
+            variantKey: variant.key,
+            subject,
+            weekNumber,
+            year,
+            messageId: messageId || `manual-${Date.now()}`
+          });
           
           results.push({ 
             coupleId: couple.id,
             emails,
             variant: variant.key,
             subject,
+            messageId,
             success: true 
           });
         }
@@ -496,22 +536,24 @@ const handler = async (req: Request): Promise<Response> => {
               error: emailResponse.error.message 
             });
           } else {
-            await supabase
-              .from('email_digest_log')
-              .insert({
-                user_id: profile.user_id,
-                type: 'midweek-nudge',
-                week_number: weekNumber,
-                year,
-                variant_key: variant.key,
-                subject
-              });
+            const messageId = emailResponse.data?.id;
+            
+            await logEmailSent(supabase, {
+              userId: profile.user_id,
+              type: 'midweek-nudge',
+              variantKey: variant.key,
+              subject,
+              weekNumber,
+              year,
+              messageId: messageId || `manual-${Date.now()}`
+            });
             
             results.push({ 
               userId: profile.user_id, 
               email: authUser.user.email,
               variant: variant.key,
               subject,
+              messageId,
               success: true 
             });
           }

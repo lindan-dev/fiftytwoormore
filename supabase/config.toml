@@ -12,6 +12,15 @@ verify_jwt = false
 [functions.send-midweek-nudge-manual]
 verify_jwt = false
 
+[functions.email-click-tracker]
+verify_jwt = false
+
+[functions.resend-webhook]
+verify_jwt = false
+
+[functions.email-metrics]
+verify_jwt = false
+
 [functions.get-vapid-key]
 verify_jwt = false
 

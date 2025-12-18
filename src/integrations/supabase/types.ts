@@ -93,6 +93,7 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          message_id: string | null
           sent_at: string | null
           subject: string | null
           type: string
@@ -104,6 +105,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
+          message_id?: string | null
           sent_at?: string | null
           subject?: string | null
           type: string
@@ -115,6 +117,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
+          message_id?: string | null
           sent_at?: string | null
           subject?: string | null
           type?: string
@@ -122,6 +125,42 @@ export type Database = {
           variant_key?: string | null
           week_number?: number
           year?: number
+        }
+        Relationships: []
+      }
+      email_events: {
+        Row: {
+          created_at: string
+          event: string
+          event_at: string
+          id: string
+          message_id: string
+          metadata: Json | null
+          type: string
+          user_id: string
+          variant_key: string | null
+        }
+        Insert: {
+          created_at?: string
+          event: string
+          event_at?: string
+          id?: string
+          message_id: string
+          metadata?: Json | null
+          type: string
+          user_id: string
+          variant_key?: string | null
+        }
+        Update: {
+          created_at?: string
+          event?: string
+          event_at?: string
+          id?: string
+          message_id?: string
+          metadata?: Json | null
+          type?: string
+          user_id?: string
+          variant_key?: string | null
         }
         Relationships: []
       }

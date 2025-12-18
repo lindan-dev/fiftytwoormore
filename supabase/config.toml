@@ -9,6 +9,9 @@ verify_jwt = false
 [functions.send-midweek-nudge]
 verify_jwt = false
 
+[functions.send-midweek-nudge-manual]
+verify_jwt = false
+
 [functions.get-vapid-key]
 verify_jwt = false
 

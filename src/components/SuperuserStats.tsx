@@ -7,6 +7,7 @@ import { format, subDays, startOfDay } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 interface StatsData {
   date: string;
@@ -22,12 +23,15 @@ interface Couple {
   user2_name: string;
 }
 
+type EmailType = "weekly-digest" | "midweek-nudge";
+
 export default function SuperuserStats() {
   const [statsData, setStatsData] = useState<StatsData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sendingDigest, setSendingDigest] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
   const [couples, setCouples] = useState<Couple[]>([]);
   const [selectedCouple, setSelectedCouple] = useState<string>("all");
+  const [emailType, setEmailType] = useState<EmailType>("weekly-digest");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -171,32 +175,38 @@ export default function SuperuserStats() {
     }
   };
 
-  const handleSendDigest = async () => {
+  const handleSendEmail = async () => {
     try {
-      setSendingDigest(true);
+      setSendingEmail(true);
+      
+      const functionName = emailType === "weekly-digest" 
+        ? "send-digest-manual" 
+        : "send-midweek-nudge-manual";
       
       const body = selectedCouple !== "all" ? { couple_id: selectedCouple } : undefined;
-      const { data, error } = await supabase.functions.invoke("send-digest-manual", { body });
+      const { data, error } = await supabase.functions.invoke(functionName, { body });
       
       if (error) throw error;
       
+      const emailLabel = emailType === "weekly-digest" ? "Weekly Digest" : "Mid-week Nudge";
+      
       toast({
-        title: "Digest Sent",
+        title: `${emailLabel} Sent`,
         description: selectedCouple !== "all"
-          ? `Successfully sent digest to selected couple`
-          : `Successfully sent ${data?.sent || 0} digest emails`,
+          ? `Successfully sent ${emailLabel.toLowerCase()} to selected couple`
+          : `Successfully sent ${data?.successful || data?.sent || 0} ${emailLabel.toLowerCase()} emails`,
       });
       
-      console.log("Digest result:", data);
+      console.log("Email result:", data);
     } catch (error) {
-      console.error("Error sending digest:", error);
+      console.error("Error sending email:", error);
       toast({
         title: "Error",
-        description: "Failed to send digest emails",
+        description: `Failed to send ${emailType === "weekly-digest" ? "digest" : "nudge"} emails`,
         variant: "destructive",
       });
     } finally {
-      setSendingDigest(false);
+      setSendingEmail(false);
     }
   };
 
@@ -214,12 +224,24 @@ export default function SuperuserStats() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Send className="h-5 w-5" />
-            Weekly Digest Email
+            Send Email
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="text-sm font-medium mb-2 block">Select Couple (optional)</label>
+            <Label className="mb-2 block">Email Type</Label>
+            <Select value={emailType} onValueChange={(v) => setEmailType(v as EmailType)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="weekly-digest">Weekly Digest (Saturday)</SelectItem>
+                <SelectItem value="midweek-nudge">Mid-week Nudge (Wednesday)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="mb-2 block">Select Couple (optional)</Label>
             <Select value={selectedCouple} onValueChange={setSelectedCouple}>
               <SelectTrigger>
                 <SelectValue placeholder="All couples" />
@@ -235,11 +257,15 @@ export default function SuperuserStats() {
             </Select>
           </div>
           <Button 
-            onClick={handleSendDigest}
-            disabled={sendingDigest}
+            onClick={handleSendEmail}
+            disabled={sendingEmail}
             className="w-full"
           >
-            {sendingDigest ? "Sending..." : selectedCouple !== "all" ? "Send to Selected Couple" : "Send to All"}
+            {sendingEmail 
+              ? "Sending..." 
+              : selectedCouple !== "all" 
+                ? `Send ${emailType === "weekly-digest" ? "Digest" : "Nudge"} to Selected` 
+                : `Send ${emailType === "weekly-digest" ? "Digest" : "Nudge"} to All`}
           </Button>
         </CardContent>
       </Card>

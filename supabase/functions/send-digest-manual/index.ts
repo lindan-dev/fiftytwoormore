@@ -223,12 +223,18 @@ fiftytwoormore
 Helping couples stay… consistent.`;
 }
 
-function getHtml(text: string): string {
+function getHtml(text: string, trackingParams?: { messageId: string; userId: string; emailType: string; variantKey?: string }): string {
+  let ctaHtml = '';
+  if (trackingParams) {
+    const trackingUrl = `https://uuijigmwkpmakltymkqe.supabase.co/functions/v1/email-click-tracker?mid=${encodeURIComponent(trackingParams.messageId)}&u=${encodeURIComponent(trackingParams.userId)}&type=${encodeURIComponent(trackingParams.emailType)}&v=${encodeURIComponent(trackingParams.variantKey || '')}`;
+    ctaHtml = `<p style="margin-top: 24px;"><a href="${trackingUrl}" style="color: #2754C5; text-decoration: underline; font-family: sans-serif;">Open fiftytwoormore →</a></p>`;
+  }
   return `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
   <pre style="white-space: pre-wrap; font-family: sans-serif;">${text}</pre>
+  ${ctaHtml}
 </body>
 </html>`;
 }
@@ -323,10 +329,19 @@ const handler = async (req: Request): Promise<Response> => {
         // Select random subject
         const subjects = isNystart ? subjectsNystart : subjectsStandard;
         const subject = subjects[Math.floor(Math.random() * subjects.length)];
+        const variantKey = isNystart ? 'nystart' : 'standard';
         
-        // Generate email content
+        // Generate a tracking ID for the CTA (we'll use this before we have the Resend messageId)
+        const trackingId = crypto.randomUUID();
+        
+        // Generate email content with CTA tracking
         const plainText = getPlainText(isNystart, emailData);
-        const html = getHtml(plainText);
+        const html = getHtml(plainText, {
+          messageId: trackingId,
+          userId: couple.user1_id,
+          emailType: 'digest-manual',
+          variantKey
+        });
         
         // Send ONE email to BOTH partners
         const emailResponse = await resend.emails.send({
@@ -350,20 +365,38 @@ const handler = async (req: Request): Promise<Response> => {
             error: emailResponse.error.message 
           });
         } else {
-          // Log successful send (using first user_id)
+          const resendMessageId = emailResponse.data?.id;
+          
+          // Log successful send with both tracking ID and Resend message ID
           await supabase
             .from('email_digest_log')
             .insert({
               user_id: couple.user1_id,
               type: isNystart ? 'digest-nystart' : 'digest',
               week_number: weekNumber,
-              year
+              year,
+              message_id: trackingId,
+              variant_key: variantKey,
+              subject
+            });
+          
+          // Also log to email_events for tracking
+          await supabase
+            .from('email_events')
+            .insert({
+              message_id: trackingId,
+              user_id: couple.user1_id,
+              type: 'digest-manual',
+              variant_key: variantKey,
+              event: 'sent',
+              metadata: { resend_id: resendMessageId, emails }
             });
           
           results.push({ 
             coupleId: couple.id,
             emails,
             type: isNystart ? 'nystart' : 'standard',
+            trackingId,
             success: true 
           });
         }
@@ -419,9 +452,18 @@ const handler = async (req: Request): Promise<Response> => {
           
           const subjects = isNystart ? subjectsNystart : subjectsStandard;
           const subject = subjects[Math.floor(Math.random() * subjects.length)];
+          const variantKey = isNystart ? 'nystart' : 'standard';
+          
+          // Generate tracking ID for CTA
+          const trackingId = crypto.randomUUID();
           
           const plainText = getPlainText(isNystart, emailData);
-          const html = getHtml(plainText);
+          const html = getHtml(plainText, {
+            messageId: trackingId,
+            userId: profile.user_id,
+            emailType: 'digest-manual',
+            variantKey
+          });
           
           const emailResponse = await resend.emails.send({
             from: "fiftytwoormore <digest@updates.lindaninc.com>",
@@ -443,19 +485,37 @@ const handler = async (req: Request): Promise<Response> => {
               error: emailResponse.error.message 
             });
           } else {
+            const resendMessageId = emailResponse.data?.id;
+            
             await supabase
               .from('email_digest_log')
               .insert({
                 user_id: profile.user_id,
                 type: isNystart ? 'digest-nystart' : 'digest',
                 week_number: weekNumber,
-                year
+                year,
+                message_id: trackingId,
+                variant_key: variantKey,
+                subject
+              });
+            
+            // Also log to email_events for tracking
+            await supabase
+              .from('email_events')
+              .insert({
+                message_id: trackingId,
+                user_id: profile.user_id,
+                type: 'digest-manual',
+                variant_key: variantKey,
+                event: 'sent',
+                metadata: { resend_id: resendMessageId, email: authUser.user.email }
               });
             
             results.push({ 
               userId: profile.user_id, 
               email: authUser.user.email,
               type: isNystart ? 'nystart' : 'standard',
+              trackingId,
               success: true 
             });
           }

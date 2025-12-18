@@ -250,12 +250,18 @@ function selectSubject(variant: NudgeVariant, weekNumber: number): string {
   return variant.subjects[subjectIndex];
 }
 
-function getHtml(text: string): string {
+function getHtml(text: string, trackingParams?: { messageId: string; userId: string; emailType: string; variantKey?: string }): string {
+  let ctaHtml = '';
+  if (trackingParams) {
+    const trackingUrl = `https://uuijigmwkpmakltymkqe.supabase.co/functions/v1/email-click-tracker?mid=${encodeURIComponent(trackingParams.messageId)}&u=${encodeURIComponent(trackingParams.userId)}&type=${encodeURIComponent(trackingParams.emailType)}&v=${encodeURIComponent(trackingParams.variantKey || '')}`;
+    ctaHtml = `<p style="margin-top: 24px;"><a href="${trackingUrl}" style="color: #2754C5; text-decoration: underline; font-family: sans-serif;">Open fiftytwoormore →</a></p>`;
+  }
   return `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
 <body style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
   <pre style="white-space: pre-wrap; font-family: sans-serif;">${text}</pre>
+  ${ctaHtml}
 </body>
 </html>`;
 }
@@ -344,9 +350,17 @@ const handler = async (req: Request): Promise<Response> => {
         
         console.log(`Couple ${couple.id}: logsThisWeek=${logsThisWeek}, variant=${variant.key}, subject="${subject}"`);
         
-        // Generate email content
+        // Generate tracking ID for CTA
+        const trackingId = crypto.randomUUID();
+        
+        // Generate email content with CTA tracking
         const plainText = variant.body;
-        const html = getHtml(plainText);
+        const html = getHtml(plainText, {
+          messageId: trackingId,
+          userId: couple.user1_id,
+          emailType: 'midweek-nudge-manual',
+          variantKey: variant.key
+        });
         
         // Send ONE email to BOTH partners
         const emailResponse = await resend.emails.send({
@@ -369,7 +383,9 @@ const handler = async (req: Request): Promise<Response> => {
             error: emailResponse.error.message 
           });
         } else {
-          // Log successful send (mark as manual)
+          const resendMessageId = emailResponse.data?.id;
+          
+          // Log successful send with tracking info
           await supabase
             .from('email_digest_log')
             .insert({
@@ -378,7 +394,20 @@ const handler = async (req: Request): Promise<Response> => {
               week_number: weekNumber,
               year,
               variant_key: variant.key,
-              subject
+              subject,
+              message_id: trackingId
+            });
+          
+          // Also log to email_events for tracking
+          await supabase
+            .from('email_events')
+            .insert({
+              message_id: trackingId,
+              user_id: couple.user1_id,
+              type: 'midweek-nudge-manual',
+              variant_key: variant.key,
+              event: 'sent',
+              metadata: { resend_id: resendMessageId, emails }
             });
           
           results.push({ 
@@ -386,6 +415,7 @@ const handler = async (req: Request): Promise<Response> => {
             emails,
             variant: variant.key,
             subject,
+            trackingId,
             success: true 
           });
         }

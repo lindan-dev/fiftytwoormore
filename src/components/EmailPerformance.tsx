@@ -29,21 +29,21 @@ interface StatCardProps {
 }
 
 const StatCard = ({ icon, label, value, tooltip, valueClassName }: StatCardProps) => (
-  <Card>
-    <CardContent className="pt-4">
-      <div className="flex items-center gap-2 text-muted-foreground text-sm">
+  <Card className="min-w-0">
+    <CardContent className="pt-4 text-center">
+      <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm">
         {icon}
-        <span>{label}</span>
+        <span className="truncate">{label}</span>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Info className="h-3.5 w-3.5 cursor-help opacity-50 hover:opacity-100 transition-opacity" />
+            <Info className="h-3.5 w-3.5 flex-shrink-0 cursor-help opacity-50 hover:opacity-100 transition-opacity" />
           </TooltipTrigger>
           <TooltipContent className="max-w-xs">
             <p>{tooltip}</p>
           </TooltipContent>
         </Tooltip>
       </div>
-      <div className={`text-2xl font-bold ${valueClassName || ""}`}>{value}</div>
+      <div className={`text-2xl font-bold mt-1 ${valueClassName || ""}`}>{value}</div>
     </CardContent>
   </Card>
 );
@@ -343,7 +343,7 @@ export default function EmailPerformance() {
 
         {/* KPI Tiles */}
         {summary && (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             <StatCard 
               icon={<Mail className="h-4 w-4" />}
               label="Sent"

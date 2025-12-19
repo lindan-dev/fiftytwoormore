@@ -395,7 +395,8 @@ const handler = async (req: Request): Promise<Response> => {
               year,
               variant_key: variant.key,
               subject,
-              message_id: trackingId
+              message_id: trackingId,
+              resend_message_id: resendMessageId
             });
           
           // Also log to email_events for tracking

@@ -74,11 +74,11 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
     
-    // Look up the original email log to get user_id and type
+    // Look up the original email log by Resend's message ID to get user_id, type, and our tracking message_id
     const { data: emailLog, error: lookupError } = await supabase
       .from("email_digest_log")
-      .select("user_id, type, variant_key")
-      .eq("message_id", messageId)
+      .select("user_id, type, variant_key, message_id")
+      .eq("resend_message_id", messageId)
       .maybeSingle();
     
     if (lookupError) {
@@ -98,11 +98,14 @@ const handler = async (req: Request): Promise<Response> => {
       metadata.click_url = data.click.link;
     }
     
+    // Use our tracking message_id if found, otherwise fall back to Resend's message ID
+    const trackingMessageId = emailLog?.message_id || messageId;
+    
     // Insert event (upsert to handle duplicates)
     const { error: insertError } = await supabase
       .from("email_events")
       .upsert({
-        message_id: messageId,
+        message_id: trackingMessageId,
         user_id: emailLog?.user_id || "00000000-0000-0000-0000-000000000000",
         type: emailLog?.type || "unknown",
         variant_key: emailLog?.variant_key || null,

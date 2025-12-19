@@ -94,6 +94,7 @@ export type Database = {
           created_at: string | null
           id: string
           message_id: string | null
+          resend_message_id: string | null
           sent_at: string | null
           subject: string | null
           type: string
@@ -106,6 +107,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           message_id?: string | null
+          resend_message_id?: string | null
           sent_at?: string | null
           subject?: string | null
           type: string
@@ -118,6 +120,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           message_id?: string | null
+          resend_message_id?: string | null
           sent_at?: string | null
           subject?: string | null
           type?: string

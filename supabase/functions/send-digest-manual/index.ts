@@ -72,11 +72,27 @@ async function getLastLogRelative(supabase: any, userIds: string[]): Promise<str
   
   const lastLog = new Date(data.activity_date);
   const now = new Date();
+  
+  // Use ISO week comparison instead of 168 hours
+  const lastLogWeek = getWeekNumber(lastLog);
+  const lastLogYear = lastLog.getFullYear();
+  const currentWeek = getWeekNumber(now);
+  const currentYear = now.getFullYear();
+  
   const diffHours = (now.getTime() - lastLog.getTime()) / (1000 * 60 * 60);
+  const diffDays = Math.floor(diffHours / 24);
   
   if (diffHours < 24) return "Last night";
-  if (diffHours < 168) return "Earlier this week";
-  return `${Math.floor(diffHours / 24)} days ago`;
+  
+  // Check if same ISO week (Monday-Sunday)
+  if (lastLogYear === currentYear && lastLogWeek === currentWeek) {
+    return "Earlier this week";
+  }
+  
+  // For activities from previous weeks
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 14) return "Last week";
+  return `${diffDays} days ago`;
 }
 
 async function getYearTotal(supabase: any, userIds: string[]): Promise<number> {

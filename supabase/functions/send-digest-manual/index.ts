@@ -104,7 +104,7 @@ async function getStreakWeeks(supabase: any, userIds: string[]): Promise<number>
   
   if (error || !data || data.length === 0) return 0;
   
-  // Group activities by ISO week
+  // Group activities by ISO week using Set for O(1) lookups
   const weekSet = new Set<string>();
   data.forEach((activity: any) => {
     const date = new Date(activity.activity_date);
@@ -113,27 +113,39 @@ async function getStreakWeeks(supabase: any, userIds: string[]): Promise<number>
     weekSet.add(`${year}-W${week}`);
   });
   
-  const weeks = Array.from(weekSet).sort().reverse();
-  
   // Count consecutive weeks from current week backwards
   const now = new Date();
-  let currentYear = now.getFullYear();
-  let currentWeek = getWeekNumber(now);
+  let checkYear = now.getFullYear();
+  let checkWeek = getWeekNumber(now);
   let streak = 0;
   
+  // Check if current week has activity - if so, count it
+  const currentWeekKey = `${checkYear}-W${checkWeek}`;
+  if (weekSet.has(currentWeekKey)) {
+    streak = 1;
+  }
+  
+  // Move to previous week to start counting backwards
+  checkWeek--;
+  if (checkWeek < 1) {
+    checkYear--;
+    checkWeek = getWeekNumber(new Date(checkYear, 11, 31));
+  }
+  
+  // Count consecutive weeks backwards from previous week
   for (let i = 0; i < 52; i++) {
-    const weekKey = `${currentYear}-W${currentWeek}`;
-    if (weeks.includes(weekKey)) {
+    const weekKey = `${checkYear}-W${checkWeek}`;
+    if (weekSet.has(weekKey)) {
       streak++;
     } else {
-      break;
+      break; // Only break when checking past weeks, not current week
     }
     
     // Move to previous week
-    currentWeek--;
-    if (currentWeek < 1) {
-      currentYear--;
-      currentWeek = getWeekNumber(new Date(currentYear, 11, 31));
+    checkWeek--;
+    if (checkWeek < 1) {
+      checkYear--;
+      checkWeek = getWeekNumber(new Date(checkYear, 11, 31));
     }
   }
   

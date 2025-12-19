@@ -372,10 +372,11 @@ const handler = async (req: Request): Promise<Response> => {
             .from('email_digest_log')
             .insert({
               user_id: couple.user1_id,
-              type: isNystart ? 'digest-nystart' : 'digest',
+              type: 'digest-manual',
               week_number: weekNumber,
               year,
               message_id: trackingId,
+              resend_message_id: resendMessageId,
               variant_key: variantKey,
               subject
             });
@@ -491,10 +492,11 @@ const handler = async (req: Request): Promise<Response> => {
               .from('email_digest_log')
               .insert({
                 user_id: profile.user_id,
-                type: isNystart ? 'digest-nystart' : 'digest',
+                type: 'digest-manual',
                 week_number: weekNumber,
                 year,
                 message_id: trackingId,
+                resend_message_id: resendMessageId,
                 variant_key: variantKey,
                 subject
               });

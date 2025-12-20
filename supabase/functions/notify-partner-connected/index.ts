@@ -22,10 +22,40 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { senderId, receiverId }: PartnerAcceptedRequest = await req.json();
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Verify JWT token
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error("Missing Authorization header");
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }), 
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    console.log("Partner accepted - fetching user data");
+    const token = authHeader.replace('Bearer ', '');
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      console.error("Invalid token:", authError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }), 
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { senderId, receiverId }: PartnerAcceptedRequest = await req.json();
+
+    // Verify the authenticated user is either the sender or receiver
+    if (user.id !== senderId && user.id !== receiverId) {
+      console.error("User is not authorized to trigger this notification");
+      return new Response(
+        JSON.stringify({ error: 'Forbidden' }), 
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Partner accepted - fetching user data for authenticated user:", user.id);
 
     // Get sender's email and name
     const { data: senderAuth, error: senderAuthError } = await supabase.auth.admin.getUserById(senderId);
@@ -49,7 +79,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Sender email not found");
     }
 
-    console.log("Sending partner joined email to:", senderAuth.user.email);
+    console.log("Sending partner joined email to admin");
 
     const emailResponse = await resend.emails.send({
       from: "52 or More <onboarding@resend.dev>",

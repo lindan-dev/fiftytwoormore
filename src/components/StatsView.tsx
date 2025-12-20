@@ -484,7 +484,7 @@ export default function StatsView({
       <h2 className="text-xl sm:text-2xl font-bold">Statistics</h2>
       
       {/* Period-based Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <StatCard
           title="This Week"
           current={weekStats.currentCount}
@@ -509,7 +509,7 @@ export default function StatsView({
       {(bestMonth || bestWeek || bestYear) && (
         <>
           <h3 className="text-lg sm:text-xl font-semibold mt-4">Best Periods</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             {bestYear && (
               <Card className="border-2 border-primary/10 hover:border-primary/30 transition-all hover:shadow-soft">
                 <CardContent className="p-3 sm:p-4">

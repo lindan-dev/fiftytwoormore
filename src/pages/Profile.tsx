@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, User, Heart, Trash2, Loader2, UserX } from "lucide-react";
+import { ArrowLeft, User, Heart, Trash2, Loader2, UserX, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { DateInput } from "@/components/DateInput";
+import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,6 +53,7 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [benchmarkOptIn, setBenchmarkOptIn] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -140,6 +142,7 @@ const Profile = () => {
       setProfile(data);
       setName(data.name || "");
       setBirthday(data.birthday || "");
+      setBenchmarkOptIn(data.benchmark_opt_in || false);
     }
   };
 
@@ -524,6 +527,64 @@ const Profile = () => {
             </AlertDialog>
           </Card>
         )}
+
+        {/* Benchmark Settings Card */}
+        <Card className="p-3 sm:p-4 border-2 border-primary/20 shadow-sm">
+          <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-5">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+              <Users className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-semibold text-sm sm:text-base truncate">Benchmarks</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Compare with other couples anonymously
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+              <div className="flex-1 mr-4">
+                <Label htmlFor="benchmark-opt-in" className="text-sm font-medium cursor-pointer">
+                  Compare with other couples
+                </Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  See how your activity compares to similar couples. All data is anonymized.
+                </p>
+              </div>
+              <Switch
+                id="benchmark-opt-in"
+                checked={benchmarkOptIn}
+                onCheckedChange={async (checked) => {
+                  setBenchmarkOptIn(checked);
+                  if (session?.user?.id) {
+                    const { error } = await supabase
+                      .from("profiles")
+                      .update({ benchmark_opt_in: checked })
+                      .eq("user_id", session.user.id);
+                    
+                    if (error) {
+                      console.error("Error updating benchmark opt-in:", error);
+                      setBenchmarkOptIn(!checked);
+                      toast({
+                        title: "Error",
+                        description: "Failed to update benchmark settings",
+                        variant: "destructive",
+                      });
+                    } else {
+                      toast({
+                        title: checked ? "Benchmarks enabled" : "Benchmarks disabled",
+                        description: checked 
+                          ? "You can now see how you compare to similar couples" 
+                          : "Your data will no longer be included in benchmarks",
+                      });
+                    }
+                  }
+                }}
+              />
+            </div>
+          </div>
+        </Card>
 
         {/* Delete Account Card */}
         <Card className="p-3 sm:p-4 border-2 border-destructive/20 shadow-sm">

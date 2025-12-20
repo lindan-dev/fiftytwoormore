@@ -38,6 +38,20 @@ interface Invitation {
   created_at: string;
 }
 
+// Helper to determine relationship length cohort from anniversary
+function getCohortKeyFromAnniversary(anniversary: string): string {
+  const anniversaryDate = new Date(anniversary);
+  const now = new Date();
+  const yearsTogetherMs = now.getTime() - anniversaryDate.getTime();
+  const yearsTogether = yearsTogetherMs / (1000 * 60 * 60 * 24 * 365.25);
+  
+  if (yearsTogether < 1) return 'rel_0-1';
+  if (yearsTogether < 3) return 'rel_1-3';
+  if (yearsTogether < 7) return 'rel_3-7';
+  if (yearsTogether < 15) return 'rel_7-15';
+  return 'rel_15+';
+}
+
 const Index = () => {
   const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
@@ -67,6 +81,20 @@ const Index = () => {
   const [isJoiningViaInvite, setIsJoiningViaInvite] = useState(false);
   const [isBetaUser, setIsBetaUser] = useState(false);
   const [isSuperuser, setIsSuperuser] = useState(false);
+  const [benchmarkOptIn, setBenchmarkOptIn] = useState(false);
+  const [anniversary, setAnniversary] = useState<string | null>(null);
+  const [cohortData, setCohortData] = useState<{
+    cohort_key: string;
+    period: string;
+    period_type: string;
+    couple_count: number | null;
+    median_monthly_count: number | null;
+    median_rolling_4_weeks: number | null;
+    median_consistency_score: number | null;
+    median_streak_length: number | null;
+    p25_monthly_count: number | null;
+    p75_monthly_count: number | null;
+  } | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -206,6 +234,7 @@ const Index = () => {
       if (data) {
         setHasPartner(true);
         setConnectedDate(data.created_at);
+        setAnniversary(data.anniversary || null);
 
         // Get partner's ID
         const partnerId = data.user1_id === session.user.id ? data.user2_id : data.user1_id;
@@ -223,15 +252,32 @@ const Index = () => {
           setPartnerName(partnerProfile.name || "Your Partner");
         }
 
-        // Fetch current user's profile to check beta status
+        // Fetch current user's profile to check beta status and benchmark opt-in
         const { data: myProfile } = await supabase
           .from("profiles")
-          .select("is_beta_user")
+          .select("is_beta_user, benchmark_opt_in")
           .eq("user_id", session.user.id)
           .maybeSingle();
 
         if (myProfile?.is_beta_user) {
           setIsBetaUser(true);
+        }
+        setBenchmarkOptIn(myProfile?.benchmark_opt_in || false);
+
+        // Fetch cohort data if opted in and has anniversary
+        if (myProfile?.benchmark_opt_in && data.anniversary) {
+          const cohortKey = getCohortKeyFromAnniversary(data.anniversary);
+          const currentPeriod = new Date().toISOString().slice(0, 7); // "2025-01" format
+          
+          const { data: cohort } = await supabase
+            .from("benchmark_cohorts")
+            .select("*")
+            .eq("cohort_key", cohortKey)
+            .eq("period_type", "month")
+            .eq("period", currentPeriod)
+            .maybeSingle();
+          
+          setCohortData(cohort);
         }
 
         // Check if user is a superuser
@@ -1157,7 +1203,13 @@ const Index = () => {
             onUpdate={handleUpdateActivity}
           />
         ) : view === "stats" ? (
-          <StatsView activities={activities} compact={false} />
+          <StatsView 
+            activities={activities} 
+            compact={false} 
+            benchmarkOptIn={benchmarkOptIn}
+            anniversary={anniversary}
+            cohortData={cohortData}
+          />
         ) : view === "superuser" && isSuperuser ? (
           <SuperuserStats />
         ) : null}

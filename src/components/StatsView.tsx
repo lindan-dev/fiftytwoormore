@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Minus, Flame, Calendar, Zap, Moon, Sunrise, Coffee, Sun, Sunset, Stars, Activity, Shield, AlertTriangle, CheckCircle } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Flame, Calendar, Zap, Moon, Sunrise, Coffee, Sun, Sunset, Stars, Activity, Shield, AlertTriangle, CheckCircle, Users, ArrowUp, ArrowDown } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -26,14 +26,36 @@ interface Activity {
   activity_date: string;
 }
 
+interface BenchmarkCohort {
+  cohort_key: string;
+  period: string;
+  period_type: string;
+  couple_count: number | null;
+  median_monthly_count: number | null;
+  median_rolling_4_weeks: number | null;
+  median_consistency_score: number | null;
+  median_streak_length: number | null;
+  p25_monthly_count: number | null;
+  p75_monthly_count: number | null;
+}
+
 interface StatsViewProps {
   activities: Activity[];
   compact?: boolean;
+  benchmarkOptIn?: boolean;
+  anniversary?: string | null;
+  cohortData?: BenchmarkCohort | null;
 }
 
 type Period = "week" | "month" | "year";
 
-export default function StatsView({ activities, compact = false }: StatsViewProps) {
+export default function StatsView({ 
+  activities, 
+  compact = false,
+  benchmarkOptIn = false,
+  anniversary = null,
+  cohortData = null
+}: StatsViewProps) {
   const calculateStreaks = useMemo(() => {
     if (activities.length === 0) return { currentStreak: 0, longestStreak: 0 };
 
@@ -700,6 +722,184 @@ export default function StatsView({ activities, compact = false }: StatsViewProp
           color="text-indigo-500"
         />
       </div>
+
+      {/* Benchmarks Section - Only shown when opted in */}
+      {benchmarkOptIn && (
+        <>
+          <h3 className="text-lg sm:text-xl font-semibold mt-4 flex items-center gap-2">
+            <Users className="w-5 h-5 text-primary" />
+            Benchmarks
+          </h3>
+          <p className="text-xs sm:text-sm text-muted-foreground -mt-2">
+            {cohortData 
+              ? `Comparing with couples together ${getCohortLabel(cohortData.cohort_key)}`
+              : anniversary 
+                ? `Comparing with similar couples`
+                : `Set your anniversary in Profile to see cohort comparisons`
+            }
+          </p>
+          
+          {cohortData ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              {/* Monthly Count Comparison */}
+              <Card className="border-2 border-primary/10 hover:border-primary/30 transition-all hover:shadow-soft">
+                <CardContent className="p-4 sm:p-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="text-xs sm:text-sm text-muted-foreground mb-1">This Month</p>
+                      <p className="text-2xl sm:text-3xl font-bold text-primary">{monthStats.currentCount}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-muted-foreground">Cohort median</p>
+                      <p className="text-lg font-semibold text-muted-foreground">
+                        {cohortData.median_monthly_count?.toFixed(1) ?? '—'}
+                      </p>
+                    </div>
+                  </div>
+                  {cohortData.median_monthly_count && (
+                    <div className="flex items-center gap-1 text-xs">
+                      {monthStats.currentCount >= cohortData.median_monthly_count ? (
+                        <>
+                          <ArrowUp className="w-3 h-3 text-green-500" />
+                          <span className="text-green-600">Above cohort median</span>
+                        </>
+                      ) : (
+                        <>
+                          <ArrowDown className="w-3 h-3 text-amber-500" />
+                          <span className="text-amber-600">Slightly under cohort median</span>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Rolling 4 Weeks Comparison */}
+              <Card className="border-2 border-primary/10 hover:border-primary/30 transition-all hover:shadow-soft">
+                <CardContent className="p-4 sm:p-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="text-xs sm:text-sm text-muted-foreground mb-1">Last 4 Weeks</p>
+                      <p className="text-2xl sm:text-3xl font-bold text-primary">{rolling4WeeksCount}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-muted-foreground">Cohort median</p>
+                      <p className="text-lg font-semibold text-muted-foreground">
+                        {cohortData.median_rolling_4_weeks?.toFixed(1) ?? '—'}
+                      </p>
+                    </div>
+                  </div>
+                  {cohortData.median_rolling_4_weeks && (
+                    <div className="flex items-center gap-1 text-xs">
+                      {rolling4WeeksCount >= cohortData.median_rolling_4_weeks ? (
+                        <>
+                          <ArrowUp className="w-3 h-3 text-green-500" />
+                          <span className="text-green-600">Above cohort median</span>
+                        </>
+                      ) : (
+                        <>
+                          <ArrowDown className="w-3 h-3 text-amber-500" />
+                          <span className="text-amber-600">Slightly under cohort median</span>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Consistency Score Comparison */}
+              <Card className="border-2 border-primary/10 hover:border-primary/30 transition-all hover:shadow-soft">
+                <CardContent className="p-4 sm:p-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="text-xs sm:text-sm text-muted-foreground mb-1">Consistency</p>
+                      <p className="text-2xl sm:text-3xl font-bold text-primary">{consistencyScore}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-muted-foreground">Cohort median</p>
+                      <p className="text-lg font-semibold text-muted-foreground">
+                        {cohortData.median_consistency_score?.toFixed(0) ?? '—'}
+                      </p>
+                    </div>
+                  </div>
+                  {cohortData.median_consistency_score && (
+                    <div className="flex items-center gap-1 text-xs">
+                      {consistencyScore >= cohortData.median_consistency_score ? (
+                        <>
+                          <ArrowUp className="w-3 h-3 text-green-500" />
+                          <span className="text-green-600">Above cohort median</span>
+                        </>
+                      ) : (
+                        <>
+                          <ArrowDown className="w-3 h-3 text-amber-500" />
+                          <span className="text-amber-600">Slightly under cohort median</span>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Streak Comparison */}
+              <Card className="border-2 border-primary/10 hover:border-primary/30 transition-all hover:shadow-soft">
+                <CardContent className="p-4 sm:p-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="text-xs sm:text-sm text-muted-foreground mb-1">Current Streak</p>
+                      <p className="text-2xl sm:text-3xl font-bold text-primary">{calculateStreaks.currentStreak}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-muted-foreground">Cohort median</p>
+                      <p className="text-lg font-semibold text-muted-foreground">
+                        {cohortData.median_streak_length?.toFixed(1) ?? '—'}
+                      </p>
+                    </div>
+                  </div>
+                  {cohortData.median_streak_length && (
+                    <div className="flex items-center gap-1 text-xs">
+                      {calculateStreaks.currentStreak >= cohortData.median_streak_length ? (
+                        <>
+                          <ArrowUp className="w-3 h-3 text-green-500" />
+                          <span className="text-green-600">Above cohort median</span>
+                        </>
+                      ) : (
+                        <>
+                          <ArrowDown className="w-3 h-3 text-amber-500" />
+                          <span className="text-amber-600">Slightly under cohort median</span>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <Card className="border-2 border-primary/10">
+              <CardContent className="p-4 sm:p-5 text-center">
+                <Users className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  {anniversary 
+                    ? "Benchmark data will appear once computed. Check back soon!"
+                    : "Set your anniversary date in Profile to see how you compare to similar couples."
+                  }
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
     </div>
   );
+}
+
+// Helper function to get human-readable cohort label
+function getCohortLabel(cohortKey: string): string {
+  const labels: Record<string, string> = {
+    'rel_0-1': '0-1 years',
+    'rel_1-3': '1-3 years',
+    'rel_3-7': '3-7 years',
+    'rel_7-15': '7-15 years',
+    'rel_15+': '15+ years',
+  };
+  return labels[cohortKey] || cohortKey;
 }

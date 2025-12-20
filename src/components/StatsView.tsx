@@ -538,7 +538,10 @@ export default function StatsView({
                       <p className="text-xs sm:text-sm text-muted-foreground mb-0.5 sm:mb-1 truncate">Best Month</p>
                       <div className="min-h-[2.5rem] sm:min-h-[3rem]">
                         <p className="text-sm sm:text-base font-bold text-primary truncate">
-                          {bestMonth.month} {bestMonth.year}
+                          {bestMonth.month}
+                        </p>
+                        <p className="text-sm sm:text-base font-bold text-primary">
+                          {bestMonth.year}
                         </p>
                       </div>
                       <p className="text-sm sm:text-base text-muted-foreground mt-0.5">

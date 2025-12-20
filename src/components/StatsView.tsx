@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Minus, Flame, Calendar, Zap, Moon, Sunrise, Coffee, Sun, Sunset, Stars } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Flame, Calendar, Zap, Moon, Sunrise, Coffee, Sun, Sunset, Stars, Activity, Shield, AlertTriangle, CheckCircle } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import {
   startOfWeek,
   startOfMonth,
@@ -15,6 +17,8 @@ import {
   format,
   endOfWeek,
   getHours,
+  getDay,
+  isThisWeek,
 } from "date-fns";
 
 interface Activity {
@@ -264,6 +268,107 @@ export default function StatsView({ activities, compact = false }: StatsViewProp
     return stats;
   }, [activities]);
 
+  // Rolling 4 weeks count
+  const rolling4WeeksCount = useMemo(() => {
+    const now = new Date();
+    const fourWeeksAgo = subWeeks(now, 4);
+    return activities.filter(a => 
+      new Date(a.activity_date) >= fourWeeksAgo
+    ).length;
+  }, [activities]);
+
+  // Rolling 8 weeks active (weeks with ≥1 activity)
+  const rolling8WeeksActive = useMemo(() => {
+    const now = new Date();
+    const weekCounts = new Map<string, number>();
+    
+    for (let i = 0; i < 8; i++) {
+      const weekStart = startOfWeek(subWeeks(now, i), { weekStartsOn: 1 });
+      const weekKey = format(weekStart, 'yyyy-MM-dd');
+      weekCounts.set(weekKey, 0);
+    }
+    
+    activities.forEach(a => {
+      const activityDate = new Date(a.activity_date);
+      const weekStart = startOfWeek(activityDate, { weekStartsOn: 1 });
+      const weekKey = format(weekStart, 'yyyy-MM-dd');
+      if (weekCounts.has(weekKey)) {
+        weekCounts.set(weekKey, (weekCounts.get(weekKey) || 0) + 1);
+      }
+    });
+    
+    return Array.from(weekCounts.values()).filter(count => count >= 1).length;
+  }, [activities]);
+
+  // Rolling 12 months count
+  const rolling12MonthsCount = useMemo(() => {
+    const now = new Date();
+    const twelveMonthsAgo = subMonths(now, 12);
+    return activities.filter(a => 
+      new Date(a.activity_date) >= twelveMonthsAgo
+    ).length;
+  }, [activities]);
+
+  // Consistency score (0-100)
+  // Based on last 8 weeks: +12 points per week with ≥1 log, +2 bonus per week with ≥2 logs
+  const consistencyScore = useMemo(() => {
+    const now = new Date();
+    const weekCounts = new Map<string, number>();
+    
+    for (let i = 0; i < 8; i++) {
+      const weekStart = startOfWeek(subWeeks(now, i), { weekStartsOn: 1 });
+      const weekKey = format(weekStart, 'yyyy-MM-dd');
+      weekCounts.set(weekKey, 0);
+    }
+    
+    activities.forEach(a => {
+      const activityDate = new Date(a.activity_date);
+      const weekStart = startOfWeek(activityDate, { weekStartsOn: 1 });
+      const weekKey = format(weekStart, 'yyyy-MM-dd');
+      if (weekCounts.has(weekKey)) {
+        weekCounts.set(weekKey, (weekCounts.get(weekKey) || 0) + 1);
+      }
+    });
+    
+    let score = 0;
+    weekCounts.forEach(count => {
+      if (count >= 1) score += 12; // +12 for any activity
+      if (count >= 2) score += 2;  // +2 bonus for 2+ activities
+    });
+    
+    return Math.min(score, 100);
+  }, [activities]);
+
+  // Streak health: 'safe' | 'watch' | 'atRisk'
+  const streakHealth = useMemo(() => {
+    const now = new Date();
+    const currentWeekStart = startOfWeek(now, { weekStartsOn: 1 });
+    const dayOfWeek = getDay(now); // 0 = Sunday, 1 = Monday, ...
+    
+    // Check if logged this week
+    const hasLoggedThisWeek = activities.some(a => {
+      const activityDate = new Date(a.activity_date);
+      return activityDate >= currentWeekStart;
+    });
+    
+    if (hasLoggedThisWeek) {
+      return 'safe' as const;
+    }
+    
+    // Sunday (0) and not logged = at risk
+    if (dayOfWeek === 0) {
+      return 'atRisk' as const;
+    }
+    
+    // Thursday (4), Friday (5), Saturday (6) and not logged = watch
+    if (dayOfWeek >= 4) {
+      return 'watch' as const;
+    }
+    
+    // Monday-Wednesday without log is still safe territory
+    return 'safe' as const;
+  }, [activities]);
+
   const StatCard = ({
     title,
     current,
@@ -465,6 +570,95 @@ export default function StatsView({ activities, compact = false }: StatsViewProp
           </div>
         </>
       )}
+
+      {/* Consistency Section */}
+      <h3 className="text-lg sm:text-xl font-semibold mt-4">Consistency</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        {/* Consistency Score */}
+        <Card className="border-2 border-primary/10 hover:border-primary/30 transition-all hover:shadow-soft">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-xs sm:text-sm text-muted-foreground mb-1">Consistency Score</p>
+                <p className="text-3xl sm:text-4xl font-bold text-primary">{consistencyScore}</p>
+              </div>
+              <Activity className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
+            </div>
+            <Progress value={consistencyScore} className="h-2" />
+            <p className="text-xs text-muted-foreground mt-2">
+              Based on your last 8 weeks of activity
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Streak Health */}
+        <Card className="border-2 border-primary/10 hover:border-primary/30 transition-all hover:shadow-soft">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs sm:text-sm text-muted-foreground mb-1">Streak Health</p>
+                <div className="flex items-center gap-2 mt-2">
+                  {streakHealth === 'safe' && (
+                    <>
+                      <CheckCircle className="w-6 h-6 text-green-500" />
+                      <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">
+                        Safe
+                      </Badge>
+                    </>
+                  )}
+                  {streakHealth === 'watch' && (
+                    <>
+                      <AlertTriangle className="w-6 h-6 text-amber-500" />
+                      <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30">
+                        Watch
+                      </Badge>
+                    </>
+                  )}
+                  {streakHealth === 'atRisk' && (
+                    <>
+                      <Shield className="w-6 h-6 text-red-500" />
+                      <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/30">
+                        At Risk
+                      </Badge>
+                    </>
+                  )}
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl sm:text-3xl font-bold text-primary">{calculateStreaks.currentStreak}</p>
+                <p className="text-xs text-muted-foreground">week streak</p>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              {streakHealth === 'safe' && "You're on track this week!"}
+              {streakHealth === 'watch' && "Weekend approaching — time to connect?"}
+              {streakHealth === 'atRisk' && "Last chance to log before the week ends!"}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Rolling Windows */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-3">
+        <Card className="border-2 border-primary/10">
+          <CardContent className="p-3 sm:p-4 text-center">
+            <p className="text-xs text-muted-foreground mb-1">Last 4 Weeks</p>
+            <p className="text-2xl sm:text-3xl font-bold text-primary">{rolling4WeeksCount}</p>
+          </CardContent>
+        </Card>
+        <Card className="border-2 border-primary/10">
+          <CardContent className="p-3 sm:p-4 text-center">
+            <p className="text-xs text-muted-foreground mb-1">Active Weeks</p>
+            <p className="text-2xl sm:text-3xl font-bold text-primary">{rolling8WeeksActive}<span className="text-sm text-muted-foreground">/8</span></p>
+          </CardContent>
+        </Card>
+        <Card className="border-2 border-primary/10">
+          <CardContent className="p-3 sm:p-4 text-center">
+            <p className="text-xs text-muted-foreground mb-1">Last 12 Months</p>
+            <p className="text-2xl sm:text-3xl font-bold text-primary">{rolling12MonthsCount}</p>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Time of Day Stats */}
       <h3 className="text-lg sm:text-xl font-semibold mt-4">Time of Day</h3>

@@ -41,6 +41,51 @@ export type Database = {
         }
         Relationships: []
       }
+      benchmark_cohorts: {
+        Row: {
+          cohort_key: string
+          computed_at: string | null
+          couple_count: number | null
+          id: string
+          median_consistency_score: number | null
+          median_monthly_count: number | null
+          median_rolling_4_weeks: number | null
+          median_streak_length: number | null
+          p25_monthly_count: number | null
+          p75_monthly_count: number | null
+          period: string
+          period_type: string
+        }
+        Insert: {
+          cohort_key: string
+          computed_at?: string | null
+          couple_count?: number | null
+          id?: string
+          median_consistency_score?: number | null
+          median_monthly_count?: number | null
+          median_rolling_4_weeks?: number | null
+          median_streak_length?: number | null
+          p25_monthly_count?: number | null
+          p75_monthly_count?: number | null
+          period: string
+          period_type: string
+        }
+        Update: {
+          cohort_key?: string
+          computed_at?: string | null
+          couple_count?: number | null
+          id?: string
+          median_consistency_score?: number | null
+          median_monthly_count?: number | null
+          median_rolling_4_weeks?: number | null
+          median_streak_length?: number | null
+          p25_monthly_count?: number | null
+          p75_monthly_count?: number | null
+          period?: string
+          period_type?: string
+        }
+        Relationships: []
+      }
       couple_invitations: {
         Row: {
           created_at: string
@@ -169,6 +214,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          benchmark_opt_in: boolean | null
           beta_partner_name: string | null
           beta_signup_date: string | null
           birthday: string | null
@@ -186,6 +232,7 @@ export type Database = {
           year_total: number | null
         }
         Insert: {
+          benchmark_opt_in?: boolean | null
           beta_partner_name?: string | null
           beta_signup_date?: string | null
           birthday?: string | null
@@ -203,6 +250,7 @@ export type Database = {
           year_total?: number | null
         }
         Update: {
+          benchmark_opt_in?: boolean | null
           beta_partner_name?: string | null
           beta_signup_date?: string | null
           birthday?: string | null

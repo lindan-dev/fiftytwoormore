@@ -38,3 +38,6 @@ verify_jwt = false
 
 [functions.trigger-instant-notification]
 verify_jwt = false
+
+[functions.compute-benchmark-cohorts]
+verify_jwt = false

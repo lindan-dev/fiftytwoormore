@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "https://esm.sh/resend@4.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
@@ -19,9 +20,43 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Verify JWT token
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error("Missing Authorization header");
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }), 
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      console.error("Invalid token:", authError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }), 
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { email, name }: WelcomeEmailRequest = await req.json();
     
-    console.log("Sending welcome email to:", email);
+    // Verify email matches the authenticated user
+    if (email !== user.email) {
+      console.error("Email mismatch: request email does not match authenticated user");
+      return new Response(
+        JSON.stringify({ error: 'Forbidden' }), 
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    console.log("Sending welcome email for authenticated user:", email);
 
     const emailResponse = await resend.emails.send({
       from: "52 or More <onboarding@resend.dev>",

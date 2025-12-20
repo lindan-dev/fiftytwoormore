@@ -299,38 +299,6 @@ export default function StatsView({
     ).length;
   }, [activities]);
 
-  // Rolling 8 weeks active (weeks with ≥1 activity)
-  const rolling8WeeksActive = useMemo(() => {
-    const now = new Date();
-    const weekCounts = new Map<string, number>();
-    
-    for (let i = 0; i < 8; i++) {
-      const weekStart = startOfWeek(subWeeks(now, i), { weekStartsOn: 1 });
-      const weekKey = format(weekStart, 'yyyy-MM-dd');
-      weekCounts.set(weekKey, 0);
-    }
-    
-    activities.forEach(a => {
-      const activityDate = new Date(a.activity_date);
-      const weekStart = startOfWeek(activityDate, { weekStartsOn: 1 });
-      const weekKey = format(weekStart, 'yyyy-MM-dd');
-      if (weekCounts.has(weekKey)) {
-        weekCounts.set(weekKey, (weekCounts.get(weekKey) || 0) + 1);
-      }
-    });
-    
-    return Array.from(weekCounts.values()).filter(count => count >= 1).length;
-  }, [activities]);
-
-  // Rolling 12 months count
-  const rolling12MonthsCount = useMemo(() => {
-    const now = new Date();
-    const twelveMonthsAgo = subMonths(now, 12);
-    return activities.filter(a => 
-      new Date(a.activity_date) >= twelveMonthsAgo
-    ).length;
-  }, [activities]);
-
   // Consistency score (0-100)
   // Based on last 8 weeks: +12 points per week with ≥1 log, +2 bonus per week with ≥2 logs
   const consistencyScore = useMemo(() => {

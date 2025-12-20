@@ -669,27 +669,6 @@ export default function StatsView({
         </Card>
       </div>
 
-      {/* Rolling Windows */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-3">
-        <Card className="border-2 border-primary/10">
-          <CardContent className="p-3 sm:p-4 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Last 4 Weeks</p>
-            <p className="text-2xl sm:text-3xl font-bold text-primary">{rolling4WeeksCount}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-2 border-primary/10">
-          <CardContent className="p-3 sm:p-4 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Active Weeks</p>
-            <p className="text-2xl sm:text-3xl font-bold text-primary">{rolling8WeeksActive}<span className="text-sm text-muted-foreground">/8</span></p>
-          </CardContent>
-        </Card>
-        <Card className="border-2 border-primary/10">
-          <CardContent className="p-3 sm:p-4 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Last 12 Months</p>
-            <p className="text-2xl sm:text-3xl font-bold text-primary">{rolling12MonthsCount}</p>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Time of Day Stats */}
       <h3 className="text-lg sm:text-xl font-semibold mt-4">Time of Day</h3>

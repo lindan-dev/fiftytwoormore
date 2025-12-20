@@ -516,9 +516,11 @@ export default function StatsView({
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <p className="text-xs sm:text-sm text-muted-foreground mb-0.5 sm:mb-1 truncate">Best Year</p>
-                      <p className="text-sm sm:text-base font-bold text-primary truncate">
-                        {bestYear.year}
-                      </p>
+                      <div className="min-h-[2.5rem] sm:min-h-[3rem]">
+                        <p className="text-sm sm:text-base font-bold text-primary truncate">
+                          {bestYear.year}
+                        </p>
+                      </div>
                       <p className="text-sm sm:text-base text-muted-foreground mt-0.5">
                         {bestYear.count} {bestYear.count === 1 ? 'activity' : 'activities'}
                       </p>
@@ -534,9 +536,11 @@ export default function StatsView({
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <p className="text-xs sm:text-sm text-muted-foreground mb-0.5 sm:mb-1 truncate">Best Month</p>
-                      <p className="text-sm sm:text-base font-bold text-primary truncate">
-                        {bestMonth.month} {bestMonth.year}
-                      </p>
+                      <div className="min-h-[2.5rem] sm:min-h-[3rem]">
+                        <p className="text-sm sm:text-base font-bold text-primary truncate">
+                          {bestMonth.month} {bestMonth.year}
+                        </p>
+                      </div>
                       <p className="text-sm sm:text-base text-muted-foreground mt-0.5">
                         {bestMonth.count} {bestMonth.count === 1 ? 'activity' : 'activities'}
                       </p>
@@ -552,9 +556,14 @@ export default function StatsView({
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <p className="text-xs sm:text-sm text-muted-foreground mb-0.5 sm:mb-1 truncate">Best Week</p>
-                      <p className="text-sm sm:text-base font-bold text-primary">
-                        {format(bestWeek.weekStart, 'MMM d')} - {format(bestWeek.weekEnd, 'MMM d, yyyy')}
-                      </p>
+                      <div className="min-h-[2.5rem] sm:min-h-[3rem]">
+                        <p className="text-sm sm:text-base font-bold text-primary">
+                          {format(bestWeek.weekStart, 'MMM d')} - {format(bestWeek.weekEnd, 'MMM d')}
+                        </p>
+                        <p className="text-sm sm:text-base font-bold text-primary">
+                          {format(bestWeek.weekStart, 'yyyy')}
+                        </p>
+                      </div>
                       <p className="text-sm sm:text-base text-muted-foreground mt-0.5">
                         {bestWeek.count} {bestWeek.count === 1 ? 'activity' : 'activities'}
                       </p>

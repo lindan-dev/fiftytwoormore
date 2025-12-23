@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+🩸import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -11,11 +11,14 @@ const EMOJI_PRESETS = [
   { emoji: "🍑", label: "Ass" },
   { emoji: "🍆", label: "Dick" },
   { emoji: "💋", label: "Kiss" },
+  { emoji: "💥", label: "Explosion" },
   { emoji: "👅", label: "Oral" },
   { emoji: "🍩", label: "Anal" },
   { emoji: "👉", label: "Fingering" },
   { emoji: "✂️", label: "Scissoring" },
   { emoji: "♋️", label: "69" },
+  { emoji: "🏇", label: "Cowgirl" },
+  { emoji: "💋", label: "Kiss" },
   { emoji: "💃", label: "Striptease" },
   { emoji: "🔥", label: "Hot" },
   { emoji: "💦", label: "Cum" },

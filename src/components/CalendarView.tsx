@@ -6,8 +6,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import EmojiSelector from "./EmojiSelector";
+import OnThisDay from "./OnThisDay";
 import { supabase } from "@/integrations/supabase/client";
-import { 
+import {
   startOfMonth, 
   endOfMonth, 
   eachDayOfInterval, 
@@ -232,6 +233,7 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
   };
 
   return (
+    <div className="space-y-4">
     <Card className="p-4 sm:p-6">
       {/* Month Navigation */}
       <div className="flex items-center justify-between mb-6">
@@ -482,5 +484,9 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
         </DialogContent>
       </Dialog>
     </Card>
+    
+    {/* On This Day Section */}
+    <OnThisDay activities={activities} />
+    </div>
   );
 }

@@ -81,6 +81,53 @@ function hashUserId(userId: string): number {
   return Math.abs(hash);
 }
 
+// ============ Time of Day Insights ============
+
+async function getDominantTimeOfDay(supabase: any, userIds: string[]): Promise<string | null> {
+  const eightWeeksAgo = new Date();
+  eightWeeksAgo.setDate(eightWeeksAgo.getDate() - 56);
+  
+  const { data, error } = await supabase
+    .from('activities')
+    .select('activity_date')
+    .in('user_id', userIds)
+    .gte('activity_date', eightWeeksAgo.toISOString());
+  
+  if (error || !data || data.length < 3) return null;
+  
+  const stats = { nightOwl: 0, earlyBird: 0, lazyMorning: 0, nooner: 0, afternoon: 0, evening: 0 };
+  
+  data.forEach((a: any) => {
+    const hour = new Date(a.activity_date).getHours();
+    if (hour >= 22 || hour < 4) stats.nightOwl++;
+    else if (hour >= 4 && hour < 8) stats.earlyBird++;
+    else if (hour >= 8 && hour < 12) stats.lazyMorning++;
+    else if (hour >= 12 && hour < 15) stats.nooner++;
+    else if (hour >= 15 && hour < 18) stats.afternoon++;
+    else if (hour >= 18 && hour < 22) stats.evening++;
+  });
+  
+  const entries = Object.entries(stats).sort((a, b) => b[1] - a[1]);
+  const [dominant, count] = entries[0];
+  const total = data.length;
+  
+  // Only return if clearly dominant (>30% of activities)
+  if (count / total < 0.3) return null;
+  
+  const labels: Record<string, string> = {
+    nightOwl: 'nights', earlyBird: 'early mornings', lazyMorning: 'mornings',
+    nooner: 'midday', afternoon: 'afternoons', evening: 'evenings'
+  };
+  return labels[dominant] || null;
+}
+
+const timeOfDayInsights = [
+  (tod: string) => `Most of your moments lately happen in the ${tod}. Wednesday counts too.`,
+  (tod: string) => `Looks like ${tod} are your thing lately. Mid-week ${tod} included.`,
+  (tod: string) => `You tend to connect later in the day. No reason tonight can't count.`,
+  (tod: string) => `Your recent pattern says "${tod === 'evenings' ? 'Evening Bliss' : tod}". Wednesdays qualify.`,
+];
+
 // ============ Nudge Variants ============
 
 interface NudgeVariant {
@@ -271,6 +318,20 @@ function getHtml(text: string, messageId?: string, userId?: string, emailType?: 
 </html>`;
 }
 
+function addTimeOfDayInsight(body: string, dominantToD: string | null, weekNumber: number): string {
+  if (!dominantToD) return body;
+  
+  const insightFn = timeOfDayInsights[weekNumber % timeOfDayInsights.length];
+  const insight = insightFn(dominantToD);
+  
+  // Add insight after the greeting
+  const lines = body.split('\n');
+  const insertIndex = lines.findIndex(l => l.startsWith('Hi you two')) + 2;
+  lines.splice(insertIndex, 0, '', `💡 ${insight}`, '');
+  
+  return lines.join('\n');
+}
+
 async function logEmailSent(supabase: any, params: {
   userId: string;
   type: string;
@@ -401,8 +462,11 @@ const handler = async (req: Request): Promise<Response> => {
         
         console.log(`Couple ${couple.id}: logsThisWeek=${logsThisWeek}, variant=${variant.key}, subject="${subject}"`);
         
-        // Generate email content
-        const plainText = variant.body;
+        // Get time of day insight
+        const dominantToD = await getDominantTimeOfDay(supabase, userIds);
+        
+        // Generate email content with optional insight
+        const plainText = addTimeOfDayInsight(variant.body, dominantToD, weekNumber);
         const html = getHtml(plainText);
         
         // Send ONE email to BOTH partners

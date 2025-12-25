@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Minus, Flame, Calendar, Zap, Moon, Sunrise, Coffee, Sun, Sunset, Stars, Activity, Shield, AlertTriangle, CheckCircle, Users, ArrowUp, ArrowDown } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import PeriodPicker from "@/components/PeriodPicker";
+import { usePeriodStats, getDeltaMessage } from "@/hooks/usePeriodStats";
 import {
   startOfWeek,
   startOfMonth,
@@ -13,12 +15,10 @@ import {
   isWithinInterval,
   startOfDay,
   differenceInDays,
-  isSameDay,
   format,
   endOfWeek,
   getHours,
   getDay,
-  isThisWeek,
 } from "date-fns";
 
 interface Activity {
@@ -56,6 +56,9 @@ export default function StatsView({
   anniversary = null,
   cohortData = null
 }: StatsViewProps) {
+  // Period stats hook for Bunny Days and Time of Day
+  const periodStats = usePeriodStats(activities);
+
   const calculateStreaks = useMemo(() => {
     if (activities.length === 0) return { currentStreak: 0, longestStreak: 0 };
 
@@ -89,20 +92,15 @@ export default function StatsView({
     }
 
     // Calculate current streak from this week
-    // Streak remains active until a full week (Mon-Sun) has passed without activity
     const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
     let currentStreak = 0;
 
-    // Check if there's activity in current or previous week
     const lastActivityWeek = uniqueWeeks[uniqueWeeks.length - 1];
     const weeksFromLastActivity = Math.round(differenceInDays(currentWeekStart, lastActivityWeek) / 7);
 
-    // If last activity is in current week (0) or previous week (1), streak is active
     if (weeksFromLastActivity <= 1) {
-      // Start counting from the last activity week
       currentStreak = 1;
       
-      // Count consecutive weeks backwards
       for (let i = uniqueWeeks.length - 2; i >= 0; i--) {
         const weeksDiff = Math.round(differenceInDays(uniqueWeeks[i + 1], uniqueWeeks[i]) / 7);
         
@@ -115,25 +113,6 @@ export default function StatsView({
     }
 
     return { currentStreak, longestStreak };
-  }, [activities]);
-
-  const calculateMultipleDays = useMemo(() => {
-    const dayActivityCounts = new Map<string, number>();
-
-    activities.forEach(activity => {
-      const dayKey = startOfDay(new Date(activity.activity_date)).toISOString();
-      dayActivityCounts.set(dayKey, (dayActivityCounts.get(dayKey) || 0) + 1);
-    });
-
-    let doubleDays = 0;
-    let tripleDays = 0;
-
-    dayActivityCounts.forEach(count => {
-      if (count === 2) doubleDays++;
-      else if (count >= 3) tripleDays++;
-    });
-
-    return { doubleDays, tripleDays };
   }, [activities]);
 
   const calculateStats = (period: Period) => {
@@ -259,37 +238,6 @@ export default function StatsView({
     return best.count > 0 ? best : null;
   }, [activities]);
 
-  const timeOfDayStats = useMemo(() => {
-    const stats = {
-      nightOwl: 0,      // 10pm - 4am (22-4)
-      earlyBird: 0,     // 4am - 8am
-      lazyMorning: 0,   // 8am - 12pm
-      nooner: 0,        // 12pm - 3pm
-      afternoon: 0,     // 3pm - 6pm (15-18)
-      evening: 0,       // 6pm - 10pm (18-22)
-    };
-
-    activities.forEach(activity => {
-      const hour = getHours(new Date(activity.activity_date));
-
-      if (hour >= 22 || hour < 4) {
-        stats.nightOwl++;
-      } else if (hour >= 4 && hour < 8) {
-        stats.earlyBird++;
-      } else if (hour >= 8 && hour < 12) {
-        stats.lazyMorning++;
-      } else if (hour >= 12 && hour < 15) {
-        stats.nooner++;
-      } else if (hour >= 15 && hour < 18) {
-        stats.afternoon++;
-      } else if (hour >= 18 && hour < 22) {
-        stats.evening++;
-      }
-    });
-
-    return stats;
-  }, [activities]);
-
   // Rolling 4 weeks count
   const rolling4WeeksCount = useMemo(() => {
     const now = new Date();
@@ -300,7 +248,6 @@ export default function StatsView({
   }, [activities]);
 
   // Consistency score (0-100)
-  // Based on last 8 weeks: +12 points per week with ≥1 log, +2 bonus per week with ≥2 logs
   const consistencyScore = useMemo(() => {
     const now = new Date();
     const weekCounts = new Map<string, number>();
@@ -322,8 +269,8 @@ export default function StatsView({
     
     let score = 0;
     weekCounts.forEach(count => {
-      if (count >= 1) score += 12; // +12 for any activity
-      if (count >= 2) score += 2;  // +2 bonus for 2+ activities
+      if (count >= 1) score += 12;
+      if (count >= 2) score += 2;
     });
     
     return Math.min(score, 100);
@@ -333,9 +280,8 @@ export default function StatsView({
   const streakHealth = useMemo(() => {
     const now = new Date();
     const currentWeekStart = startOfWeek(now, { weekStartsOn: 1 });
-    const dayOfWeek = getDay(now); // 0 = Sunday, 1 = Monday, ...
+    const dayOfWeek = getDay(now);
     
-    // Check if logged this week
     const hasLoggedThisWeek = activities.some(a => {
       const activityDate = new Date(a.activity_date);
       return activityDate >= currentWeekStart;
@@ -345,17 +291,14 @@ export default function StatsView({
       return 'safe' as const;
     }
     
-    // Sunday (0) and not logged = at risk
     if (dayOfWeek === 0) {
       return 'atRisk' as const;
     }
     
-    // Thursday (4), Friday (5), Saturday (6) and not logged = watch
     if (dayOfWeek >= 4) {
       return 'watch' as const;
     }
     
-    // Monday-Wednesday without log is still safe territory
     return 'safe' as const;
   }, [activities]);
 
@@ -409,11 +352,13 @@ export default function StatsView({
     title,
     value,
     color = "text-primary",
+    delta,
   }: {
     icon: any;
     title: string;
     value: number;
     color?: string;
+    delta?: string;
   }) => (
     <Card className="border-2 border-primary/10 hover:border-primary/30 transition-all hover:shadow-soft">
       <CardContent className="p-3 sm:p-4">
@@ -421,12 +366,34 @@ export default function StatsView({
           <div className="min-w-0 flex-1">
             <p className="text-xs sm:text-sm text-muted-foreground mb-0.5 sm:mb-1 truncate">{title}</p>
             <p className={`text-2xl sm:text-3xl font-bold ${color}`}>{value}</p>
+            {delta && (
+              <p className="text-xs text-muted-foreground mt-1 italic">{delta}</p>
+            )}
           </div>
           <Icon className={`w-6 h-6 sm:w-8 sm:h-8 ${color} flex-shrink-0`} />
         </div>
       </CardContent>
     </Card>
   );
+
+  // Generate delta messages for time of day
+  const getTimeOfDayDelta = (key: keyof typeof periodStats.timeOfDay, label: string) => {
+    const current = periodStats.timeOfDay[key];
+    const comparison = periodStats.comparisonTimeOfDay[key];
+    const diff = current - comparison;
+    if (diff === 0 || comparison === 0) return undefined;
+    const pct = Math.round((diff / comparison) * 100);
+    const direction = diff > 0 ? "More" : "Less";
+    return `${direction} than last period (${diff > 0 ? "+" : ""}${pct}%)`;
+  };
+
+  // Generate delta messages for bunny days
+  const getBunnyDelta = (type: "doubleDays" | "tripleDays") => {
+    const diff = periodStats.bunnyDaysDelta[type];
+    if (diff === 0) return undefined;
+    const direction = diff > 0 ? "More" : "Fewer";
+    return `${direction} than last period (${diff > 0 ? "+" : ""}${diff})`;
+  };
 
   if (compact) {
     return (
@@ -471,6 +438,73 @@ export default function StatsView({
           difference={yearStats.difference}
           percentChange={yearStats.percentChange}
         />
+      </div>
+
+      {/* Consistency Section - MOVED BEFORE Best Periods */}
+      <h3 className="text-lg sm:text-xl font-semibold mt-4">Consistency</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        {/* Consistency Score */}
+        <Card className="border-2 border-primary/10 hover:border-primary/30 transition-all hover:shadow-soft">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-xs sm:text-sm text-muted-foreground mb-1">Consistency Score</p>
+                <p className="text-3xl sm:text-4xl font-bold text-primary">{consistencyScore}</p>
+              </div>
+              <Activity className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
+            </div>
+            <Progress value={consistencyScore} className="h-2" />
+            <p className="text-xs text-muted-foreground mt-2">
+              Based on your last 8 weeks of activity
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Streak Health */}
+        <Card className="border-2 border-primary/10 hover:border-primary/30 transition-all hover:shadow-soft">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs sm:text-sm text-muted-foreground mb-1">Streak Health</p>
+                <div className="flex items-center gap-2 mt-2">
+                  {streakHealth === 'safe' && (
+                    <>
+                      <CheckCircle className="w-6 h-6 text-green-500" />
+                      <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">
+                        Safe
+                      </Badge>
+                    </>
+                  )}
+                  {streakHealth === 'watch' && (
+                    <>
+                      <AlertTriangle className="w-6 h-6 text-amber-500" />
+                      <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30">
+                        Watch
+                      </Badge>
+                    </>
+                  )}
+                  {streakHealth === 'atRisk' && (
+                    <>
+                      <Shield className="w-6 h-6 text-red-500" />
+                      <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/30">
+                        At Risk
+                      </Badge>
+                    </>
+                  )}
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl sm:text-3xl font-bold text-primary">{calculateStreaks.currentStreak}</p>
+                <p className="text-xs text-muted-foreground">week streak</p>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              {streakHealth === 'safe' && "You're on track this week!"}
+              {streakHealth === 'watch' && "Weekend approaching — time to connect?"}
+              {streakHealth === 'atRisk' && "Last chance to log before the week ends!"}
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Best Period Stats */}
@@ -548,137 +582,95 @@ export default function StatsView({
         </>
       )}
 
-      {/* Bunny Days Section */}
-      {(calculateMultipleDays.doubleDays > 0 || calculateMultipleDays.tripleDays > 0) && (
+      {/* Bunny Days Section with Period Picker */}
+      {(periodStats.bunnyDays.doubleDays > 0 || periodStats.bunnyDays.tripleDays > 0) && (
         <>
-          <h3 className="text-lg sm:text-xl font-semibold mt-4">Bunny Days</h3>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-4">
+            <h3 className="text-lg sm:text-xl font-semibold">Bunny Days</h3>
+            <PeriodPicker
+              period={periodStats.period}
+              comparison={periodStats.comparison}
+              onPeriodChange={periodStats.setPeriod}
+              onComparisonChange={periodStats.setComparison}
+            />
+          </div>
           <div className="grid grid-cols-2 gap-2 sm:gap-3">
-            {calculateMultipleDays.doubleDays > 0 && (
+            {periodStats.bunnyDays.doubleDays > 0 && (
               <SimpleStatCard
                 icon={Zap}
                 title="Double Days"
-                value={calculateMultipleDays.doubleDays}
+                value={periodStats.bunnyDays.doubleDays}
                 color="text-blue-500"
+                delta={getBunnyDelta("doubleDays")}
               />
             )}
-            {calculateMultipleDays.tripleDays > 0 && (
+            {periodStats.bunnyDays.tripleDays > 0 && (
               <SimpleStatCard
                 icon={Zap}
                 title="Triple Days"
-                value={calculateMultipleDays.tripleDays}
+                value={periodStats.bunnyDays.tripleDays}
                 color="text-purple-500"
+                delta={getBunnyDelta("tripleDays")}
               />
             )}
           </div>
         </>
       )}
 
-      {/* Consistency Section */}
-      <h3 className="text-lg sm:text-xl font-semibold mt-4">Consistency</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-        {/* Consistency Score */}
-        <Card className="border-2 border-primary/10 hover:border-primary/30 transition-all hover:shadow-soft">
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <p className="text-xs sm:text-sm text-muted-foreground mb-1">Consistency Score</p>
-                <p className="text-3xl sm:text-4xl font-bold text-primary">{consistencyScore}</p>
-              </div>
-              <Activity className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
-            </div>
-            <Progress value={consistencyScore} className="h-2" />
-            <p className="text-xs text-muted-foreground mt-2">
-              Based on your last 8 weeks of activity
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Streak Health */}
-        <Card className="border-2 border-primary/10 hover:border-primary/30 transition-all hover:shadow-soft">
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm text-muted-foreground mb-1">Streak Health</p>
-                <div className="flex items-center gap-2 mt-2">
-                  {streakHealth === 'safe' && (
-                    <>
-                      <CheckCircle className="w-6 h-6 text-green-500" />
-                      <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">
-                        Safe
-                      </Badge>
-                    </>
-                  )}
-                  {streakHealth === 'watch' && (
-                    <>
-                      <AlertTriangle className="w-6 h-6 text-amber-500" />
-                      <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30">
-                        Watch
-                      </Badge>
-                    </>
-                  )}
-                  {streakHealth === 'atRisk' && (
-                    <>
-                      <Shield className="w-6 h-6 text-red-500" />
-                      <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/30">
-                        At Risk
-                      </Badge>
-                    </>
-                  )}
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-2xl sm:text-3xl font-bold text-primary">{calculateStreaks.currentStreak}</p>
-                <p className="text-xs text-muted-foreground">week streak</p>
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground mt-3">
-              {streakHealth === 'safe' && "You're on track this week!"}
-              {streakHealth === 'watch' && "Weekend approaching — time to connect?"}
-              {streakHealth === 'atRisk' && "Last chance to log before the week ends!"}
-            </p>
-          </CardContent>
-        </Card>
+      {/* Time of Day Stats with Period Picker */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-4">
+        <h3 className="text-lg sm:text-xl font-semibold">Time of Day</h3>
+        {(periodStats.bunnyDays.doubleDays === 0 && periodStats.bunnyDays.tripleDays === 0) && (
+          <PeriodPicker
+            period={periodStats.period}
+            comparison={periodStats.comparison}
+            onPeriodChange={periodStats.setPeriod}
+            onComparisonChange={periodStats.setComparison}
+          />
+        )}
       </div>
-
-
-      {/* Time of Day Stats */}
-      <h3 className="text-lg sm:text-xl font-semibold mt-4">Time of Day</h3>
       <div className="grid grid-cols-2 gap-2 sm:gap-3">
         <SimpleStatCard
           icon={Sunrise}
           title="Early Bird"
-          value={timeOfDayStats.earlyBird}
+          value={periodStats.timeOfDay.earlyBird}
           color="text-amber-500"
+          delta={getTimeOfDayDelta("earlyBird", "Early Bird")}
         />
         <SimpleStatCard
           icon={Coffee}
           title="Lazy Morning"
-          value={timeOfDayStats.lazyMorning}
+          value={periodStats.timeOfDay.lazyMorning}
           color="text-brown-500"
+          delta={getTimeOfDayDelta("lazyMorning", "Lazy Morning")}
         />
         <SimpleStatCard
           icon={Sun}
           title="Nooner"
-          value={timeOfDayStats.nooner}
+          value={periodStats.timeOfDay.nooner}
           color="text-yellow-500"
+          delta={getTimeOfDayDelta("nooner", "Nooner")}
         />
         <SimpleStatCard
           icon={Sunset}
           title="Afternoon Delight"
-          value={timeOfDayStats.afternoon}
+          value={periodStats.timeOfDay.afternoon}
           color="text-orange-400"
+          delta={getTimeOfDayDelta("afternoon", "Afternoon Delight")}
         />
         <SimpleStatCard
           icon={Stars}
           title="Evening Bliss"
-          value={timeOfDayStats.evening}
+          value={periodStats.timeOfDay.evening}
           color="text-purple-500"
+          delta={getTimeOfDayDelta("evening", "Evening Bliss")}
         />
         <SimpleStatCard
           icon={Moon}
           title="Night Owl"
-          value={timeOfDayStats.nightOwl}
+          value={periodStats.timeOfDay.nightOwl}
           color="text-indigo-500"
+          delta={getTimeOfDayDelta("nightOwl", "Night Owl")}
         />
       </div>
 

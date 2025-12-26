@@ -68,6 +68,26 @@ async function getLogsThisWeek(supabase: any, userIds: string[], timezone: strin
   return data?.length || 0;
 }
 
+async function getPreviousWeekLogs(supabase: any, userIds: string[], timezone: string): Promise<number> {
+  const monday = getMondayOfWeek(timezone);
+  const previousMonday = new Date(monday);
+  previousMonday.setDate(monday.getDate() - 7);
+  
+  const { data, error } = await supabase
+    .from('activities')
+    .select('id')
+    .in('user_id', userIds)
+    .gte('activity_date', previousMonday.toISOString())
+    .lt('activity_date', monday.toISOString());
+  
+  if (error) {
+    console.error('Error fetching previous week logs:', error);
+    return 0;
+  }
+  
+  return data?.length || 0;
+}
+
 async function getLastLogRelative(supabase: any, userIds: string[]): Promise<string> {
   const { data, error } = await supabase
     .from('activities')
@@ -468,13 +488,24 @@ const handler = async (req: Request): Promise<Response> => {
         const yearTotal = await getYearTotal(supabase, userIds);
         const streakWeeks = await getStreakWeeks(supabase, userIds);
         const paceLabel = getPaceLabel(yearTotal);
+        const consistencyScore = await getConsistencyScore(supabase, userIds);
+        const previousWeekLogs = await getPreviousWeekLogs(supabase, userIds, timezone);
+        
+        // Generate optional insight for standard digest (not nystart)
+        const insight = !isNystart ? getDigestInsight({
+          logsThisWeek,
+          streakWeeks,
+          consistencyScore,
+          previousWeekLogs
+        }) : null;
         
         const emailData = {
           logsThisWeek,
           lastLogRelative,
           streakWeeks,
           yearTotal,
-          paceLabel
+          paceLabel,
+          insight
         };
         
         // Select random subject
@@ -595,13 +626,24 @@ const handler = async (req: Request): Promise<Response> => {
           const yearTotal = await getYearTotal(supabase, userIds);
           const streakWeeks = await getStreakWeeks(supabase, userIds);
           const paceLabel = getPaceLabel(yearTotal);
+          const consistencyScore = await getConsistencyScore(supabase, userIds);
+          const previousWeekLogs = await getPreviousWeekLogs(supabase, userIds, timezone);
+          
+          // Generate optional insight for standard digest (not nystart)
+          const insight = !isNystart ? getDigestInsight({
+            logsThisWeek,
+            streakWeeks,
+            consistencyScore,
+            previousWeekLogs
+          }) : null;
           
           const emailData = {
             logsThisWeek,
             lastLogRelative,
             streakWeeks,
             yearTotal,
-            paceLabel
+            paceLabel,
+            insight
           };
           
           const subjects = isNystart ? subjectsNystart : subjectsStandard;

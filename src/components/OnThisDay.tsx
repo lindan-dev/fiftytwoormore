@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles } from "lucide-react";
 import { format, getMonth, getDate, getYear } from "date-fns";
+import { buildOnThisDayCopy, type OnThisDayActivity } from "@/lib/onThisDayCopy";
 
 interface Activity {
   id: string;
@@ -12,16 +13,10 @@ interface Activity {
 
 interface OnThisDayProps {
   activities: Activity[];
+  userId?: string;
 }
 
-const nostalgicMessages = [
-  "A spark from the past.",
-  "You were here before.",
-  "Some things stay warm.",
-  "This day remembers you.",
-];
-
-export default function OnThisDay({ activities }: OnThisDayProps) {
+export default function OnThisDay({ activities, userId = 'anonymous' }: OnThisDayProps) {
   const memories = useMemo(() => {
     const today = new Date();
     const todayMonth = getMonth(today);
@@ -54,9 +49,31 @@ export default function OnThisDay({ activities }: OnThisDayProps) {
     return sortedYears;
   }, [activities]);
 
-  const randomMessage = useMemo(() => {
-    return nostalgicMessages[Math.floor(Math.random() * nostalgicMessages.length)];
-  }, []);
+  // Generate copy for each memory
+  const memoryCopy = useMemo(() => {
+    const today = new Date();
+    const currentYear = getYear(today);
+    const todayIso = format(today, 'yyyy-MM-dd');
+
+    return memories.map(([year, yearActivities]) => {
+      const yearsBack = currentYear - year;
+      const items: OnThisDayActivity[] = yearActivities.map(a => ({
+        id: a.id,
+        activity_date: a.activity_date,
+        emoji: a.emoji,
+        notes: a.notes,
+      }));
+
+      const copy = buildOnThisDayCopy({
+        yearsBack,
+        items,
+        userId,
+        date: todayIso,
+      });
+
+      return { year, yearActivities, copy, yearsBack };
+    });
+  }, [memories, userId]);
 
   if (memories.length === 0) {
     return (
@@ -84,27 +101,38 @@ export default function OnThisDay({ activities }: OnThisDayProps) {
           On this day
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3 pb-4">
-        {memories.map(([year, yearActivities]) => (
-          <div key={year} className="flex items-center gap-3">
-            <span className="text-sm font-medium text-muted-foreground min-w-[3rem]">
-              {year}
-            </span>
-            <div className="flex items-center gap-1">
-              {yearActivities.slice(0, 5).map((activity, idx) => (
-                <span key={activity.id} className="text-xl" title={activity.notes || undefined}>
-                  {activity.emoji || "✨"}
-                </span>
-              ))}
-              {yearActivities.length > 5 && (
-                <span className="text-xs text-muted-foreground ml-1">
-                  +{yearActivities.length - 5}
-                </span>
-              )}
+      <CardContent className="space-y-4 pb-4">
+        {memoryCopy.map(({ year, yearActivities, copy }) => (
+          <div key={year} className="space-y-1">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-muted-foreground min-w-[3rem]">
+                {year}
+              </span>
+              <div className="flex items-center gap-1">
+                {yearActivities.slice(0, 5).map((activity) => (
+                  <span key={activity.id} className="text-xl" title={activity.notes || undefined}>
+                    {activity.emoji || "✨"}
+                  </span>
+                ))}
+                {yearActivities.length > 5 && (
+                  <span className="text-xs text-muted-foreground ml-1">
+                    +{yearActivities.length - 5}
+                  </span>
+                )}
+              </div>
             </div>
+            <p className="text-sm font-medium text-foreground">{copy.title}</p>
+            {copy.subtitle && (
+              <p className="text-xs text-muted-foreground italic">{copy.subtitle}</p>
+            )}
+            {copy.body && (
+              <p className="text-xs text-muted-foreground">{copy.body}</p>
+            )}
           </div>
         ))}
-        <p className="text-xs text-muted-foreground italic mt-2">{randomMessage}</p>
+        {memoryCopy.length > 0 && memoryCopy[0].copy.cta && (
+          <p className="text-xs text-primary/70 mt-2">{memoryCopy[0].copy.cta}</p>
+        )}
       </CardContent>
     </Card>
   );

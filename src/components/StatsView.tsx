@@ -376,23 +376,22 @@ export default function StatsView({
     </Card>
   );
 
-  // Generate delta messages for time of day
+  // Generate delta messages for time of day - always show, use actual numbers
   const getTimeOfDayDelta = (key: keyof typeof periodStats.timeOfDay, label: string) => {
     const current = periodStats.timeOfDay[key];
     const comparison = periodStats.comparisonTimeOfDay[key];
     const diff = current - comparison;
-    if (diff === 0 || comparison === 0) return undefined;
-    const pct = Math.round((diff / comparison) * 100);
-    const direction = diff > 0 ? "More" : "Less";
-    return `${direction} than last period (${diff > 0 ? "+" : ""}${pct}%)`;
+    const direction = diff > 0 ? "More" : diff < 0 ? "Less" : "Same as";
+    const sign = diff > 0 ? "+" : "";
+    return `${direction} than last period (${sign}${diff})`;
   };
 
-  // Generate delta messages for bunny days
+  // Generate delta messages for bunny days - always show, use actual numbers
   const getBunnyDelta = (type: "doubleDays" | "tripleDays") => {
     const diff = periodStats.bunnyDaysDelta[type];
-    if (diff === 0) return undefined;
-    const direction = diff > 0 ? "More" : "Fewer";
-    return `${direction} than last period (${diff > 0 ? "+" : ""}${diff})`;
+    const direction = diff > 0 ? "More" : diff < 0 ? "Fewer" : "Same as";
+    const sign = diff > 0 ? "+" : "";
+    return `${direction} than last period (${sign}${diff})`;
   };
 
   if (compact) {
@@ -582,53 +581,36 @@ export default function StatsView({
         </>
       )}
 
-      {/* Bunny Days Section with Period Picker */}
-      {(periodStats.bunnyDays.doubleDays > 0 || periodStats.bunnyDays.tripleDays > 0) && (
-        <>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-4">
-            <h3 className="text-lg sm:text-xl font-semibold">Bunny Days</h3>
-            <PeriodPicker
-              period={periodStats.period}
-              comparison={periodStats.comparison}
-              onPeriodChange={periodStats.setPeriod}
-              onComparisonChange={periodStats.setComparison}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-2 sm:gap-3">
-            {periodStats.bunnyDays.doubleDays > 0 && (
-              <SimpleStatCard
-                icon={Zap}
-                title="Double Days"
-                value={periodStats.bunnyDays.doubleDays}
-                color="text-blue-500"
-                delta={getBunnyDelta("doubleDays")}
-              />
-            )}
-            {periodStats.bunnyDays.tripleDays > 0 && (
-              <SimpleStatCard
-                icon={Zap}
-                title="Triple Days"
-                value={periodStats.bunnyDays.tripleDays}
-                color="text-purple-500"
-                delta={getBunnyDelta("tripleDays")}
-              />
-            )}
-          </div>
-        </>
-      )}
-
-      {/* Time of Day Stats with Period Picker */}
+      {/* Even More Stats Section - Combined Bunny Days + Time of Day */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-4">
-        <h3 className="text-lg sm:text-xl font-semibold">Time of Day</h3>
-        {(periodStats.bunnyDays.doubleDays === 0 && periodStats.bunnyDays.tripleDays === 0) && (
-          <PeriodPicker
-            period={periodStats.period}
-            comparison={periodStats.comparison}
-            onPeriodChange={periodStats.setPeriod}
-            onComparisonChange={periodStats.setComparison}
-          />
-        )}
+        <h3 className="text-lg sm:text-xl font-semibold">Even more stats</h3>
+        <PeriodPicker
+          period={periodStats.period}
+          comparison={periodStats.comparison}
+          onPeriodChange={periodStats.setPeriod}
+          onComparisonChange={periodStats.setComparison}
+        />
       </div>
+      
+      {/* Bunny Days - Always visible */}
+      <div className="grid grid-cols-2 gap-2 sm:gap-3">
+        <SimpleStatCard
+          icon={Zap}
+          title="Double Days"
+          value={periodStats.bunnyDays.doubleDays}
+          color="text-blue-500"
+          delta={getBunnyDelta("doubleDays")}
+        />
+        <SimpleStatCard
+          icon={Zap}
+          title="Triple Days"
+          value={periodStats.bunnyDays.tripleDays}
+          color="text-purple-500"
+          delta={getBunnyDelta("tripleDays")}
+        />
+      </div>
+
+      {/* Time of Day - Always visible */}
       <div className="grid grid-cols-2 gap-2 sm:gap-3">
         <SimpleStatCard
           icon={Sunrise}

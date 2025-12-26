@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Minus, Flame, Calendar, Zap, Moon, Sunrise, Coffee, Sun, Sunset, Stars, Activity, Shield, AlertTriangle, CheckCircle, Users, ArrowUp, ArrowDown } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Flame, Calendar, Rabbit, Moon, Sunrise, Coffee, Sun, Sunset, Stars, Activity, Shield, AlertTriangle, CheckCircle, Users, ArrowUp, ArrowDown } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import PeriodPicker from "@/components/PeriodPicker";
@@ -526,7 +526,7 @@ export default function StatsView({
                         {bestYear.count} {bestYear.count === 1 ? 'activity' : 'activities'}
                       </p>
                     </div>
-                    <Zap className="w-8 h-8 sm:w-10 sm:h-10 text-yellow-500 flex-shrink-0" />
+                    <Rabbit className="w-8 h-8 sm:w-10 sm:h-10 text-yellow-500 flex-shrink-0" />
                   </div>
                 </CardContent>
               </Card>
@@ -595,14 +595,14 @@ export default function StatsView({
       {/* Bunny Days - Always visible */}
       <div className="grid grid-cols-2 gap-2 sm:gap-3">
         <SimpleStatCard
-          icon={Zap}
+          icon={Rabbit}
           title="Double Days"
           value={periodStats.bunnyDays.doubleDays}
           color="text-blue-500"
           delta={getBunnyDelta("doubleDays")}
         />
         <SimpleStatCard
-          icon={Zap}
+          icon={Rabbit}
           title="Triple Days"
           value={periodStats.bunnyDays.tripleDays}
           color="text-purple-500"

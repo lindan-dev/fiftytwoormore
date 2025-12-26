@@ -186,6 +186,66 @@ function getPaceLabel(yearTotal: number): string {
   return "slightly behind—but weekends fix that";
 }
 
+// Calculate consistency score (0-100) - same logic as frontend
+async function getConsistencyScore(supabase: any, userIds: string[]): Promise<number> {
+  const now = new Date();
+  const eightWeeksAgo = new Date(now);
+  eightWeeksAgo.setDate(now.getDate() - 56);
+  
+  const { data, error } = await supabase
+    .from('activities')
+    .select('activity_date')
+    .in('user_id', userIds)
+    .gte('activity_date', eightWeeksAgo.toISOString());
+  
+  if (error || !data) return 0;
+  
+  // Group by week
+  const weekCounts = new Map<string, number>();
+  data.forEach((a: any) => {
+    const date = new Date(a.activity_date);
+    const weekStart = new Date(date);
+    const day = weekStart.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    weekStart.setDate(weekStart.getDate() + diff);
+    const weekKey = weekStart.toISOString().split('T')[0];
+    weekCounts.set(weekKey, (weekCounts.get(weekKey) || 0) + 1);
+  });
+  
+  let score = 0;
+  weekCounts.forEach(count => {
+    if (count >= 1) score += 12;
+    if (count >= 2) score += 2;
+  });
+  
+  return Math.min(score, 100);
+}
+
+// Get optional insight for weekly digest
+function getDigestInsight(data: { logsThisWeek: number; streakWeeks: number; consistencyScore: number; previousWeekLogs: number }): string | null {
+  const insightOptions: string[] = [];
+  
+  // Consistency trend insights
+  if (data.consistencyScore >= 80) {
+    insightOptions.push("You've been showing up more consistently lately. It adds up.");
+    insightOptions.push("Your consistency score is trending up. Quiet progress.");
+    insightOptions.push("Steady beats intense. You're doing steady.");
+  }
+  
+  // Period comparison insights
+  const diff = data.logsThisWeek - data.previousWeekLogs;
+  if (diff > 0) {
+    insightOptions.push("More moments than last week. Momentum looks good.");
+  } else if (diff < 0 && data.logsThisWeek > 0) {
+    insightOptions.push("Slight dip from last period — still very much in the game.");
+    insightOptions.push("Different rhythm this week. That's normal.");
+  }
+  
+  // Return random insight or null
+  if (insightOptions.length === 0) return null;
+  return insightOptions[Math.floor(Math.random() * insightOptions.length)];
+}
+
 const subjectsStandard = [
   "Your week in moments (so far)",
   "Weekend window: open",
@@ -200,7 +260,7 @@ const subjectsNystart = [
 ];
 
 function getPlainText(isNystart: boolean, data: any): string {
-  const { logsThisWeek, lastLogRelative, streakWeeks, yearTotal, paceLabel } = data;
+  const { logsThisWeek, lastLogRelative, streakWeeks, yearTotal, paceLabel, insight } = data;
   
   if (isNystart) {
     return `Hi you two,
@@ -229,6 +289,8 @@ fiftytwoormore
 Here for your journey — softly.`;
   }
   
+  const insightLine = insight ? `\n${insight}\n` : '';
+  
   return `Hi you two,
 
 Here's a quick look at your week so far — no pressure, just the fun part.
@@ -246,7 +308,7 @@ That puts you: ${paceLabel}.
 ${streakWeeks > 0 
   ? `Your streak: ${streakWeeks} week${streakWeeks > 1 ? 's' : ''}.\nThat's some admirable consistency. Keep doing whatever you're doing.`
   : 'No streak right now — which is perfect.\nEvery streak starts with one moment.'}
-
+${insightLine}
 Weekend is a great time for sparks, cuddles, glances, winks…
 (or whatever your version of chemistry looks like.)
 

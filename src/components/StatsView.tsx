@@ -352,46 +352,69 @@ export default function StatsView({
     title,
     value,
     color = "text-primary",
-    delta,
+    difference,
+    comparisonValue,
   }: {
     icon: any;
     title: string;
     value: number;
     color?: string;
-    delta?: string;
-  }) => (
-    <Card className="border-2 border-primary/10 hover:border-primary/30 transition-all hover:shadow-soft">
-      <CardContent className="p-3 sm:p-4">
-        <div className="flex items-center justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <p className="text-xs sm:text-sm text-muted-foreground mb-0.5 sm:mb-1 truncate">{title}</p>
-            <p className={`text-2xl sm:text-3xl font-bold ${color}`}>{value}</p>
-            {delta && (
-              <p className="text-xs text-muted-foreground mt-1">{delta}</p>
-            )}
-          </div>
-          <Icon className={`w-6 h-6 sm:w-8 sm:h-8 ${color} flex-shrink-0`} />
-        </div>
-      </CardContent>
-    </Card>
-  );
+    difference?: number;
+    comparisonValue?: number;
+  }) => {
+    const getTrendIcon = () => {
+      if (difference === undefined) return null;
+      if (difference > 0) return <TrendingUp className="w-4 h-4 text-green-500" />;
+      if (difference < 0) return <TrendingDown className="w-4 h-4 text-red-500" />;
+      return <Minus className="w-4 h-4 text-muted-foreground" />;
+    };
 
-  // Generate delta messages for time of day - always show, use actual numbers
-  const getTimeOfDayDelta = (key: keyof typeof periodStats.timeOfDay, label: string) => {
-    const current = periodStats.timeOfDay[key];
-    const comparison = periodStats.comparisonTimeOfDay[key];
-    const diff = current - comparison;
-    const direction = diff > 0 ? "More" : diff < 0 ? "Less" : "Same as";
-    const sign = diff > 0 ? "+" : "";
-    return `${direction} than last period (${sign}${diff})`;
+    const getTrendColor = () => {
+      if (difference === undefined) return "text-muted-foreground";
+      if (difference > 0) return "text-green-500";
+      if (difference < 0) return "text-red-500";
+      return "text-muted-foreground";
+    };
+
+    const percentChange = comparisonValue === 0 ? "0" : ((difference ?? 0) / (comparisonValue ?? 1) * 100).toFixed(1);
+
+    return (
+      <Card className="border-2 border-primary/10 hover:border-primary/30 transition-all hover:shadow-soft">
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs sm:text-sm text-muted-foreground mb-0.5 sm:mb-1 truncate">{title}</p>
+              <p className={`text-2xl sm:text-3xl font-bold ${color}`}>{value}</p>
+              {difference !== undefined && (
+                <div className="flex items-center gap-1.5 text-xs mt-1 flex-wrap">
+                  {getTrendIcon()}
+                  <span className={getTrendColor()}>
+                    {difference > 0 ? "+" : ""}
+                    {difference} ({percentChange}%)
+                  </span>
+                  <span className="text-muted-foreground whitespace-nowrap">vs previous</span>
+                </div>
+              )}
+            </div>
+            <Icon className={`w-6 h-6 sm:w-8 sm:h-8 ${color} flex-shrink-0`} />
+          </div>
+        </CardContent>
+      </Card>
+    );
   };
 
-  // Generate delta messages for bunny days - always show, use actual numbers
-  const getBunnyDelta = (type: "doubleDays" | "tripleDays") => {
-    const diff = periodStats.bunnyDaysDelta[type];
-    const direction = diff > 0 ? "More" : diff < 0 ? "Fewer" : "Same as";
-    const sign = diff > 0 ? "+" : "";
-    return `${direction} than last period (${sign}${diff})`;
+  // Get comparison values for time of day
+  const getTimeOfDayComparison = (key: keyof typeof periodStats.timeOfDay) => {
+    const current = periodStats.timeOfDay[key];
+    const comparison = periodStats.comparisonTimeOfDay[key];
+    return { current, comparison, difference: current - comparison };
+  };
+
+  // Get comparison values for bunny days
+  const getBunnyComparison = (type: "doubleDays" | "tripleDays") => {
+    const current = periodStats.bunnyDays[type];
+    const comparison = periodStats.comparisonBunnyDays[type];
+    return { current, comparison, difference: current - comparison };
   };
 
   if (compact) {
@@ -597,16 +620,18 @@ export default function StatsView({
         <SimpleStatCard
           icon={Rabbit}
           title="Double Days"
-          value={periodStats.bunnyDays.doubleDays}
+          value={getBunnyComparison("doubleDays").current}
           color="text-blue-500"
-          delta={getBunnyDelta("doubleDays")}
+          difference={getBunnyComparison("doubleDays").difference}
+          comparisonValue={getBunnyComparison("doubleDays").comparison}
         />
         <SimpleStatCard
           icon={Rabbit}
           title="Triple Days"
-          value={periodStats.bunnyDays.tripleDays}
+          value={getBunnyComparison("tripleDays").current}
           color="text-purple-500"
-          delta={getBunnyDelta("tripleDays")}
+          difference={getBunnyComparison("tripleDays").difference}
+          comparisonValue={getBunnyComparison("tripleDays").comparison}
         />
       </div>
 
@@ -615,44 +640,50 @@ export default function StatsView({
         <SimpleStatCard
           icon={Sunrise}
           title="Early Bird"
-          value={periodStats.timeOfDay.earlyBird}
+          value={getTimeOfDayComparison("earlyBird").current}
           color="text-amber-500"
-          delta={getTimeOfDayDelta("earlyBird", "Early Bird")}
+          difference={getTimeOfDayComparison("earlyBird").difference}
+          comparisonValue={getTimeOfDayComparison("earlyBird").comparison}
         />
         <SimpleStatCard
           icon={Coffee}
           title="Lazy Morning"
-          value={periodStats.timeOfDay.lazyMorning}
+          value={getTimeOfDayComparison("lazyMorning").current}
           color="text-brown-500"
-          delta={getTimeOfDayDelta("lazyMorning", "Lazy Morning")}
+          difference={getTimeOfDayComparison("lazyMorning").difference}
+          comparisonValue={getTimeOfDayComparison("lazyMorning").comparison}
         />
         <SimpleStatCard
           icon={Sun}
           title="Nooner"
-          value={periodStats.timeOfDay.nooner}
+          value={getTimeOfDayComparison("nooner").current}
           color="text-yellow-500"
-          delta={getTimeOfDayDelta("nooner", "Nooner")}
+          difference={getTimeOfDayComparison("nooner").difference}
+          comparisonValue={getTimeOfDayComparison("nooner").comparison}
         />
         <SimpleStatCard
           icon={Sunset}
           title="Afternoon Delight"
-          value={periodStats.timeOfDay.afternoon}
+          value={getTimeOfDayComparison("afternoon").current}
           color="text-orange-400"
-          delta={getTimeOfDayDelta("afternoon", "Afternoon Delight")}
+          difference={getTimeOfDayComparison("afternoon").difference}
+          comparisonValue={getTimeOfDayComparison("afternoon").comparison}
         />
         <SimpleStatCard
           icon={Stars}
           title="Evening Bliss"
-          value={periodStats.timeOfDay.evening}
+          value={getTimeOfDayComparison("evening").current}
           color="text-purple-500"
-          delta={getTimeOfDayDelta("evening", "Evening Bliss")}
+          difference={getTimeOfDayComparison("evening").difference}
+          comparisonValue={getTimeOfDayComparison("evening").comparison}
         />
         <SimpleStatCard
           icon={Moon}
           title="Night Owl"
-          value={periodStats.timeOfDay.nightOwl}
+          value={getTimeOfDayComparison("nightOwl").current}
           color="text-indigo-500"
-          delta={getTimeOfDayDelta("nightOwl", "Night Owl")}
+          difference={getTimeOfDayComparison("nightOwl").difference}
+          comparisonValue={getTimeOfDayComparison("nightOwl").comparison}
         />
       </div>
 

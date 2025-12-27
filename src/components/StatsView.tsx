@@ -1,8 +1,9 @@
 import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Minus, Flame, Calendar, Rabbit, Moon, Sunrise, Coffee, Sun, Sunset, Stars, Activity, Shield, AlertTriangle, CheckCircle, Users, ArrowUp, ArrowDown } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Flame, Calendar, Rabbit, Moon, Sunrise, Coffee, Sun, Sunset, Stars, Activity, Shield, AlertTriangle, CheckCircle, Users, ArrowUp, ArrowDown, Info } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import PeriodPicker from "@/components/PeriodPicker";
 import { usePeriodStats, getDeltaMessage } from "@/hooks/usePeriodStats";
 import {
@@ -351,12 +352,14 @@ export default function StatsView({
     value,
     color = "text-primary",
     difference,
+    tooltip,
   }: {
     icon: any;
     title: string;
     value: number;
     color?: string;
     difference?: number;
+    tooltip?: string;
   }) => {
     const getTrendIcon = () => {
       if (difference === undefined) return null;
@@ -377,7 +380,21 @@ export default function StatsView({
         <CardContent className="p-3 sm:p-4">
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0 flex-1">
-              <p className="text-xs sm:text-sm text-muted-foreground mb-0.5 sm:mb-1 truncate">{title}</p>
+              <div className="flex items-center gap-1 mb-0.5 sm:mb-1">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">{title}</p>
+                {tooltip && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="w-3 h-3 text-muted-foreground/60 cursor-help flex-shrink-0" />
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-[200px] text-xs">
+                        <p>{tooltip}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
               <p className={`text-2xl sm:text-3xl font-bold ${color}`}>{value}</p>
               {difference !== undefined && (
                 <div className="flex items-center gap-1.5 text-xs mt-1 flex-wrap">
@@ -614,6 +631,7 @@ export default function StatsView({
           value={getBunnyComparison("doubleDays").current}
           color="text-blue-500"
           difference={getBunnyComparison("doubleDays").difference}
+          tooltip="Days with exactly 2 activities logged"
         />
         <SimpleStatCard
           icon={Rabbit}
@@ -621,6 +639,7 @@ export default function StatsView({
           value={getBunnyComparison("tripleDays").current}
           color="text-purple-500"
           difference={getBunnyComparison("tripleDays").difference}
+          tooltip="Days with 3 or more activities logged"
         />
       </div>
 
@@ -632,6 +651,7 @@ export default function StatsView({
           value={getTimeOfDayComparison("earlyBird").current}
           color="text-amber-500"
           difference={getTimeOfDayComparison("earlyBird").difference}
+          tooltip="Activities between 5am and 8am"
         />
         <SimpleStatCard
           icon={Coffee}
@@ -639,6 +659,7 @@ export default function StatsView({
           value={getTimeOfDayComparison("lazyMorning").current}
           color="text-brown-500"
           difference={getTimeOfDayComparison("lazyMorning").difference}
+          tooltip="Activities between 8am and 11am"
         />
         <SimpleStatCard
           icon={Sun}
@@ -646,6 +667,7 @@ export default function StatsView({
           value={getTimeOfDayComparison("nooner").current}
           color="text-yellow-500"
           difference={getTimeOfDayComparison("nooner").difference}
+          tooltip="Activities between 11am and 2pm"
         />
         <SimpleStatCard
           icon={Sunset}
@@ -653,6 +675,7 @@ export default function StatsView({
           value={getTimeOfDayComparison("afternoon").current}
           color="text-orange-400"
           difference={getTimeOfDayComparison("afternoon").difference}
+          tooltip="Activities between 2pm and 6pm"
         />
         <SimpleStatCard
           icon={Stars}
@@ -660,6 +683,7 @@ export default function StatsView({
           value={getTimeOfDayComparison("evening").current}
           color="text-purple-500"
           difference={getTimeOfDayComparison("evening").difference}
+          tooltip="Activities between 6pm and 10pm"
         />
         <SimpleStatCard
           icon={Moon}
@@ -667,6 +691,7 @@ export default function StatsView({
           value={getTimeOfDayComparison("nightOwl").current}
           color="text-indigo-500"
           difference={getTimeOfDayComparison("nightOwl").difference}
+          tooltip="Activities between 10pm and 5am"
         />
       </div>
 

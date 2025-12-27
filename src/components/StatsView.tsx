@@ -367,7 +367,7 @@ export default function StatsView({
             <p className="text-xs sm:text-sm text-muted-foreground mb-0.5 sm:mb-1 truncate">{title}</p>
             <p className={`text-2xl sm:text-3xl font-bold ${color}`}>{value}</p>
             {delta && (
-              <p className="text-xs text-muted-foreground mt-1 italic">{delta}</p>
+              <p className="text-xs text-muted-foreground mt-1">{delta}</p>
             )}
           </div>
           <Icon className={`w-6 h-6 sm:w-8 sm:h-8 ${color} flex-shrink-0`} />

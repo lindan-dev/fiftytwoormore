@@ -306,12 +306,10 @@ export default function StatsView({
     title,
     current,
     difference,
-    percentChange,
   }: {
     title: string;
     current: number;
     difference: number;
-    percentChange: string;
   }) => {
     const getTrendIcon = () => {
       if (difference > 0) return <TrendingUp className="w-4 h-4 text-green-500" />;
@@ -338,7 +336,7 @@ export default function StatsView({
             {getTrendIcon()}
             <span className={getTrendColor()}>
               {difference > 0 ? "+" : ""}
-              {difference} ({percentChange}%)
+              {difference}
             </span>
             <span className="text-muted-foreground whitespace-nowrap">vs previous</span>
           </div>
@@ -353,14 +351,12 @@ export default function StatsView({
     value,
     color = "text-primary",
     difference,
-    comparisonValue,
   }: {
     icon: any;
     title: string;
     value: number;
     color?: string;
     difference?: number;
-    comparisonValue?: number;
   }) => {
     const getTrendIcon = () => {
       if (difference === undefined) return null;
@@ -376,8 +372,6 @@ export default function StatsView({
       return "text-muted-foreground";
     };
 
-    const percentChange = comparisonValue === 0 ? "0" : ((difference ?? 0) / (comparisonValue ?? 1) * 100).toFixed(1);
-
     return (
       <Card className="border-2 border-primary/10 hover:border-primary/30 transition-all hover:shadow-soft">
         <CardContent className="p-3 sm:p-4">
@@ -390,7 +384,7 @@ export default function StatsView({
                   {getTrendIcon()}
                   <span className={getTrendColor()}>
                     {difference > 0 ? "+" : ""}
-                    {difference} ({percentChange}%)
+                    {difference}
                   </span>
                   <span className="text-muted-foreground whitespace-nowrap">vs previous</span>
                 </div>
@@ -446,19 +440,16 @@ export default function StatsView({
           title="This Week"
           current={weekStats.currentCount}
           difference={weekStats.difference}
-          percentChange={weekStats.percentChange}
         />
         <StatCard
           title="This Month"
           current={monthStats.currentCount}
           difference={monthStats.difference}
-          percentChange={monthStats.percentChange}
         />
         <StatCard
           title="This Year"
           current={yearStats.currentCount}
           difference={yearStats.difference}
-          percentChange={yearStats.percentChange}
         />
       </div>
 
@@ -623,7 +614,6 @@ export default function StatsView({
           value={getBunnyComparison("doubleDays").current}
           color="text-blue-500"
           difference={getBunnyComparison("doubleDays").difference}
-          comparisonValue={getBunnyComparison("doubleDays").comparison}
         />
         <SimpleStatCard
           icon={Rabbit}
@@ -631,7 +621,6 @@ export default function StatsView({
           value={getBunnyComparison("tripleDays").current}
           color="text-purple-500"
           difference={getBunnyComparison("tripleDays").difference}
-          comparisonValue={getBunnyComparison("tripleDays").comparison}
         />
       </div>
 
@@ -643,7 +632,6 @@ export default function StatsView({
           value={getTimeOfDayComparison("earlyBird").current}
           color="text-amber-500"
           difference={getTimeOfDayComparison("earlyBird").difference}
-          comparisonValue={getTimeOfDayComparison("earlyBird").comparison}
         />
         <SimpleStatCard
           icon={Coffee}
@@ -651,7 +639,6 @@ export default function StatsView({
           value={getTimeOfDayComparison("lazyMorning").current}
           color="text-brown-500"
           difference={getTimeOfDayComparison("lazyMorning").difference}
-          comparisonValue={getTimeOfDayComparison("lazyMorning").comparison}
         />
         <SimpleStatCard
           icon={Sun}
@@ -659,7 +646,6 @@ export default function StatsView({
           value={getTimeOfDayComparison("nooner").current}
           color="text-yellow-500"
           difference={getTimeOfDayComparison("nooner").difference}
-          comparisonValue={getTimeOfDayComparison("nooner").comparison}
         />
         <SimpleStatCard
           icon={Sunset}
@@ -667,7 +653,6 @@ export default function StatsView({
           value={getTimeOfDayComparison("afternoon").current}
           color="text-orange-400"
           difference={getTimeOfDayComparison("afternoon").difference}
-          comparisonValue={getTimeOfDayComparison("afternoon").comparison}
         />
         <SimpleStatCard
           icon={Stars}
@@ -675,7 +660,6 @@ export default function StatsView({
           value={getTimeOfDayComparison("evening").current}
           color="text-purple-500"
           difference={getTimeOfDayComparison("evening").difference}
-          comparisonValue={getTimeOfDayComparison("evening").comparison}
         />
         <SimpleStatCard
           icon={Moon}
@@ -683,7 +667,6 @@ export default function StatsView({
           value={getTimeOfDayComparison("nightOwl").current}
           color="text-indigo-500"
           difference={getTimeOfDayComparison("nightOwl").difference}
-          comparisonValue={getTimeOfDayComparison("nightOwl").comparison}
         />
       </div>
 

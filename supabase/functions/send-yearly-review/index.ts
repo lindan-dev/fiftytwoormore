@@ -819,7 +819,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw couplesError;
     }
 
-    const results: { email: string; success: boolean; error?: string }[] = [];
+    const results: { emails: string[]; success: boolean; error?: string }[] = [];
 
     for (const couple of couples || []) {
       try {
@@ -857,7 +857,7 @@ const handler = async (req: Request): Promise<Response> => {
 
         if (!testMode && !sendToAll) {
           console.log('Dry run - would send to:', emails);
-          results.push(...emails.map(e => ({ email: e, success: true, error: 'dry run' })));
+          results.push({ emails, success: true, error: 'dry run' });
           continue;
         }
 
@@ -949,44 +949,41 @@ const handler = async (req: Request): Promise<Response> => {
         const subjectFn = SUBJECT_LINES[Math.floor(Math.random() * SUBJECT_LINES.length)];
         const subject = subjectFn(reviewYear, yearTotal);
 
-        // Send to each user
-        for (const email of emails) {
-          const userId = userIds[emails.indexOf(email)] || userIds[0];
-          const messageId = crypto.randomUUID();
-          
-          const html = getHtml(plainText, { messageId, userId });
+        // Send ONE email to BOTH partners (same as weekly digest)
+        const messageId = crypto.randomUUID();
+        const userId = userIds[0]; // Use first partner's ID for logging
+        const html = getHtml(plainText, { messageId, userId });
 
-          try {
-            const emailResponse = await resend.emails.send({
-              from: "fiftytwoormore <digest@updates.lindaninc.com>",
-              to: [email],
-              subject,
-              html,
-              text: plainText,
-            });
+        try {
+          const emailResponse = await resend.emails.send({
+            from: "fiftytwoormore <digest@updates.lindaninc.com>",
+            to: emails, // Send to all partners at once
+            subject,
+            html,
+            text: plainText,
+          });
 
-            console.log(`Sent yearly review to ${email}:`, emailResponse);
+          console.log(`Sent yearly review to couple (${emails.join(', ')}):`, emailResponse);
 
-            // Log to email_digest_log
-            await supabase.from('email_digest_log').insert({
-              user_id: userId,
-              type: 'yearly-review',
-              year: reviewYear,
-              week_number: 1,
-              subject,
-              message_id: messageId,
-              resend_message_id: emailResponse.data?.id,
-            });
+          // Log to email_digest_log (log for first partner)
+          await supabase.from('email_digest_log').insert({
+            user_id: userId,
+            type: 'yearly-review',
+            year: reviewYear,
+            week_number: 1,
+            subject,
+            message_id: messageId,
+            resend_message_id: emailResponse.data?.id,
+          });
 
-            results.push({ email, success: true });
-          } catch (sendError: any) {
-            console.error(`Failed to send to ${email}:`, sendError);
-            results.push({ email, success: false, error: sendError.message });
-          }
-
-          // Rate limiting
-          await new Promise(resolve => setTimeout(resolve, 600));
+          results.push({ emails, success: true });
+        } catch (sendError: any) {
+          console.error(`Failed to send to couple (${emails.join(', ')}):`, sendError);
+          results.push({ emails, success: false, error: sendError.message });
         }
+
+        // Rate limiting
+        await new Promise(resolve => setTimeout(resolve, 600));
       } catch (coupleError: any) {
         console.error(`Error processing couple ${couple.id}:`, coupleError);
       }

@@ -11,6 +11,28 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+function getLocalDate(timezone: string): Date {
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+  
+  const parts = formatter.formatToParts(now);
+  const year = parseInt(parts.find(p => p.type === 'year')?.value || '2024');
+  const month = parseInt(parts.find(p => p.type === 'month')?.value || '1') - 1;
+  const day = parseInt(parts.find(p => p.type === 'day')?.value || '1');
+  const hour = parseInt(parts.find(p => p.type === 'hour')?.value || '0');
+  const minute = parseInt(parts.find(p => p.type === 'minute')?.value || '0');
+  
+  return new Date(year, month, day, hour, minute);
+}
+
 function getWeekNumber(date: Date): number {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
   const dayNum = d.getUTCDay() || 7;
@@ -59,7 +81,7 @@ async function getLogsThisWeek(supabase: any, userIds: string[], timezone: strin
   return data?.length || 0;
 }
 
-async function getLastLogRelative(supabase: any, userIds: string[]): Promise<string> {
+async function getLastLogRelative(supabase: any, userIds: string[], timezone: string): Promise<string> {
   const { data, error } = await supabase
     .from('activities')
     .select('activity_date')
@@ -71,15 +93,15 @@ async function getLastLogRelative(supabase: any, userIds: string[]): Promise<str
   if (error || !data) return "None yet";
   
   const lastLog = new Date(data.activity_date);
-  const now = new Date();
+  const localNow = getLocalDate(timezone);
   
-  // Use ISO week comparison instead of 168 hours
+  // Use ISO week comparison with timezone-aware current time
   const lastLogWeek = getWeekNumber(lastLog);
   const lastLogYear = lastLog.getFullYear();
-  const currentWeek = getWeekNumber(now);
-  const currentYear = now.getFullYear();
+  const currentWeek = getWeekNumber(localNow);
+  const currentYear = localNow.getFullYear();
   
-  const diffHours = (now.getTime() - lastLog.getTime()) / (1000 * 60 * 60);
+  const diffHours = (Date.now() - lastLog.getTime()) / (1000 * 60 * 60);
   const diffDays = Math.floor(diffHours / 24);
   
   if (diffHours < 24) return "Last night";
@@ -95,8 +117,9 @@ async function getLastLogRelative(supabase: any, userIds: string[]): Promise<str
   return `${diffDays} days ago`;
 }
 
-async function getYearTotal(supabase: any, userIds: string[]): Promise<number> {
-  const yearStart = new Date(new Date().getFullYear(), 0, 1).toISOString();
+async function getYearTotal(supabase: any, userIds: string[], timezone: string): Promise<number> {
+  const localNow = getLocalDate(timezone);
+  const yearStart = new Date(localNow.getFullYear(), 0, 1).toISOString();
   const { data, error } = await supabase
     .from('activities')
     .select('id')
@@ -111,7 +134,7 @@ async function getYearTotal(supabase: any, userIds: string[]): Promise<number> {
   return data?.length || 0;
 }
 
-async function getStreakWeeks(supabase: any, userIds: string[]): Promise<number> {
+async function getStreakWeeks(supabase: any, userIds: string[], timezone: string): Promise<number> {
   const { data, error } = await supabase
     .from('activities')
     .select('activity_date')
@@ -129,10 +152,10 @@ async function getStreakWeeks(supabase: any, userIds: string[]): Promise<number>
     weekSet.add(`${year}-W${week}`);
   });
   
-  // Count consecutive weeks from current week backwards
-  const now = new Date();
-  let checkYear = now.getFullYear();
-  let checkWeek = getWeekNumber(now);
+  // Use timezone-aware current time for "now"
+  const localNow = getLocalDate(timezone);
+  let checkYear = localNow.getFullYear();
+  let checkWeek = getWeekNumber(localNow);
   let streak = 0;
   
   // Check if current week has activity - if so, count it
@@ -341,9 +364,9 @@ const handler = async (req: Request): Promise<Response> => {
         // Calculate combined stats
         const userIds = [couple.user1_id, couple.user2_id];
         const logsThisWeek = await getLogsThisWeek(supabase, userIds, timezone);
-        const lastLogRelative = await getLastLogRelative(supabase, userIds);
-        const yearTotal = await getYearTotal(supabase, userIds);
-        const streakWeeks = await getStreakWeeks(supabase, userIds);
+        const lastLogRelative = await getLastLogRelative(supabase, userIds, timezone);
+        const yearTotal = await getYearTotal(supabase, userIds, timezone);
+        const streakWeeks = await getStreakWeeks(supabase, userIds, timezone);
         const paceLabel = getPaceLabel(yearTotal);
         
         const emailData = {
@@ -465,10 +488,11 @@ const handler = async (req: Request): Promise<Response> => {
           
           // Calculate stats for single user
           const userIds = [profile.user_id];
-          const logsThisWeek = await getLogsThisWeek(supabase, userIds, profile.timezone || 'Europe/Stockholm');
-          const lastLogRelative = await getLastLogRelative(supabase, userIds);
-          const yearTotal = await getYearTotal(supabase, userIds);
-          const streakWeeks = await getStreakWeeks(supabase, userIds);
+          const timezone = profile.timezone || 'Europe/Stockholm';
+          const logsThisWeek = await getLogsThisWeek(supabase, userIds, timezone);
+          const lastLogRelative = await getLastLogRelative(supabase, userIds, timezone);
+          const yearTotal = await getYearTotal(supabase, userIds, timezone);
+          const streakWeeks = await getStreakWeeks(supabase, userIds, timezone);
           const paceLabel = getPaceLabel(yearTotal);
           
           const emailData = {

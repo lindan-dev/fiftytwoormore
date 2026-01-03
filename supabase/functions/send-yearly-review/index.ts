@@ -573,7 +573,7 @@ function getPlainText(data: {
     lines.push(`YOUR FAVOURITE MOVES`);
     data.topEmojis.forEach((e, i) => {
       const prefix = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
-      lines.push(`${prefix} ${e.emoji} ${e.label} - ${e.count} times`);
+      lines.push(`${prefix} ${e.emoji} - ${e.count} times`);
     });
     if (data.topEmojis.length > 0) {
       const topEmoji = data.topEmojis[0];

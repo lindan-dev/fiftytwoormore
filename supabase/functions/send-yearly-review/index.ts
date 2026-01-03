@@ -444,7 +444,7 @@ function getLocationAdventures(activities: Activity[]): { count: number; topLoca
   });
   
   const sorted = Object.entries(emojiCounts).sort((a, b) => b[1] - a[1]);
-  const topLocation = sorted.length > 0 ? EMOJI_LABEL_MAP[sorted[0][0]] || null : null;
+  const topLocation = sorted.length > 0 ? sorted[0][0] : null; // Return emoji directly
   
   return { count: awayActivities.length, topLocation };
 }
@@ -459,6 +459,22 @@ function getDominantTimeOfDay(breakdown: Record<string, number>): { slot: string
   const percentage = Math.round((count / total) * 100);
   
   return { slot, label: TIME_BUCKETS[slot as keyof typeof TIME_BUCKETS]?.label || slot, percentage };
+}
+
+// Get time of day ranking (top 5)
+function getTimeOfDayRanking(breakdown: Record<string, number>): Array<{ label: string; count: number; percentage: number }> {
+  const total = Object.values(breakdown).reduce((a, b) => a + b, 0);
+  if (total === 0) return [];
+  
+  const sorted = Object.entries(breakdown)
+    .filter(([_, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1]);
+  
+  return sorted.slice(0, 5).map(([slot, count]) => ({
+    label: TIME_BUCKETS[slot as keyof typeof TIME_BUCKETS]?.label || slot,
+    count,
+    percentage: Math.round((count / total) * 100),
+  }));
 }
 
 // Generate signature move copy
@@ -531,6 +547,7 @@ function getPlainText(data: {
   longestStreak: number;
   activeWeeks: number;
   dominantTime: { label: string; percentage: number };
+  timeOfDayRanking: Array<{ label: string; count: number; percentage: number }>;
   bunnyDays: { doubleDays: number; tripleDays: number };
   topEmojis: Array<{ emoji: string; label: string; count: number }>;
   emojiVariety: { count: number; examples: string[] };
@@ -568,16 +585,21 @@ function getPlainText(data: {
   }
   lines.push('');
   
-  // Top 5 emojis section
+  // Top 5 emojis section - #1 as statement, 2-5 as podium
   if (data.topEmojis.length > 0) {
     lines.push(`YOUR FAVOURITE MOVES`);
-    data.topEmojis.forEach((e, i) => {
-      const prefix = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
-      lines.push(`${prefix} ${e.emoji} - ${e.count} times`);
-    });
-    if (data.topEmojis.length > 0) {
-      const topEmoji = data.topEmojis[0];
-      lines.push(getSignatureMoveCopy(topEmoji.emoji, EMOJI_CATEGORY_MAP[topEmoji.emoji] || 'OTHER'));
+    const topEmoji = data.topEmojis[0];
+    lines.push(`${topEmoji.emoji} is your signature move (${topEmoji.count} times)`);
+    lines.push(getSignatureMoveCopy(topEmoji.emoji, EMOJI_CATEGORY_MAP[topEmoji.emoji] || 'OTHER'));
+    
+    // Show 2-5 as podium
+    if (data.topEmojis.length > 1) {
+      lines.push('');
+      lines.push('The rest of the podium:');
+      data.topEmojis.slice(1).forEach((e, i) => {
+        const prefix = i === 0 ? '🥈' : i === 1 ? '🥉' : `${i + 3}.`;
+        lines.push(`${prefix} ${e.emoji} - ${e.count} times`);
+      });
     }
     lines.push('');
   }
@@ -624,11 +646,19 @@ function getPlainText(data: {
     );
   }
   
-  lines.push(
-    `TIME OF DAY`,
-    `You're ${data.dominantTime.label} people (${data.dominantTime.percentage}%)`,
-    ''
-  );
+  // Time of Day - #1 as statement, 2-5 as podium
+  lines.push(`TIME OF DAY`);
+  lines.push(`You're ${data.dominantTime.label} people (${data.dominantTime.percentage}%)`);
+  
+  if (data.timeOfDayRanking && data.timeOfDayRanking.length > 1) {
+    lines.push('');
+    lines.push('The rest:');
+    data.timeOfDayRanking.slice(1).forEach((t, i) => {
+      const prefix = i === 0 ? '🥈' : i === 1 ? '🥉' : `${i + 3}.`;
+      lines.push(`${prefix} ${t.label} - ${t.percentage}%`);
+    });
+  }
+  lines.push('');
   
   const totalBunny = data.bunnyDays.doubleDays + data.bunnyDays.tripleDays;
   if (totalBunny > 0) {
@@ -846,6 +876,7 @@ const handler = async (req: Request): Promise<Response> => {
         const activeWeeks = getActiveWeeksCount(yearActivities, timezone);
         const timeBreakdown = getTimeOfDayBreakdown(yearActivities, timezone);
         const dominantTime = getDominantTimeOfDay(timeBreakdown);
+        const timeOfDayRanking = getTimeOfDayRanking(timeBreakdown);
         const bunnyDays = getBunnyDaysBreakdown(yearActivities, timezone);
         const topEmojis = getTopEmojis(yearActivities, 5);
         const emojiVariety = getEmojiVariety(yearActivities);
@@ -884,6 +915,7 @@ const handler = async (req: Request): Promise<Response> => {
           longestStreak,
           activeWeeks,
           dominantTime,
+          timeOfDayRanking,
           bunnyDays,
           topEmojis,
           emojiVariety,

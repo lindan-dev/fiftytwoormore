@@ -302,8 +302,8 @@ function getBunnyDaysBreakdown(activities: Activity[], timezone: string): { doub
   return { doubleDays, tripleDays };
 }
 
-// Get top emoji (excluding default 🔥)
-function getTopEmoji(activities: Activity[]): { emoji: string; label: string; count: number } | null {
+// Get top 5 emojis (excluding default 🔥)
+function getTopEmojis(activities: Activity[], limit: number = 5): Array<{ emoji: string; label: string; count: number }> {
   const emojiCounts: Record<string, number> = {};
   
   activities.forEach(a => {
@@ -313,19 +313,23 @@ function getTopEmoji(activities: Activity[]): { emoji: string; label: string; co
   });
   
   const sorted = Object.entries(emojiCounts).sort((a, b) => b[1] - a[1]);
-  if (sorted.length === 0) return null;
   
-  const [emoji, count] = sorted[0];
-  return { emoji, label: EMOJI_LABEL_MAP[emoji] || 'Unknown', count };
+  return sorted.slice(0, limit).map(([emoji, count]) => ({
+    emoji,
+    label: EMOJI_LABEL_MAP[emoji] || 'Unknown',
+    count,
+  }));
 }
 
-// Get emoji variety count
-function getEmojiVarietyCount(activities: Activity[]): number {
+// Get emoji variety with examples
+function getEmojiVariety(activities: Activity[]): { count: number; examples: string[] } {
   const uniqueEmojis = new Set<string>();
   activities.forEach(a => {
     if (a.emoji) uniqueEmojis.add(a.emoji);
   });
-  return uniqueEmojis.size;
+  
+  const examples = Array.from(uniqueEmojis).slice(0, 8); // Show up to 8 example emojis
+  return { count: uniqueEmojis.size, examples };
 }
 
 // Get emoji time patterns
@@ -528,8 +532,8 @@ function getPlainText(data: {
   activeWeeks: number;
   dominantTime: { label: string; percentage: number };
   bunnyDays: { doubleDays: number; tripleDays: number };
-  topEmoji: { emoji: string; label: string; count: number } | null;
-  emojiVariety: number;
+  topEmojis: Array<{ emoji: string; label: string; count: number }>;
+  emojiVariety: { count: number; examples: string[] };
   emojiTimePatterns: Array<{ emoji: string; label: string; timeSlot: string; percentage: number }>;
   emojiDayPatterns: Array<{ emoji: string; label: string; day: string; percentage: number }>;
   locationAdventures: { count: number; topLocation: string | null };
@@ -564,22 +568,29 @@ function getPlainText(data: {
   }
   lines.push('');
   
-  if (data.topEmoji) {
-    lines.push(
-      `YOUR SIGNATURE MOVE`,
-      `${data.topEmoji.emoji} ${data.topEmoji.label} - ${data.topEmoji.count} times`,
-      getSignatureMoveCopy(data.topEmoji.emoji, EMOJI_CATEGORY_MAP[data.topEmoji.emoji] || 'OTHER'),
-      ''
-    );
+  // Top 5 emojis section
+  if (data.topEmojis.length > 0) {
+    lines.push(`YOUR FAVOURITE MOVES`);
+    data.topEmojis.forEach((e, i) => {
+      const prefix = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+      lines.push(`${prefix} ${e.emoji} ${e.label} - ${e.count} times`);
+    });
+    if (data.topEmojis.length > 0) {
+      const topEmoji = data.topEmojis[0];
+      lines.push(getSignatureMoveCopy(topEmoji.emoji, EMOJI_CATEGORY_MAP[topEmoji.emoji] || 'OTHER'));
+    }
+    lines.push('');
   }
   
-  if (data.emojiVariety > 1) {
-    lines.push(
-      `EMOJI VARIETY`,
-      `${data.emojiVariety} different flavors`,
-      getVarietyScoreCopy(data.emojiVariety),
-      ''
-    );
+  // Emoji variety with examples
+  if (data.emojiVariety.count > 1) {
+    lines.push(`EMOJI VARIETY`);
+    lines.push(`${data.emojiVariety.count} different flavors`);
+    if (data.emojiVariety.examples.length > 0) {
+      lines.push(`Your palette: ${data.emojiVariety.examples.join(' ')}`);
+    }
+    lines.push(getVarietyScoreCopy(data.emojiVariety.count));
+    lines.push('');
   }
   
   if (data.emojiTimePatterns.length > 0) {
@@ -836,8 +847,8 @@ const handler = async (req: Request): Promise<Response> => {
         const timeBreakdown = getTimeOfDayBreakdown(yearActivities, timezone);
         const dominantTime = getDominantTimeOfDay(timeBreakdown);
         const bunnyDays = getBunnyDaysBreakdown(yearActivities, timezone);
-        const topEmoji = getTopEmoji(yearActivities);
-        const emojiVariety = getEmojiVarietyCount(yearActivities);
+        const topEmojis = getTopEmojis(yearActivities, 5);
+        const emojiVariety = getEmojiVariety(yearActivities);
         const emojiTimePatterns = getEmojiTimePatterns(yearActivities, timezone);
         const emojiDayPatterns = getEmojiDayPatterns(yearActivities, timezone);
         const locationAdventures = getLocationAdventures(yearActivities);
@@ -860,7 +871,7 @@ const handler = async (req: Request): Promise<Response> => {
             yearTotal: previousYearActivities.length,
             longestStreak: getLongestStreak(previousYearActivities, timezone),
             activeWeeks: getActiveWeeksCount(previousYearActivities, timezone),
-            emojiVariety: getEmojiVarietyCount(previousYearActivities),
+            emojiVariety: getEmojiVariety(previousYearActivities).count,
             bunnyDays: getBunnyDaysBreakdown(previousYearActivities, timezone),
           };
         }
@@ -874,7 +885,7 @@ const handler = async (req: Request): Promise<Response> => {
           activeWeeks,
           dominantTime,
           bunnyDays,
-          topEmoji,
+          topEmojis,
           emojiVariety,
           emojiTimePatterns,
           emojiDayPatterns,

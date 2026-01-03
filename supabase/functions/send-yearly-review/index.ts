@@ -772,6 +772,20 @@ const SUBJECT_LINES = [
   (year: number, total: number) => `What ${total} moments taught us about you two`,
 ];
 
+// Check if it's the right time to send (9AM local time on first Saturday of year)
+function shouldSendNow(timezone: string, targetHour: number = 9): boolean {
+  const localDate = getLocalDate(timezone);
+  const localHour = localDate.getHours();
+  const dayOfWeek = localDate.getDay(); // 0 = Sunday, 6 = Saturday
+  const dayOfMonth = localDate.getDate();
+  
+  // First Saturday of the year is within first 7 days
+  const isFirstSaturday = dayOfWeek === 6 && dayOfMonth <= 7 && localDate.getMonth() === 0;
+  const isTargetHour = localHour === targetHour;
+  
+  return isFirstSaturday && isTargetHour;
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -787,8 +801,9 @@ const handler = async (req: Request): Promise<Response> => {
     const testMode = body.testMode || false;
     const testEmail = body.testEmail;
     const sendToAll = body.sendToAll || false;
+    const cronMode = body.cronMode || false; // When called from cron, check timezone
 
-    console.log(`Starting yearly review for ${reviewYear}, testMode: ${testMode}, sendToAll: ${sendToAll}`);
+    console.log(`Starting yearly review for ${reviewYear}, testMode: ${testMode}, sendToAll: ${sendToAll}, cronMode: ${cronMode}`);
 
     // Get all couples with their profiles
     const { data: couples, error: couplesError } = await supabase
@@ -847,6 +862,11 @@ const handler = async (req: Request): Promise<Response> => {
         }
 
         const timezone = profiles[0].timezone || 'Europe/Stockholm';
+
+        // In cron mode, only send if it's 9AM local time for this user
+        if (cronMode && !shouldSendNow(timezone, 9)) {
+          continue;
+        }
 
         // Get all activities for this couple
         const { data: activities, error: activitiesError } = await supabase

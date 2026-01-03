@@ -494,6 +494,30 @@ function getVarietyScoreCopy(count: number): string {
   return "Adventurers. Every emoji tells a story.";
 }
 
+// Generate year-over-year comparison copy
+function getYoYCopy(current: number, previous: number): string {
+  const diff = current - previous;
+  const percentChange = previous > 0 ? Math.round((diff / previous) * 100) : 0;
+  
+  if (diff > 0) {
+    if (percentChange >= 50) return `Up ${diff} from last year. Major glow-up.`;
+    if (percentChange >= 20) return `${diff} more than last year. You're on a roll.`;
+    return `Up ${diff} from ${previous} last year. Steady growth.`;
+  } else if (diff < 0) {
+    const absDiff = Math.abs(diff);
+    if (percentChange <= -30) return `${absDiff} fewer than last year. Quality over quantity, right?`;
+    return `Down ${absDiff} from last year. Life happens.`;
+  }
+  return `Same as last year. Consistency is your thing.`;
+}
+
+function getStreakYoYCopy(current: number, previous: number): string {
+  const diff = current - previous;
+  if (diff > 0) return `Longest streak up ${diff} weeks from last year!`;
+  if (diff < 0) return `Streak was ${Math.abs(diff)} weeks longer last year.`;
+  return `Same longest streak as last year.`;
+}
+
 // Generate plain text email
 function getPlainText(data: {
   year: number;
@@ -509,6 +533,15 @@ function getPlainText(data: {
   emojiTimePatterns: Array<{ emoji: string; label: string; timeSlot: string; percentage: number }>;
   emojiDayPatterns: Array<{ emoji: string; label: string; day: string; percentage: number }>;
   locationAdventures: { count: number; topLocation: string | null };
+  // Year-over-year comparison (optional)
+  previousYear?: {
+    year: number;
+    yearTotal: number;
+    longestStreak: number;
+    activeWeeks: number;
+    emojiVariety: number;
+    bunnyDays: { doubleDays: number; tripleDays: number };
+  };
 }): string {
   const lines: string[] = [
     `Your ${data.year}, Wrapped`,
@@ -517,11 +550,19 @@ function getPlainText(data: {
     '',
     `THE BIG NUMBER`,
     `${data.yearTotal} moments together`,
-    data.yearTotal >= 52 
-      ? `You hit the goal! That's once a week, every week.`
-      : `That's ${Math.round((data.yearTotal / 52) * 100)}% of the way to 52.`,
-    '',
   ];
+  
+  // Add year-over-year comparison if available
+  if (data.previousYear && data.previousYear.yearTotal > 0) {
+    lines.push(getYoYCopy(data.yearTotal, data.previousYear.yearTotal));
+  } else {
+    lines.push(
+      data.yearTotal >= 52 
+        ? `You hit the goal! That's once a week, every week.`
+        : `That's ${Math.round((data.yearTotal / 52) * 100)}% of the way to 52.`
+    );
+  }
+  lines.push('');
   
   if (data.topEmoji) {
     lines.push(
@@ -598,10 +639,27 @@ function getPlainText(data: {
     );
   }
   
+  lines.push(`CONSISTENCY`);
+  lines.push(`Longest streak: ${data.longestStreak} weeks in a row`);
+  
+  // Add YoY streak comparison if available
+  if (data.previousYear && data.previousYear.longestStreak > 0) {
+    lines.push(getStreakYoYCopy(data.longestStreak, data.previousYear.longestStreak));
+  }
+  
+  lines.push(`Active weeks: ${data.activeWeeks} out of 52`);
+  
+  // Add YoY active weeks comparison if available
+  if (data.previousYear && data.previousYear.activeWeeks > 0) {
+    const activeWeeksDiff = data.activeWeeks - data.previousYear.activeWeeks;
+    if (activeWeeksDiff > 0) {
+      lines.push(`${activeWeeksDiff} more active weeks than ${data.previousYear.year}.`);
+    } else if (activeWeeksDiff < 0) {
+      lines.push(`${Math.abs(activeWeeksDiff)} fewer active weeks than ${data.previousYear.year}.`);
+    }
+  }
+  
   lines.push(
-    `CONSISTENCY`,
-    `Longest streak: ${data.longestStreak} weeks in a row`,
-    `Active weeks: ${data.activeWeeks} out of 52`,
     '',
     '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
     '',
@@ -769,7 +827,7 @@ const handler = async (req: Request): Promise<Response> => {
           continue;
         }
 
-        // Calculate all statistics
+        // Calculate all statistics for current year
         const yearTotal = yearActivities.length;
         const bestMonth = getBestMonth(yearActivities, timezone);
         const bestWeek = getBestWeek(yearActivities, timezone);
@@ -783,6 +841,29 @@ const handler = async (req: Request): Promise<Response> => {
         const emojiTimePatterns = getEmojiTimePatterns(yearActivities, timezone);
         const emojiDayPatterns = getEmojiDayPatterns(yearActivities, timezone);
         const locationAdventures = getLocationAdventures(yearActivities);
+
+        // Calculate previous year stats for year-over-year comparison
+        const previousYearActivities = getActivitiesForYear(activities || [], reviewYear - 1, timezone);
+        let previousYear: {
+          year: number;
+          yearTotal: number;
+          longestStreak: number;
+          activeWeeks: number;
+          emojiVariety: number;
+          bunnyDays: { doubleDays: number; tripleDays: number };
+        } | undefined;
+
+        if (previousYearActivities.length > 0) {
+          console.log(`Couple ${couple.id} has ${previousYearActivities.length} activities in ${reviewYear - 1} - including YoY comparison`);
+          previousYear = {
+            year: reviewYear - 1,
+            yearTotal: previousYearActivities.length,
+            longestStreak: getLongestStreak(previousYearActivities, timezone),
+            activeWeeks: getActiveWeeksCount(previousYearActivities, timezone),
+            emojiVariety: getEmojiVarietyCount(previousYearActivities),
+            bunnyDays: getBunnyDaysBreakdown(previousYearActivities, timezone),
+          };
+        }
 
         const data = {
           year: reviewYear,
@@ -798,6 +879,7 @@ const handler = async (req: Request): Promise<Response> => {
           emojiTimePatterns,
           emojiDayPatterns,
           locationAdventures,
+          previousYear,
         };
 
         const plainText = getPlainText(data);

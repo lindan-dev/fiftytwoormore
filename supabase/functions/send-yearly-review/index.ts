@@ -596,7 +596,7 @@ function getPlainText(data: {
   if (data.emojiTimePatterns.length > 0) {
     lines.push(`PATTERNS WE NOTICED`);
     data.emojiTimePatterns.forEach(p => {
-      lines.push(`${p.emoji} ${p.label} is an ${p.timeSlot} thing for you`);
+      lines.push(`${p.emoji} is an ${p.timeSlot} thing for you`);
     });
     lines.push('');
   }

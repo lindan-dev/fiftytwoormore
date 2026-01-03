@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.compute-benchmark-cohorts]
 verify_jwt = false
+
+[functions.send-yearly-review]
+verify_jwt = false

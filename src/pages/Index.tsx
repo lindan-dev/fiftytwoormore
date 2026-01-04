@@ -6,6 +6,7 @@ import Auth from "@/components/Auth";
 import Onboarding from "@/components/Onboarding";
 
 import EmojiSelector from "@/components/EmojiSelector";
+import YearInReviewOverlay from "@/components/YearInReviewOverlay";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Heart, Plus, BarChart3, List, LogOut, Copy, Loader2, User, Download, X, Info, Shield } from "lucide-react";
@@ -1238,6 +1239,9 @@ const Index = () => {
           </p>
         </div>
       </div>
+
+      {/* Year in Review Overlay - shows first week of new year until dismissed */}
+      {hasPartner && <YearInReviewOverlay />}
     </div>
   );
 };

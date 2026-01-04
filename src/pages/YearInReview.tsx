@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, Home, Share2, Sparkles, Flame, Calendar, Trophy, Rabbit, MapPin, Sunrise, Coffee, Sun, Sunset, Stars, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, startOfWeek, endOfWeek, getWeek } from "date-fns";
+import { getEmojiLabel } from "@/lib/emojiLabels";
 
 interface Activity {
   id: string;
@@ -197,7 +198,7 @@ export default function YearInReview() {
     const topEmojis = Object.entries(emojiCounts)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
-      .map(([emoji, count]) => ({ emoji, count, percentage: Math.round((count / total) * 100) }));
+      .map(([emoji, count]) => ({ emoji, label: getEmojiLabel(emoji), count, percentage: Math.round((count / total) * 100) }));
 
     // Emoji variety
     const emojiVariety = Object.keys(emojiCounts).length;
@@ -350,20 +351,22 @@ export default function YearInReview() {
           );
         })()
       },
-      // Top emojis
+      // Top emojis - same layout as Time of Day
       stats.topEmojis.length > 0 && {
         id: 'emojis',
         bg: 'bg-gradient-to-br from-pink-500 via-rose-500 to-red-500',
         content: (
           <div className="text-center space-y-6">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white">
-              {stats.topEmojis[0].emoji} is your signature move
+            <span className="text-6xl">{stats.topEmojis[0].emoji}</span>
+            <h2 className="text-2xl sm:text-3xl font-bold text-white">
+              {stats.topEmojis[0].label} is your signature move.
             </h2>
-            <div className="space-y-3 max-w-xs mx-auto mt-8">
+            <div className="space-y-3 max-w-xs mx-auto">
               {stats.topEmojis.slice(1).map((item, i) => (
-                <div key={item.emoji} className="flex items-center gap-4 text-white/80">
-                  <span className="text-2xl w-6 text-right">{i + 2}.</span>
+                <div key={item.emoji} className="flex items-center gap-3 text-white/80">
+                  <span className="text-2xl">{i + 2}.</span>
                   <span className="text-3xl">{item.emoji}</span>
+                  <span className="text-lg flex-1 text-left">{item.label}</span>
                   <span className="text-sm opacity-70">{item.count}</span>
                 </div>
               ))}

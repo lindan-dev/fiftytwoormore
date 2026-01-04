@@ -9,8 +9,8 @@
 export const EMOJI_LABEL_MAP: Record<string, string> = {
   // Activities & Moves
   '🍑': 'Backside',
-  '🍆': 'Equipment',
-  '🍌': 'Equipment',
+  '🍆': 'Disco Stick',
+  '🍌': 'Disco Stick',
   '💋': 'Make-out',
   '👄': 'Lips at work',
   '👅': 'Tongue work',

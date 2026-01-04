@@ -1,6 +1,8 @@
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Minus, Flame, Calendar, Rabbit, Moon, Sunrise, Coffee, Sun, Sunset, Stars, Activity, Shield, AlertTriangle, CheckCircle, Users, ArrowUp, ArrowDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { TrendingUp, TrendingDown, Minus, Flame, Calendar, Rabbit, Moon, Sunrise, Coffee, Sun, Sunset, Stars, Activity, Shield, AlertTriangle, CheckCircle, Users, ArrowUp, ArrowDown, Sparkles } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import PeriodPicker from "@/components/PeriodPicker";
@@ -834,6 +836,32 @@ export default function StatsView({
             </Card>
           )}
         </>
+      )}
+
+      {/* Year in Review CTA */}
+      {activities.length > 0 && (
+        <div className="mt-6">
+          <Card className="border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5">
+            <CardContent className="p-4 sm:p-5">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <Sparkles className="w-8 h-8 text-primary flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold">Year in Review</p>
+                    <p className="text-sm text-muted-foreground">
+                      Relive your {new Date().getFullYear() - 1} highlights
+                    </p>
+                  </div>
+                </div>
+                <Button asChild size="sm">
+                  <Link to={`/year-in-review?year=${new Date().getFullYear() - 1}`}>
+                    View
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );

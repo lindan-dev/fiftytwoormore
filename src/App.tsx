@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Profile from "./pages/Profile";
 import Install from "./pages/Install";
 import ResetPassword from "./pages/ResetPassword";
+import YearInReview from "./pages/YearInReview";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/profile" element={<Profile />} />
           <Route path="/install" element={<Install />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/year-in-review" element={<YearInReview />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

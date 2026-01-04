@@ -1,15 +1,14 @@
 import { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import Auth from "@/components/Auth";
 import Onboarding from "@/components/Onboarding";
 
 import EmojiSelector from "@/components/EmojiSelector";
-import YearInReviewOverlay from "@/components/YearInReviewOverlay";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Plus, BarChart3, List, LogOut, Copy, Loader2, User, Download, X, Info, Shield } from "lucide-react";
+import { Heart, Plus, BarChart3, List, LogOut, Copy, Loader2, User, Download, X, Info, Shield, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ActivityLog from "@/components/ActivityLog";
 import CalendarView from "@/components/CalendarView";
@@ -933,6 +932,25 @@ const Index = () => {
                 </div>
               </div>
             </div>
+            {/* Year in Review Card */}
+            <Link 
+              to={`/year-in-review?year=${new Date().getFullYear() - 1}`}
+              className="block bg-gradient-to-r from-primary/10 to-accent/10 p-3 sm:p-4 rounded-xl border-2 border-primary/20 shadow-sm hover:border-primary/40 transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm sm:text-base font-semibold leading-tight">
+                    Your {new Date().getFullYear() - 1} Year in Review
+                  </p>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                    Relive your highlights, streaks & favourite ways to connect ✨
+                  </p>
+                </div>
+              </div>
+            </Link>
             {activities.length > 0 && (
               <>
                 <StatsView activities={activities} compact={true} />
@@ -1239,9 +1257,6 @@ const Index = () => {
           </p>
         </div>
       </div>
-
-      {/* Year in Review Overlay - shows first week of new year until dismissed */}
-      {hasPartner && <YearInReviewOverlay />}
     </div>
   );
 };

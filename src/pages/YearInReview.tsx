@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, Home, Share2, Sparkles, Flame, Calendar, Trophy, Clock, Rabbit, MapPin } from "lucide-react";
+import { ChevronLeft, ChevronRight, Home, Share2, Sparkles, Flame, Calendar, Trophy, Rabbit, MapPin, Sunrise, Coffee, Sun, Sunset, Stars, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, startOfWeek, endOfWeek, getWeek } from "date-fns";
 
@@ -15,13 +15,13 @@ interface Activity {
   notes: string | null;
 }
 
-const TIME_BUCKETS = {
-  nightOwl: { label: 'Night Owl', range: '00:00-05:59', icon: '🦉' },
-  earlyBird: { label: 'Early Bird', range: '06:00-08:59', icon: '🌅' },
-  morningDelight: { label: 'Morning Delight', range: '09:00-11:59', icon: '☀️' },
-  afternoonAdventure: { label: 'Afternoon Adventure', range: '12:00-16:59', icon: '🌤️' },
-  eveningBliss: { label: 'Evening Bliss', range: '17:00-20:59', icon: '🌆' },
-  lateNight: { label: 'Late Night', range: '21:00-23:59', icon: '🌙' },
+const TIME_BUCKETS: Record<string, { label: string; range: string; Icon: React.ComponentType<{ className?: string }>; statement: string }> = {
+  nightOwl: { label: 'Night Owl', range: '00:00-05:59', Icon: Moon, statement: "The night is yours. Don't fight it." },
+  earlyBird: { label: 'Early Bird', range: '06:00-08:59', Icon: Sunrise, statement: "Early mornings are your thing. Embrace it." },
+  morningDelight: { label: 'Lazy Morning', range: '09:00-11:59', Icon: Coffee, statement: "Lazy mornings work for you. Keep it cozy." },
+  afternoonAdventure: { label: 'Afternoon Delight', range: '12:00-16:59', Icon: Sunset, statement: "Afternoon delight is real. Own it." },
+  eveningBliss: { label: 'Evening Bliss', range: '17:00-20:59', Icon: Stars, statement: "Evenings are your time. Make them count." },
+  lateNight: { label: 'Late Night', range: '21:00-23:59', Icon: Moon, statement: "Late nights are your thing. Don't apologize." },
 };
 
 // Get week number from date
@@ -182,8 +182,7 @@ export default function YearInReview() {
       .slice(0, 5)
       .map(([key, count]) => ({
         key,
-        label: TIME_BUCKETS[key as keyof typeof TIME_BUCKETS].label,
-        icon: TIME_BUCKETS[key as keyof typeof TIME_BUCKETS].icon,
+        label: TIME_BUCKETS[key]?.label || key,
         count,
         percentage: Math.round((count / total) * 100)
       }));
@@ -326,24 +325,30 @@ export default function YearInReview() {
       stats.timeOfDayRanking.length > 0 && {
         id: 'time-of-day',
         bg: 'bg-gradient-to-br from-indigo-500 via-blue-500 to-cyan-500',
-        content: (
-          <div className="text-center space-y-6">
-            <Clock className="w-16 h-16 mx-auto text-white/80" />
-            <h2 className="text-3xl sm:text-4xl font-bold text-white">
-              You're {stats.timeOfDayRanking[0].label} people
-            </h2>
-            <div className="space-y-3 max-w-xs mx-auto">
-              {stats.timeOfDayRanking.slice(1).map((slot, i) => (
-                <div key={slot.key} className="flex items-center gap-3 text-white/80">
-                  <span className="text-2xl">{i + 2}.</span>
-                  <span className="text-xl">{slot.icon}</span>
-                  <span className="text-lg flex-1 text-left">{slot.label}</span>
-                  <span className="text-sm opacity-70">{slot.count}</span>
-                </div>
-              ))}
+        content: (() => {
+          const TopIcon = TIME_BUCKETS[stats.timeOfDayRanking[0].key]?.Icon || Moon;
+          return (
+            <div className="text-center space-y-6">
+              <TopIcon className="w-16 h-16 mx-auto text-white/80" />
+              <h2 className="text-2xl sm:text-3xl font-bold text-white">
+                {TIME_BUCKETS[stats.timeOfDayRanking[0].key]?.statement || `${stats.timeOfDayRanking[0].label} is your time.`}
+              </h2>
+              <div className="space-y-3 max-w-xs mx-auto">
+                {stats.timeOfDayRanking.slice(1).map((slot, i) => {
+                  const SlotIcon = TIME_BUCKETS[slot.key]?.Icon || Moon;
+                  return (
+                    <div key={slot.key} className="flex items-center gap-3 text-white/80">
+                      <span className="text-2xl">{i + 2}.</span>
+                      <SlotIcon className="w-5 h-5" />
+                      <span className="text-lg flex-1 text-left">{slot.label}</span>
+                      <span className="text-sm opacity-70">{slot.count}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )
+          );
+        })()
       },
       // Top emojis
       stats.topEmojis.length > 0 && {
@@ -356,10 +361,9 @@ export default function YearInReview() {
             </h2>
             <div className="space-y-3 max-w-xs mx-auto mt-8">
               {stats.topEmojis.slice(1).map((item, i) => (
-                <div key={item.emoji} className="flex items-center gap-3 text-white/80">
-                  <span className="text-2xl">{i + 2}.</span>
+                <div key={item.emoji} className="flex items-center gap-4 text-white/80">
+                  <span className="text-2xl w-6 text-right">{i + 2}.</span>
                   <span className="text-3xl">{item.emoji}</span>
-                  <span className="flex-1" />
                   <span className="text-sm opacity-70">{item.count}×</span>
                 </div>
               ))}
@@ -378,20 +382,20 @@ export default function YearInReview() {
           <div className="text-center space-y-6">
             <Rabbit className="w-16 h-16 mx-auto text-white/80" />
             <p className="text-xl text-white/80">Some days were extra special</p>
-            {stats.doubleDays > 0 && (
+            {stats.tripleDays > 0 && (
               <div>
                 <h2 className="text-6xl sm:text-7xl font-bold text-white">
-                  {stats.doubleDays}
-                </h2>
-                <p className="text-xl text-white/90">double days</p>
-              </div>
-            )}
-            {stats.tripleDays > 0 && (
-              <div className="mt-4">
-                <h2 className="text-5xl font-bold text-white">
                   {stats.tripleDays}
                 </h2>
-                <p className="text-xl text-white/90">triple+ days 🐰🐰🐰</p>
+                <p className="text-xl text-white/90">triple days 🐰🐰🐰</p>
+              </div>
+            )}
+            {stats.doubleDays > 0 && (
+              <div className={stats.tripleDays > 0 ? "mt-4" : ""}>
+                <h2 className={stats.tripleDays > 0 ? "text-5xl font-bold text-white" : "text-6xl sm:text-7xl font-bold text-white"}>
+                  {stats.doubleDays}
+                </h2>
+                <p className="text-xl text-white/90">double days 🐰🐰</p>
               </div>
             )}
           </div>
@@ -408,7 +412,7 @@ export default function YearInReview() {
               Here's to another year
             </h2>
             <p className="text-xl text-primary-foreground/80">
-              of love, laughter, and {partnerName}
+              of love, laughter and most importantly, {partnerName}
             </p>
             <p className="text-5xl font-bold text-primary-foreground mt-8">
               {reviewYear + 1}

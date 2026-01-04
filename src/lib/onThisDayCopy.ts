@@ -23,76 +23,8 @@ export interface OnThisDayCopy {
 }
 
 // Emoji category mapping - imports from central source
-import { getLabelCategory, type EmojiCategory } from './emojiLabels';
+import { getLabelCategory, getEmojiLabel, type EmojiCategory } from './emojiLabels';
 export type { EmojiCategory };
-
-// Re-export for backwards compatibility - maps labels to categories
-const EMOJI_CATEGORY_MAP: Record<string, EmojiCategory> = {
-  // ROMANTIC_SOFT - new labels
-  'Romantic vibes': 'ROMANTIC_SOFT',
-  'Set the mood': 'ROMANTIC_SOFT',
-  'All the feels': 'ROMANTIC_SOFT',
-  'Make-out': 'ROMANTIC_SOFT',
-  'All wrapped up': 'ROMANTIC_SOFT',
-  'Magic moments': 'ROMANTIC_SOFT',
-  'Something special': 'ROMANTIC_SOFT',
-  'Classic': 'ROMANTIC_SOFT',
-
-  // PLAYFUL_TEASE - new labels
-  'Teasing': 'PLAYFUL_TEASE',
-  'In character': 'PLAYFUL_TEASE',
-  'Warm-up show': 'PLAYFUL_TEASE',
-  'A bit naughty': 'PLAYFUL_TEASE',
-  'Overheated': 'PLAYFUL_TEASE',
-  'Things escalated': 'PLAYFUL_TEASE',
-
-  // SPICY_HEAT - new labels
-  'Extra spicy': 'SPICY_HEAT',
-  'Mutual favor': 'SPICY_HEAT',
-  'Tied-up fun': 'SPICY_HEAT',
-  'Cold tricks': 'SPICY_HEAT',
-  'Taking the lead': 'SPICY_HEAT',
-  'Tongue work': 'SPICY_HEAT',
-  'Backdoor': 'SPICY_HEAT',
-  'Hands-on': 'SPICY_HEAT',
-  'Side-by-side': 'SPICY_HEAT',
-  'Backside': 'SPICY_HEAT',
-  'Equipment': 'SPICY_HEAT',
-  'Grand finale': 'SPICY_HEAT',
-  'Visual inspiration': 'SPICY_HEAT',
-  'Upper assets': 'SPICY_HEAT',
-  'Extra help': 'SPICY_HEAT',
-  'Steamy': 'SPICY_HEAT',
-  'Lips at work': 'SPICY_HEAT',
-
-  // LOCATION_HOME - new labels
-  'Bedroom': 'LOCATION_HOME',
-  'Couch time': 'LOCATION_HOME',
-  'Shower session': 'LOCATION_HOME',
-  'Bath time': 'LOCATION_HOME',
-  'Laundry break': 'LOCATION_HOME',
-  'Kitchen counter': 'LOCATION_HOME',
-  'Chair situation': 'LOCATION_HOME',
-
-  // LOCATION_AWAY - new labels
-  'Hotel mode': 'LOCATION_AWAY',
-  'Away from home': 'LOCATION_AWAY',
-  'Tent adventures': 'LOCATION_AWAY',
-  'Beachside': 'LOCATION_AWAY',
-  'On the water': 'LOCATION_AWAY',
-  'Mile-high mood': 'LOCATION_AWAY',
-  'Train ride': 'LOCATION_AWAY',
-  'Backseat energy': 'LOCATION_AWAY',
-  'On the move': 'LOCATION_AWAY',
-  'Sauna rules': 'LOCATION_AWAY',
-  'Poolside': 'LOCATION_AWAY',
-  'Risky location': 'LOCATION_AWAY',
-  'Out in the wild': 'LOCATION_AWAY',
-
-  // META_CAPTURE - new labels
-  'Captured': 'META_CAPTURE',
-  'Snapshot': 'META_CAPTURE',
-};
 
 // Priority order for category selection
 const CATEGORY_PRIORITY: EmojiCategory[] = [
@@ -105,17 +37,14 @@ const CATEGORY_PRIORITY: EmojiCategory[] = [
   'UNKNOWN',
 ];
 
-export function getEmojiCategory(label: string): EmojiCategory {
-  return EMOJI_CATEGORY_MAP[label] || 'UNKNOWN';
-}
-
 export function getDominantCategory(items: OnThisDayActivity[]): EmojiCategory {
   const categories = new Set<EmojiCategory>();
   
   items.forEach(item => {
-    if (item.notes) {
-      // Notes might contain the label
-      const category = getEmojiCategory(item.notes);
+    // Get category from emoji if present
+    if (item.emoji) {
+      const label = getEmojiLabel(item.emoji);
+      const category = getLabelCategory(label);
       if (category !== 'UNKNOWN') categories.add(category);
     }
   });
@@ -515,7 +444,6 @@ export function buildOnThisDayCopy(context: OnThisDayContext): OnThisDayCopy {
 // ========== EXPORTS FOR TESTING ==========
 
 export const _testing = {
-  EMOJI_CATEGORY_MAP,
   CATEGORY_PRIORITY,
   TITLES,
   SUBTITLES_ZERO,

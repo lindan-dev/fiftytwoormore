@@ -364,7 +364,7 @@ export default function YearInReview() {
                 <div key={item.emoji} className="flex items-center gap-4 text-white/80">
                   <span className="text-2xl w-6 text-right">{i + 2}.</span>
                   <span className="text-3xl">{item.emoji}</span>
-                  <span className="text-sm opacity-70">{item.count}×</span>
+                  <span className="text-sm opacity-70">{item.count}</span>
                 </div>
               ))}
             </div>

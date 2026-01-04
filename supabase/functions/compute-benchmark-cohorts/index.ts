@@ -166,7 +166,30 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    console.log("Starting benchmark cohorts computation...");
+    // Verify authorization - this function should only be called by cron job or with service role key
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      console.error("Missing Authorization header");
+      return new Response(
+        JSON.stringify({ error: "Unauthorized: Missing authorization" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Extract the token from "Bearer <token>"
+    const token = authHeader.replace("Bearer ", "");
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    
+    // Allow requests with anon key (from cron) or service role key
+    if (token !== anonKey && token !== supabaseKey) {
+      console.error("Invalid authorization token");
+      return new Response(
+        JSON.stringify({ error: "Unauthorized: Invalid token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Authorization verified, starting benchmark cohorts computation...");
     const supabase = createClient(supabaseUrl, supabaseKey);
     
     // Get all couples with benchmark_opt_in = true and anniversary set

@@ -22,82 +22,76 @@ export interface OnThisDayCopy {
   cta?: string;
 }
 
-// Emoji category mapping
-export type EmojiCategory = 
-  | 'ROMANTIC_SOFT'
-  | 'PLAYFUL_TEASE'
-  | 'SPICY_HEAT'
-  | 'LOCATION_HOME'
-  | 'LOCATION_AWAY'
-  | 'META_CAPTURE'
-  | 'UNKNOWN';
+// Emoji category mapping - imports from central source
+import { getLabelCategory, type EmojiCategory } from './emojiLabels';
+export type { EmojiCategory };
 
+// Re-export for backwards compatibility - maps labels to categories
 const EMOJI_CATEGORY_MAP: Record<string, EmojiCategory> = {
-  // ROMANTIC_SOFT
-  'Romantic': 'ROMANTIC_SOFT',
-  'Candle': 'ROMANTIC_SOFT',
-  'Hearts': 'ROMANTIC_SOFT',
-  'Lips': 'ROMANTIC_SOFT',
-  'Kiss': 'ROMANTIC_SOFT',
-  'Ribbon': 'ROMANTIC_SOFT',
-  'Sparkles': 'ROMANTIC_SOFT',
-  'Special': 'ROMANTIC_SOFT',
-  'Vanilla': 'ROMANTIC_SOFT',
+  // ROMANTIC_SOFT - new labels
+  'Romantic vibes': 'ROMANTIC_SOFT',
+  'Set the mood': 'ROMANTIC_SOFT',
+  'All the feels': 'ROMANTIC_SOFT',
+  'Make-out': 'ROMANTIC_SOFT',
+  'All wrapped up': 'ROMANTIC_SOFT',
+  'Magic moments': 'ROMANTIC_SOFT',
+  'Something special': 'ROMANTIC_SOFT',
+  'Classic': 'ROMANTIC_SOFT',
 
-  // PLAYFUL_TEASE
-  'Tease': 'PLAYFUL_TEASE',
-  'Dress-up': 'PLAYFUL_TEASE',
-  'Striptease': 'PLAYFUL_TEASE',
-  'Devil': 'PLAYFUL_TEASE',
-  'Hot Face': 'PLAYFUL_TEASE',
-  'Explosion': 'PLAYFUL_TEASE',
-  'Hot': 'PLAYFUL_TEASE',
+  // PLAYFUL_TEASE - new labels
+  'Teasing': 'PLAYFUL_TEASE',
+  'In character': 'PLAYFUL_TEASE',
+  'Warm-up show': 'PLAYFUL_TEASE',
+  'A bit naughty': 'PLAYFUL_TEASE',
+  'Overheated': 'PLAYFUL_TEASE',
+  'Things escalated': 'PLAYFUL_TEASE',
 
-  // SPICY_HEAT
-  'Spicy': 'SPICY_HEAT',
-  '69': 'SPICY_HEAT',
-  'Bondage': 'SPICY_HEAT',
-  'Ice': 'SPICY_HEAT',
-  'Cowgirl': 'SPICY_HEAT',
-  'Oral': 'SPICY_HEAT',
-  'Anal': 'SPICY_HEAT',
-  'Fingering': 'SPICY_HEAT',
-  'Scissoring': 'SPICY_HEAT',
-  'Ass': 'SPICY_HEAT',
-  'Dick': 'SPICY_HEAT',
-  'Cum': 'SPICY_HEAT',
-  'Porn': 'SPICY_HEAT',
-  'Tits': 'SPICY_HEAT',
-  'Dildo': 'SPICY_HEAT',
+  // SPICY_HEAT - new labels
+  'Extra spicy': 'SPICY_HEAT',
+  'Mutual favor': 'SPICY_HEAT',
+  'Tied-up fun': 'SPICY_HEAT',
+  'Cold tricks': 'SPICY_HEAT',
+  'Taking the lead': 'SPICY_HEAT',
+  'Tongue work': 'SPICY_HEAT',
+  'Backdoor': 'SPICY_HEAT',
+  'Hands-on': 'SPICY_HEAT',
+  'Side-by-side': 'SPICY_HEAT',
+  'Backside': 'SPICY_HEAT',
+  'Equipment': 'SPICY_HEAT',
+  'Grand finale': 'SPICY_HEAT',
+  'Visual inspiration': 'SPICY_HEAT',
+  'Upper assets': 'SPICY_HEAT',
+  'Extra help': 'SPICY_HEAT',
+  'Steamy': 'SPICY_HEAT',
+  'Lips at work': 'SPICY_HEAT',
 
-  // LOCATION_HOME
-  'Bed': 'LOCATION_HOME',
-  'Sofa': 'LOCATION_HOME',
-  'Shower': 'LOCATION_HOME',
-  'Bathtub': 'LOCATION_HOME',
-  'Laundry room': 'LOCATION_HOME',
-  'Kitchen': 'LOCATION_HOME',
-  'Chair': 'LOCATION_HOME',
+  // LOCATION_HOME - new labels
+  'Bedroom': 'LOCATION_HOME',
+  'Couch time': 'LOCATION_HOME',
+  'Shower session': 'LOCATION_HOME',
+  'Bath time': 'LOCATION_HOME',
+  'Laundry break': 'LOCATION_HOME',
+  'Kitchen counter': 'LOCATION_HOME',
+  'Chair situation': 'LOCATION_HOME',
 
-  // LOCATION_AWAY
-  'Hotel': 'LOCATION_AWAY',
-  'Hotell': 'LOCATION_AWAY',
-  'Abroad': 'LOCATION_AWAY',
-  'Tent': 'LOCATION_AWAY',
-  'Beach': 'LOCATION_AWAY',
-  'Boat': 'LOCATION_AWAY',
-  'Airplane': 'LOCATION_AWAY',
-  'Train': 'LOCATION_AWAY',
-  'Car': 'LOCATION_AWAY',
-  'Bus': 'LOCATION_AWAY',
-  'Public sauna': 'LOCATION_AWAY',
-  'Public pool': 'LOCATION_AWAY',
-  'Public toilet': 'LOCATION_AWAY',
-  'Outdoor': 'LOCATION_AWAY',
+  // LOCATION_AWAY - new labels
+  'Hotel mode': 'LOCATION_AWAY',
+  'Away from home': 'LOCATION_AWAY',
+  'Tent adventures': 'LOCATION_AWAY',
+  'Beachside': 'LOCATION_AWAY',
+  'On the water': 'LOCATION_AWAY',
+  'Mile-high mood': 'LOCATION_AWAY',
+  'Train ride': 'LOCATION_AWAY',
+  'Backseat energy': 'LOCATION_AWAY',
+  'On the move': 'LOCATION_AWAY',
+  'Sauna rules': 'LOCATION_AWAY',
+  'Poolside': 'LOCATION_AWAY',
+  'Risky location': 'LOCATION_AWAY',
+  'Out in the wild': 'LOCATION_AWAY',
 
-  // META_CAPTURE
-  'Recording': 'META_CAPTURE',
-  'Photographing': 'META_CAPTURE',
+  // META_CAPTURE - new labels
+  'Captured': 'META_CAPTURE',
+  'Snapshot': 'META_CAPTURE',
 };
 
 // Priority order for category selection

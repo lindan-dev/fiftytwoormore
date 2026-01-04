@@ -1,76 +1,21 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { getEmojiPresets } from "@/lib/emojiLabels";
 
 interface EmojiSelectorProps {
   onSelect: (emoji: string) => void;
   selectedEmoji?: string;
 }
 
-const EMOJI_PRESETS = [
-  { emoji: "🍑", label: "Ass" },
-  { emoji: "🍆", label: "Dick" },
-  { emoji: "💋", label: "Kiss" },
-  { emoji: "💥", label: "Explosion" },
-  { emoji: "👅", label: "Oral" },
-  { emoji: "🍩", label: "Anal" },
-  { emoji: "👉", label: "Fingering" },
-  { emoji: "✂️", label: "Scissoring" },
-  { emoji: "♋️", label: "69" },
-  { emoji: "🏇", label: "Cowgirl" },
-  { emoji: "💋", label: "Kiss" },
-  { emoji: "💃", label: "Striptease" },
-  { emoji: "🔥", label: "Hot" },
-  { emoji: "💦", label: "Cum" },
-  { emoji: "🌶️", label: "Spicy" },
-  { emoji: "🍦", label: "Vanilla" },
-  { emoji: "🌽", label: "Porn" },
-  { emoji: "🍒", label: "Tits" },
-  { emoji: "🍌", label: "Dick" },
-  { emoji: "🥕", label: "Dildo" },
-  { emoji: "🥵", label: "Hot Face" },
-  { emoji: "😈", label: "Devil" },
-  { emoji: "👄", label: "Lips" },
-  { emoji: "💕", label: "Hearts" },
-  { emoji: "✨", label: "Sparkles" },
-  { emoji: "🎀", label: "Ribbon" },
-  { emoji: "🧊", label: "Ice" },
-  { emoji: "🕯️", label: "Candle" },
-  { emoji: "🌹", label: "Romantic" },
-  { emoji: "💎", label: "Special" },
-  { emoji: "🎭", label: "Dress-up" },
-  { emoji: "🦋", label: "Tease" },
-  { emoji: "⛓️", label: "Bondage" },
-  { emoji: "🛏️", label: "Bed" },
-  { emoji: "🛋️", label: "Sofa" },
-  { emoji: "🧺", label: "Laundry room" },
-  { emoji: "🚿", label: "Shower" },
-  { emoji: "🛁", label: "Bathtub" },
-  { emoji: "🪑", label: "Chair" },
-  { emoji: "🍽️", label: "Kitchen" },
-  { emoji: "🌳", label: "Outdoor" },
-  { emoji: "🏖️", label: "Beach" },
-  { emoji: "🏕️", label: "Tent" },
-  { emoji: "🏩", label: "Hotell" },
-  { emoji: "🚻", label: "Public toilet" },
-  { emoji: "🧖", label: "Public sauna" },
-  { emoji: "👙", label: "Public pool" },
-  { emoji: "🗺️", label: "Abroad" },
-  { emoji: "🚗", label: "Car" },
-  { emoji: "🚌", label: "Bus" },
-  { emoji: "🚂", label: "Train" },
-  { emoji: "✈️", label: "Airplane" },
-  { emoji: "🛥️", label: "Boat" },
-  { emoji: "🎥", label: "Recording" },
-  { emoji: "📸", label: "Photographing" },
-];
-
 export default function EmojiSelector({ onSelect, selectedEmoji }: EmojiSelectorProps) {
+  const emojiPresets = getEmojiPresets();
+  
   return (
     <Card className="p-4 border-2 border-primary/20">
       <ScrollArea className="h-[200px]">
         <div className="grid grid-cols-6 gap-2">
-          {EMOJI_PRESETS.map(({ emoji, label }) => (
+          {emojiPresets.map(({ emoji, label }) => (
             <Button
               key={emoji}
               variant={selectedEmoji === emoji ? "default" : "outline"}

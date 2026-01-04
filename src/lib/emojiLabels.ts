@@ -19,8 +19,8 @@
 export const EMOJI_LABEL_MAP: Record<string, string> = {
   // Activities & Moves
   '🍑': 'Backside',
-  '🍆': 'Equipment',
-  '🍌': 'Equipment',
+  '🍆': 'Disco Stick',
+  '🍌': 'Disco Stick',
   '💋': 'Make-out',
   '👄': 'Lips at work',
   '👅': 'Tongue work',
@@ -127,7 +127,7 @@ const LABEL_CATEGORY_MAP: Record<string, EmojiCategory> = {
   'Hands-on': 'SPICY_HEAT',
   'Side-by-side': 'SPICY_HEAT',
   'Backside': 'SPICY_HEAT',
-  'Equipment': 'SPICY_HEAT',
+  'Disco Stick': 'SPICY_HEAT',
   'Grand finale': 'SPICY_HEAT',
   'Visual inspiration': 'SPICY_HEAT',
   'Upper assets': 'SPICY_HEAT',

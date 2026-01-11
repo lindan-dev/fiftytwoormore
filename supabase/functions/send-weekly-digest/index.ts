@@ -449,13 +449,14 @@ const handler = async (req: Request): Promise<Response> => {
         const weekNumber = getWeekNumber(localDate);
         const year = localDate.getFullYear();
         
-        // Check if already sent this week (check for first user)
+        // Check if already sent this week (check for first user, only digest types)
         const { data: existingLog } = await supabase
           .from('email_digest_log')
           .select('id')
           .eq('user_id', couple.user1_id)
           .eq('week_number', weekNumber)
           .eq('year', year)
+          .in('type', ['digest', 'digest-nystart'])
           .single();
         
         if (existingLog) {

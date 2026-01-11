@@ -529,15 +529,6 @@ const Index = () => {
   const handleLogActivity = async (activityDate?: Date, emoji?: string, notes?: string) => {
     if (!session?.user) return;
 
-    if (!hasPartner) {
-      toast({
-        title: "Partner required",
-        description: "You need to connect with your partner first.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     const dateToLog = activityDate || new Date();
 
     const { error } = await supabase.from("activities").insert([

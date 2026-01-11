@@ -296,6 +296,7 @@ const Index = () => {
         setPartnerName("");
         setConnectedDate("");
         checkInvitations();
+        await fetchActivities();
       }
     } catch (error) {
       console.error("Error in checkPartnerStatus:", error);
@@ -309,7 +310,7 @@ const Index = () => {
 
   // Realtime subscription for activities
   useEffect(() => {
-    if (!hasPartner) return;
+    if (!session?.user?.id) return;
 
     const channel = supabase
       .channel("activities-changes")
@@ -329,7 +330,7 @@ const Index = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [hasPartner, fetchActivities]);
+  }, [session?.user?.id, fetchActivities]);
 
   // Realtime subscription for couple connection/disconnection
   useEffect(() => {

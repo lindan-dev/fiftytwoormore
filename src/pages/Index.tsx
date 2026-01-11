@@ -63,7 +63,7 @@ const Index = () => {
   const [checkingPartner, setCheckingPartner] = useState(true);
   const [view, setView] = useState<"log" | "stats" | "superuser">("log");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [quickLogOpen, setQuickLogOpen] = useState(false);
+  
   const [customDate, setCustomDate] = useState("");
   const [customTime, setCustomTime] = useState("");
   const [selectedEmoji, setSelectedEmoji] = useState("");
@@ -561,7 +561,7 @@ const Index = () => {
         description: "Activity logged!",
       });
       fetchActivities();
-      setQuickLogOpen(false);
+      setDialogOpen(false);
       setSelectedEmoji("");
       setSelectedNotes("");
     }
@@ -1105,54 +1105,24 @@ const Index = () => {
         )}
 
         <div className="flex gap-2">
-          <Dialog open={quickLogOpen} onOpenChange={setQuickLogOpen}>
-            <DialogTrigger asChild>
-              <Button
-                className="flex-1 h-12 sm:h-14 text-sm sm:text-base font-semibold"
-              >
-                <Plus className="w-5 h-5 sm:w-6 sm:h-6 mr-1.5 sm:mr-2" />
-                Log Now
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Choose an Activity</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <EmojiSelector onSelect={setSelectedEmoji} selectedEmoji={selectedEmoji} />
-                <div className="space-y-2">
-                  <Label htmlFor="quick-notes">Notes (optional)</Label>
-                  <Input
-                    id="quick-notes"
-                    type="text"
-                    placeholder="Add a note..."
-                    value={selectedNotes}
-                    onChange={(e) => setSelectedNotes(e.target.value)}
-                    maxLength={200}
-                  />
-                </div>
-                <Button
-                  onClick={() => handleLogActivity(undefined, selectedEmoji, selectedNotes)}
-                  disabled={!selectedEmoji}
-                  className="w-full"
-                >
-                  Log Activity
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Button
+            onClick={() => {
+              const now = new Date();
+              setCustomDate(now.toISOString().split('T')[0]);
+              setCustomTime(now.toTimeString().slice(0, 5));
+              setSelectedEmoji("");
+              setSelectedNotes("");
+              setDialogOpen(true);
+            }}
+            className="flex-1 h-12 sm:h-14 text-sm sm:text-base font-semibold"
+          >
+            <Plus className="w-5 h-5 sm:w-6 sm:h-6 mr-1.5 sm:mr-2" />
+            Log Now
+          </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button
-                variant="outline"
-                className="h-12 sm:h-14 px-4 sm:px-6 border-2 border-primary/30 hover:border-primary hover:bg-primary/5 text-sm sm:text-base"
-              >
-                Custom
-              </Button>
-            </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Log Custom Activity</DialogTitle>
+                <DialogTitle>Log Activity</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -1168,9 +1138,9 @@ const Index = () => {
                   <EmojiSelector onSelect={setSelectedEmoji} selectedEmoji={selectedEmoji} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="custom-notes">Notes (optional)</Label>
+                  <Label htmlFor="notes">Notes (optional)</Label>
                   <Input
-                    id="custom-notes"
+                    id="notes"
                     type="text"
                     placeholder="Add a note..."
                     value={selectedNotes}

@@ -1091,12 +1091,24 @@ const Index = () => {
             </div>
           </div>
         )}
+        
+        {/* "Start while waiting" section - only for uncoupled users */}
+        {!hasPartner && (
+          <div className="bg-gradient-to-r from-primary/5 to-accent/5 p-3 sm:p-4 rounded-xl border-2 border-primary/10 shadow-sm">
+            <h3 className="font-semibold text-sm sm:text-base">
+              Waiting for partner, but you can start already.
+            </h3>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+              fiftytwoormore is best used together with your partner, but you can start on your own right away. Log your first moment by clicking 'Log now' below.
+            </p>
+          </div>
+        )}
+
         <div className="flex gap-2">
           <Dialog open={quickLogOpen} onOpenChange={setQuickLogOpen}>
             <DialogTrigger asChild>
               <Button
-                disabled={!hasPartner}
-                className="flex-1 h-12 sm:h-14 text-sm sm:text-base font-semibold disabled:opacity-50"
+                className="flex-1 h-12 sm:h-14 text-sm sm:text-base font-semibold"
               >
                 <Plus className="w-5 h-5 sm:w-6 sm:h-6 mr-1.5 sm:mr-2" />
                 Log Now
@@ -1132,9 +1144,8 @@ const Index = () => {
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button
-                disabled={!hasPartner}
                 variant="outline"
-                className="h-12 sm:h-14 px-4 sm:px-6 border-2 border-primary/30 hover:border-primary hover:bg-primary/5 disabled:opacity-50 text-sm sm:text-base"
+                className="h-12 sm:h-14 px-4 sm:px-6 border-2 border-primary/30 hover:border-primary hover:bg-primary/5 text-sm sm:text-base"
               >
                 Custom
               </Button>

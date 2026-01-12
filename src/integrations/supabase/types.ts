@@ -351,7 +351,7 @@ export type Database = {
       is_beta_user_or_partner: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "superuser" | "user" | "beta_user"
+      app_role: "superuser" | "user" | "beta_user" | "test_user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -479,7 +479,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["superuser", "user", "beta_user"],
+      app_role: ["superuser", "user", "beta_user", "test_user"],
     },
   },
 } as const

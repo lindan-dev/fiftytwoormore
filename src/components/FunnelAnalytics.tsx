@@ -33,27 +33,47 @@ export default function FunnelAnalytics() {
     try {
       setLoading(true);
 
-      // Fetch all user events
-      const { data: events, error } = await supabase
+      // Fetch test user IDs to exclude from analytics
+      const { data: testUserRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "test_user");
+      
+      const testUserIds = new Set(testUserRoles?.map(r => r.user_id) || []);
+
+      // Fetch all user events (excluding test users)
+      const { data: allEvents, error } = await supabase
         .from("user_events")
         .select("*")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
+      
+      const events = allEvents?.filter(e => !testUserIds.has(e.user_id));
 
-      // Fetch profiles for additional data
-      const { data: profiles } = await supabase
+      // Fetch profiles for additional data (excluding test users)
+      const { data: allProfiles } = await supabase
         .from("profiles")
         .select("user_id, signup_at, created_at");
+      
+      const profiles = allProfiles?.filter(p => !testUserIds.has(p.user_id));
 
-      const { data: couples } = await supabase
+      // Fetch couples (excluding couples with test users)
+      const { data: allCouples } = await supabase
         .from("couples")
         .select("user1_id, user2_id, created_at");
+      
+      const couples = allCouples?.filter(
+        c => !testUserIds.has(c.user1_id) && !testUserIds.has(c.user2_id)
+      );
 
-      const { data: activities } = await supabase
+      // Fetch activities (excluding test users)
+      const { data: allActivities } = await supabase
         .from("activities")
         .select("user_id, created_at")
         .order("created_at", { ascending: true });
+      
+      const activities = allActivities?.filter(a => !testUserIds.has(a.user_id));
 
       // Calculate signup funnel
       const signupStarted = new Set(

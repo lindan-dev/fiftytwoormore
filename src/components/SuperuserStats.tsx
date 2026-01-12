@@ -45,6 +45,14 @@ export default function SuperuserStats() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Get fresh test user IDs to ensure we have the latest
+      const { data: testRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "test_user");
+      
+      const currentTestUserIds = new Set(testRoles?.map(r => r.user_id) || []);
+
       // Get last check time
       const { data: lastCheck } = await supabase
         .from("superuser_last_check")
@@ -60,7 +68,7 @@ export default function SuperuserStats() {
         .select("user_id")
         .gt("created_at", lastCheckTime);
       
-      const newProfiles = newProfilesData?.filter(p => !testUserIds.has(p.user_id)).length || 0;
+      const newProfiles = newProfilesData?.filter(p => !currentTestUserIds.has(p.user_id)).length || 0;
 
       // Check for new couples (excluding test users)
       const { data: newCouplesData } = await supabase
@@ -69,7 +77,7 @@ export default function SuperuserStats() {
         .gt("created_at", lastCheckTime);
       
       const newCouples = newCouplesData?.filter(
-        c => !testUserIds.has(c.user1_id) && !testUserIds.has(c.user2_id)
+        c => !currentTestUserIds.has(c.user1_id) && !currentTestUserIds.has(c.user2_id)
       ).length || 0;
 
       if (newProfiles > 0 || newCouples > 0) {

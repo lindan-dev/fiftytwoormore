@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import { Heart } from "lucide-react";
 import { z } from "zod";
 const authSchema = z.object({
@@ -21,9 +22,22 @@ export default function Auth() {
   const {
     toast
   } = useToast();
+  const { track } = useAnalytics();
+
+  // Track auth page view on mount
+  useEffect(() => {
+    track('auth_page_view');
+  }, [track]);
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    // Track signup attempt
+    if (isSignUp) {
+      track('signup_started');
+    }
+
     try {
       if (isForgotPassword) {
         // Validate email only
@@ -86,6 +100,9 @@ export default function Auth() {
             }
           });
           if (error) throw error;
+          
+          // Track successful signup
+          track('signup_completed');
           
           // Beta status is stored in profiles table and checked via authenticated queries
           // No external unauthenticated API calls needed

@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Heart, Clock, Calendar, Lock, Flame } from "lucide-react";
+import { useAnalytics } from "@/hooks/useAnalytics";
 
 interface OnboardingProps {
   onComplete: () => void;
@@ -47,17 +48,30 @@ const Onboarding = ({ onComplete, startSlide = 0 }: OnboardingProps) => {
   const displaySlides = startSlide > 0 ? slides.slice(startSlide) : slides;
   const currentSlideData = displaySlides[currentSlide - startSlide];
   const Icon = currentSlideData.icon;
+  const { track } = useAnalytics();
+
+  // Track onboarding started
+  useEffect(() => {
+    track('onboarding_started');
+  }, [track]);
 
   const handleNext = () => {
     if (currentSlide - startSlide < displaySlides.length - 1) {
       setCurrentSlide(currentSlide + 1);
     } else {
+      track('onboarding_completed');
       onComplete();
     }
   };
 
   const handleSkip = () => {
+    track('onboarding_skipped', { at_slide: currentSlide });
     setCurrentSlide(slides.length - 1);
+  };
+
+  const handleComplete = () => {
+    track('onboarding_completed');
+    onComplete();
   };
 
   return (
@@ -97,7 +111,7 @@ const Onboarding = ({ onComplete, startSlide = 0 }: OnboardingProps) => {
         <div className="flex flex-col gap-3 min-h-[120px]">
           {currentSlideData.isFinal ? (
             <>
-              <Button onClick={onComplete} size="lg" className="w-full text-base sm:text-lg h-12 sm:h-14">
+              <Button onClick={handleComplete} size="lg" className="w-full text-base sm:text-lg h-12 sm:h-14">
                 Get Streaky
               </Button>
               <div className="h-11" />

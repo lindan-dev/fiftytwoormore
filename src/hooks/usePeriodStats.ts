@@ -48,11 +48,14 @@ function getComparisonBounds(
   }
   
   if (comparison === "same-period-last-year") {
-    const lastYearNow = subYears(now, 1);
-    return getPeriodBounds(period, lastYearNow);
+    // Compare against the entire previous calendar year
+    // This is more intuitive when users select "vs Last year"
+    const lastYearStart = startOfYear(subYears(now, 1));
+    const lastYearEnd = new Date(lastYearStart.getFullYear(), 11, 31, 23, 59, 59, 999);
+    return { start: lastYearStart, end: lastYearEnd };
   }
   
-  // Previous period
+  // Previous period - shifts the current period window back
   switch (period) {
     case "this-month":
       return { start: subMonths(startOfMonth(now), 1), end: startOfMonth(now) };

@@ -2,12 +2,13 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Users, Heart, Mail, Activity, BarChart3, TrendingUp } from "lucide-react";
+import { Users, Heart, Mail, Activity, BarChart3, TrendingUp, FlaskConical } from "lucide-react";
 import { format, subDays, startOfDay } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EmailPerformance from "@/components/EmailPerformance";
 import FunnelAnalytics from "@/components/FunnelAnalytics";
+import TestUserManager from "@/components/TestUserManager";
 
 interface StatsData {
   date: string;
@@ -20,12 +21,24 @@ interface StatsData {
 export default function SuperuserStats() {
   const [statsData, setStatsData] = useState<StatsData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [testUserIds, setTestUserIds] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchStats();
-    checkForNewSignups();
+    fetchTestUsers().then(() => {
+      fetchStats();
+      checkForNewSignups();
+    });
   }, []);
+
+  const fetchTestUsers = async () => {
+    const { data: testRoles } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "test_user");
+    
+    setTestUserIds(new Set(testRoles?.map(r => r.user_id) || []));
+  };
 
   const checkForNewSignups = async () => {
     try {
@@ -41,22 +54,28 @@ export default function SuperuserStats() {
 
       const lastCheckTime = lastCheck?.last_check_at || new Date(0).toISOString();
 
-      // Check for new profiles
-      const { count: newProfiles } = await supabase
+      // Check for new profiles (excluding test users)
+      const { data: newProfilesData } = await supabase
         .from("profiles")
-        .select("*", { count: "exact", head: true })
+        .select("user_id")
         .gt("created_at", lastCheckTime);
+      
+      const newProfiles = newProfilesData?.filter(p => !testUserIds.has(p.user_id)).length || 0;
 
-      // Check for new couples
-      const { count: newCouples } = await supabase
+      // Check for new couples (excluding test users)
+      const { data: newCouplesData } = await supabase
         .from("couples")
-        .select("*", { count: "exact", head: true })
+        .select("user1_id, user2_id")
         .gt("created_at", lastCheckTime);
+      
+      const newCouples = newCouplesData?.filter(
+        c => !testUserIds.has(c.user1_id) && !testUserIds.has(c.user2_id)
+      ).length || 0;
 
-      if ((newProfiles || 0) > 0 || (newCouples || 0) > 0) {
+      if (newProfiles > 0 || newCouples > 0) {
         toast({
           title: "New Activity! 🎉",
-          description: `${newProfiles || 0} new user(s) and ${newCouples || 0} new couple(s) since your last visit!`,
+          description: `${newProfiles} new user(s) and ${newCouples} new couple(s) since your last visit!`,
         });
       }
 
@@ -75,6 +94,15 @@ export default function SuperuserStats() {
   const fetchStats = async () => {
     try {
       setLoading(true);
+      
+      // Get fresh test user IDs
+      const { data: testRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "test_user");
+      
+      const currentTestUserIds = new Set(testRoles?.map(r => r.user_id) || []);
+
       const days = 30;
       const dateArray = Array.from({ length: days }, (_, i) => {
         const date = subDays(new Date(), days - 1 - i);
@@ -84,36 +112,44 @@ export default function SuperuserStats() {
       const statsPromises = dateArray.map(async (date) => {
         const nextDay = startOfDay(new Date(new Date(date).getTime() + 86400000)).toISOString();
 
-        const [profiles, invitations, couples, activities] = await Promise.all([
+        // Fetch all data then filter out test users
+        const [profilesRes, invitationsRes, couplesRes, activitiesRes] = await Promise.all([
           supabase
             .from("profiles")
-            .select("id", { count: "exact" })
+            .select("user_id")
             .lt("created_at", nextDay),
           supabase
             .from("couple_invitations")
-            .select("id", { count: "exact" })
+            .select("sender_id")
             .lt("created_at", nextDay),
           supabase
             .from("couples")
-            .select("id", { count: "exact" })
+            .select("user1_id, user2_id")
             .lt("created_at", nextDay),
           supabase
             .from("activities")
-            .select("id", { count: "exact" })
+            .select("user_id")
             .lt("activity_date", nextDay),
         ]);
 
+        // Filter out test users
+        const profiles = profilesRes.data?.filter(p => !currentTestUserIds.has(p.user_id)).length || 0;
+        const invitations = invitationsRes.data?.filter(i => !currentTestUserIds.has(i.sender_id)).length || 0;
+        const couples = couplesRes.data?.filter(
+          c => !currentTestUserIds.has(c.user1_id) && !currentTestUserIds.has(c.user2_id)
+        ).length || 0;
+        const activities = activitiesRes.data?.filter(a => !currentTestUserIds.has(a.user_id)).length || 0;
+
         return {
           date: format(new Date(date), "MMM dd"),
-          profiles: profiles.count || 0,
-          invitations: invitations.count || 0,
-          couples: couples.count || 0,
-          activities: activities.count || 0,
+          profiles,
+          invitations,
+          couples,
+          activities,
         };
       });
 
       const stats = await Promise.all(statsPromises);
-      console.log("Stats data:", stats);
       setStatsData(stats);
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -151,10 +187,18 @@ export default function SuperuserStats() {
           <BarChart3 className="h-4 w-4" />
           Email
         </TabsTrigger>
+        <TabsTrigger value="users" className="flex items-center gap-2">
+          <FlaskConical className="h-4 w-4" />
+          Users
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="funnel">
         <FunnelAnalytics />
+      </TabsContent>
+
+      <TabsContent value="users">
+        <TestUserManager />
       </TabsContent>
 
       <TabsContent value="stats" className="space-y-6">

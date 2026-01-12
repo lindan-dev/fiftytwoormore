@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Heart, Plus, BarChart3, List, LogOut, Copy, Loader2, User, Download, X, Info, Shield, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import ActivityLog from "@/components/ActivityLog";
 import CalendarView from "@/components/CalendarView";
 import StatsView from "@/components/StatsView";
@@ -96,6 +97,7 @@ const Index = () => {
     p75_monthly_count: number | null;
   } | null>(null);
   const { toast } = useToast();
+  const { track } = useAnalytics();
 
   useEffect(() => {
     // Check if user has seen onboarding
@@ -423,6 +425,9 @@ const Index = () => {
       const code = data.id.substring(0, 8).toUpperCase();
       setMyInvitationCode(code);
 
+      // Track invitation code generation
+      track('invitation_code_generated');
+
       toast({
         title: "Invitation code created!",
         description: "Share this code with your partner.",
@@ -486,6 +491,10 @@ const Index = () => {
 
       if (coupleError) throw coupleError;
 
+      // Track couple formation
+      track('couple_formed');
+      track('invitation_code_entered', { valid: true });
+
       toast({
         title: "Connected!",
         description: "You and your partner are now connected.",
@@ -520,6 +529,7 @@ const Index = () => {
   const copyInvitationCode = () => {
     if (myInvitationCode) {
       navigator.clipboard.writeText(myInvitationCode);
+      track('invitation_code_shared');
       toast({
         title: "Copied!",
         description: "Invitation code copied to clipboard",
@@ -548,6 +558,13 @@ const Index = () => {
         variant: "destructive",
       });
     } else {
+      // Track activity logging
+      const isFirstActivity = activities.length === 0;
+      track(isFirstActivity ? 'first_activity_logged' : 'activity_logged', {
+        has_partner: hasPartner,
+        emoji: emoji || '',
+      });
+
       toast({
         title: "Success",
         description: "Activity logged!",

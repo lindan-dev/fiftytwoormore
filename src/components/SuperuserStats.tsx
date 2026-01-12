@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Users, Heart, Mail, Activity, BarChart3 } from "lucide-react";
+import { Users, Heart, Mail, Activity, BarChart3, TrendingUp } from "lucide-react";
 import { format, subDays, startOfDay } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EmailPerformance from "@/components/EmailPerformance";
+import FunnelAnalytics from "@/components/FunnelAnalytics";
 
 interface StatsData {
   date: string;
@@ -136,8 +137,12 @@ export default function SuperuserStats() {
   }
 
   return (
-    <Tabs defaultValue="stats" className="space-y-6">
+    <Tabs defaultValue="funnel" className="space-y-6">
       <TabsList>
+        <TabsTrigger value="funnel" className="flex items-center gap-2">
+          <TrendingUp className="h-4 w-4" />
+          Funnel
+        </TabsTrigger>
         <TabsTrigger value="stats" className="flex items-center gap-2">
           <Activity className="h-4 w-4" />
           Stats
@@ -147,6 +152,10 @@ export default function SuperuserStats() {
           Email
         </TabsTrigger>
       </TabsList>
+
+      <TabsContent value="funnel">
+        <FunnelAnalytics />
+      </TabsContent>
 
       <TabsContent value="stats" className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">

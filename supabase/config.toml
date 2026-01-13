@@ -44,3 +44,9 @@ verify_jwt = false
 
 [functions.send-yearly-review]
 verify_jwt = false
+
+[functions.send-activation-emails]
+verify_jwt = false
+
+[functions.send-activation-emails-manual]
+verify_jwt = false

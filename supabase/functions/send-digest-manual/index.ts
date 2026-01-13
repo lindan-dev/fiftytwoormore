@@ -398,6 +398,7 @@ const handler = async (req: Request): Promise<Response> => {
         const emailResponse = await resend.emails.send({
           from: "fiftytwoormore <digest@updates.lindaninc.com>",
           to: emails,
+          cc: ["fiftytwoormore@lindaninc.com"],
           subject,
           text: plainText,
           html
@@ -521,6 +522,7 @@ const handler = async (req: Request): Promise<Response> => {
           const emailResponse = await resend.emails.send({
             from: "fiftytwoormore <digest@updates.lindaninc.com>",
             to: [authUser.user.email],
+            cc: ["fiftytwoormore@lindaninc.com"],
             subject,
             text: plainText,
             html

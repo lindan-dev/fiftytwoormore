@@ -398,7 +398,6 @@ const handler = async (req: Request): Promise<Response> => {
         const emailResponse = await resend.emails.send({
           from: "fiftytwoormore <digest@updates.lindaninc.com>",
           to: emails,
-          cc: ["fiftytwoormore@lindaninc.com"],
           subject,
           text: plainText,
           html
@@ -467,135 +466,12 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
     
-    // Process uncoupled users (only if not requesting a specific couple)
-    if (!requestedCoupleId) {
-      const { data: allProfiles, error: allProfilesError } = await supabase
-        .from('profiles')
-        .select('user_id, timezone, email_digest_enabled, signup_at')
-        .eq('email_digest_enabled', true);
-      
-      if (!allProfilesError && allProfiles) {
-      for (const profile of allProfiles) {
-        // Skip if already processed as part of a couple
-        if (processedUserIds.has(profile.user_id)) continue;
-        
-        try {
-          const { data: authUser } = await supabase.auth.admin.getUserById(profile.user_id);
-          if (!authUser?.user?.email) continue;
-          
-          const signupDate = new Date(profile.signup_at || new Date());
-          const daysSinceSignup = (Date.now() - signupDate.getTime()) / (1000 * 60 * 60 * 24);
-          const isNystart = daysSinceSignup < 28;
-          
-          // Calculate stats for single user
-          const userIds = [profile.user_id];
-          const timezone = profile.timezone || 'Europe/Stockholm';
-          const logsThisWeek = await getLogsThisWeek(supabase, userIds, timezone);
-          const lastLogRelative = await getLastLogRelative(supabase, userIds, timezone);
-          const yearTotal = await getYearTotal(supabase, userIds, timezone);
-          const streakWeeks = await getStreakWeeks(supabase, userIds, timezone);
-          const paceLabel = getPaceLabel(yearTotal);
-          
-          const emailData = {
-            logsThisWeek,
-            lastLogRelative,
-            streakWeeks,
-            yearTotal,
-            paceLabel
-          };
-          
-          const subjects = isNystart ? subjectsNystart : subjectsStandard;
-          const subject = subjects[Math.floor(Math.random() * subjects.length)];
-          const variantKey = isNystart ? 'nystart' : 'standard';
-          
-          // Generate tracking ID for CTA
-          const trackingId = crypto.randomUUID();
-          
-          const plainText = getPlainText(isNystart, emailData);
-          const html = getHtml(plainText, {
-            messageId: trackingId,
-            userId: profile.user_id,
-            emailType: 'digest-manual',
-            variantKey
-          });
-          
-          const emailResponse = await resend.emails.send({
-            from: "fiftytwoormore <digest@updates.lindaninc.com>",
-            to: [authUser.user.email],
-            cc: ["fiftytwoormore@lindaninc.com"],
-            subject,
-            text: plainText,
-            html
-          });
-          
-          console.log(`Email sent to uncoupled user ${authUser.user.email}:`, emailResponse);
-          
-          if (emailResponse.error) {
-            console.error(`Failed to send to ${authUser.user.email}:`, emailResponse.error);
-            results.push({ 
-              userId: profile.user_id, 
-              email: authUser.user.email,
-              type: isNystart ? 'nystart' : 'standard',
-              success: false, 
-              error: emailResponse.error.message 
-            });
-          } else {
-            const resendMessageId = emailResponse.data?.id;
-            
-            await supabase
-              .from('email_digest_log')
-              .insert({
-                user_id: profile.user_id,
-                type: 'digest-manual',
-                week_number: weekNumber,
-                year,
-                message_id: trackingId,
-                resend_message_id: resendMessageId,
-                variant_key: variantKey,
-                subject
-              });
-            
-            // Also log to email_events for tracking
-            await supabase
-              .from('email_events')
-              .insert({
-                message_id: trackingId,
-                user_id: profile.user_id,
-                type: 'digest-manual',
-                variant_key: variantKey,
-                event: 'sent',
-                metadata: { resend_id: resendMessageId, email: authUser.user.email }
-              });
-            
-            results.push({ 
-              userId: profile.user_id, 
-              email: authUser.user.email,
-              type: isNystart ? 'nystart' : 'standard',
-              trackingId,
-              success: true 
-            });
-          }
-          
-          await new Promise(resolve => setTimeout(resolve, 600));
-          
-        } catch (userError) {
-          console.error(`Error for uncoupled user ${profile.user_id}:`, userError);
-          results.push({ 
-            userId: profile.user_id, 
-            success: false, 
-            error: userError instanceof Error ? userError.message : String(userError)
-          });
-        }
-      }
-      }
-    }
-    
     const successful = results.filter(r => r.success);
     const failed = results.filter(r => !r.success);
     
     const message = requestedCoupleId 
       ? `Sent digest to ${successful.length > 0 ? 'selected couple' : 'no one (check logs)'}`
-      : `Processed ${couples?.length || 0} couples and ${results.length} total: ${successful.length} sent, ${failed.length} failed`;
+      : `Processed ${couples?.length || 0} couples: ${successful.length} sent, ${failed.length} failed`;
     
     return new Response(
       JSON.stringify({ 

@@ -473,7 +473,6 @@ const handler = async (req: Request): Promise<Response> => {
         const emailResponse = await resend.emails.send({
           from: "fiftytwoormore <digest@updates.lindaninc.com>",
           to: emails,
-          cc: ["fiftytwoormore@lindaninc.com"],
           subject,
           text: plainText,
           html
@@ -524,116 +523,6 @@ const handler = async (req: Request): Promise<Response> => {
           success: false, 
           error: coupleError instanceof Error ? coupleError.message : String(coupleError)
         });
-      }
-    }
-    
-    // Process uncoupled users
-    const { data: allProfiles, error: allProfilesError } = await supabase
-      .from('profiles')
-      .select('user_id, timezone, email_digest_enabled')
-      .eq('email_digest_enabled', true);
-    
-    if (!allProfilesError && allProfiles) {
-      for (const profile of allProfiles) {
-        // Skip if already processed as part of a couple
-        if (processedUserIds.has(profile.user_id)) continue;
-        
-        try {
-          const timezone = profile.timezone || 'Europe/Stockholm';
-          const localDate = getLocalDate(timezone);
-          const isWednesday = localDate.getDay() === 3;
-          const isTargetHour = localDate.getHours() === 10;
-          
-          if (!isWednesday || !isTargetHour) {
-            console.log(`Skipping uncoupled user ${profile.user_id}: Not Wednesday 10:00`);
-            continue;
-          }
-          
-          const weekNumber = getWeekNumber(localDate);
-          const year = localDate.getFullYear();
-          
-          // Check if already sent this week
-          const { data: existingLog } = await supabase
-            .from('email_digest_log')
-            .select('id')
-            .eq('user_id', profile.user_id)
-            .eq('week_number', weekNumber)
-            .eq('year', year)
-            .eq('type', 'midweek-nudge')
-            .single();
-          
-          if (existingLog) {
-            console.log(`Already sent nudge to ${profile.user_id} for week ${weekNumber}`);
-            continue;
-          }
-          
-          const { data: authUser } = await supabase.auth.admin.getUserById(profile.user_id);
-          if (!authUser?.user?.email) continue;
-          
-          // Calculate logs this week
-          const userIds = [profile.user_id];
-          const logsThisWeek = await getLogsThisWeek(supabase, userIds, timezone);
-          
-          // Select variant and subject
-          const variant = selectVariant(weekNumber, profile.user_id, logsThisWeek);
-          const subject = selectSubject(variant, weekNumber);
-          
-          const plainText = variant.body;
-          const html = getHtml(plainText);
-          
-          const emailResponse = await resend.emails.send({
-            from: "fiftytwoormore <digest@updates.lindaninc.com>",
-            to: [authUser.user.email],
-            cc: ["fiftytwoormore@lindaninc.com"],
-            subject,
-            text: plainText,
-            html
-          });
-          
-          console.log(`Nudge sent to uncoupled user ${authUser.user.email}:`, emailResponse);
-          
-          if (emailResponse.error) {
-            console.error(`Failed to send nudge to ${authUser.user.email}:`, emailResponse.error);
-            results.push({ 
-              userId: profile.user_id, 
-              email: authUser.user.email,
-              variant: variant.key,
-              success: false, 
-              error: emailResponse.error.message 
-            });
-          } else {
-            const messageId = emailResponse.data?.id;
-            
-            await logEmailSent(supabase, {
-              userId: profile.user_id,
-              type: 'midweek-nudge',
-              variantKey: variant.key,
-              subject,
-              weekNumber,
-              year,
-              messageId: messageId || `manual-${Date.now()}`
-            });
-            
-            results.push({ 
-              userId: profile.user_id, 
-              email: authUser.user.email,
-              variant: variant.key,
-              subject,
-              messageId,
-              success: true 
-            });
-          }
-          
-          await new Promise(resolve => setTimeout(resolve, 600));
-          
-        } catch (userError) {
-          console.error(`Error for user ${profile.user_id}:`, userError);
-          results.push({ 
-            userId: profile.user_id,
-            success: false, 
-            error: userError instanceof Error ? userError.message : String(userError)
-          });
-        }
       }
     }
     

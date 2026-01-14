@@ -523,7 +523,6 @@ const handler = async (req: Request): Promise<Response> => {
         const emailResponse = await resend.emails.send({
           from: "fiftytwoormore <digest@updates.lindaninc.com>",
           to: emails,
-          cc: ["fiftytwoormore@lindaninc.com"],
           subject,
           text: plainText,
           html: htmlWithoutTracking
@@ -576,146 +575,12 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
     
-    // Process uncoupled users
-    const { data: allProfiles, error: allProfilesError } = await supabase
-      .from('profiles')
-      .select('user_id, timezone, email_digest_enabled, signup_at')
-      .eq('email_digest_enabled', true);
-    
-    if (!allProfilesError && allProfiles) {
-      for (const profile of allProfiles) {
-        // Skip if already processed as part of a couple
-        if (processedUserIds.has(profile.user_id)) continue;
-        
-        try {
-          const timezone = profile.timezone || 'Europe/Stockholm';
-          const localDate = getLocalDate(timezone);
-          const isSaturday = localDate.getDay() === 6;
-          const isTargetHour = localDate.getHours() === 10;
-          
-          if (!isSaturday || !isTargetHour) {
-            console.log(`Skipping uncoupled user ${profile.user_id}: Not Saturday 10:00`);
-            continue;
-          }
-          
-          const weekNumber = getWeekNumber(localDate);
-          const year = localDate.getFullYear();
-          
-          // Check if already sent this week
-          const { data: existingLog } = await supabase
-            .from('email_digest_log')
-            .select('id')
-            .eq('user_id', profile.user_id)
-            .eq('week_number', weekNumber)
-            .eq('year', year)
-            .single();
-          
-          if (existingLog) {
-            console.log(`Already sent to ${profile.user_id} for week ${weekNumber}`);
-            continue;
-          }
-          
-          const { data: authUser } = await supabase.auth.admin.getUserById(profile.user_id);
-          if (!authUser?.user?.email) continue;
-          
-          const signupDate = new Date(profile.signup_at || new Date());
-          const daysSinceSignup = (Date.now() - signupDate.getTime()) / (1000 * 60 * 60 * 24);
-          const isNystart = daysSinceSignup < 28;
-          
-          // Calculate stats for single user
-          const userIds = [profile.user_id];
-          const logsThisWeek = await getLogsThisWeek(supabase, userIds, timezone);
-          const lastLogRelative = await getLastLogRelative(supabase, userIds, timezone);
-          const yearTotal = await getYearTotal(supabase, userIds, timezone);
-          const streakWeeks = await getStreakWeeks(supabase, userIds, timezone);
-          const paceLabel = getPaceLabel(yearTotal);
-          const consistencyScore = await getConsistencyScore(supabase, userIds, timezone);
-          const previousWeekLogs = await getPreviousWeekLogs(supabase, userIds, timezone);
-          
-          // Generate optional insight for standard digest (not nystart)
-          const insight = !isNystart ? getDigestInsight({
-            logsThisWeek,
-            streakWeeks,
-            consistencyScore,
-            previousWeekLogs
-          }) : null;
-          
-          const emailData = {
-            logsThisWeek,
-            lastLogRelative,
-            streakWeeks,
-            yearTotal,
-            paceLabel,
-            insight
-          };
-          
-          const subjects = isNystart ? subjectsNystart : subjectsStandard;
-          const subject = subjects[Math.floor(Math.random() * subjects.length)];
-          const emailType = isNystart ? 'digest-nystart' : 'digest';
-          
-          const plainText = getPlainText(isNystart, emailData);
-          const html = getHtml(plainText);
-          
-          const emailResponse = await resend.emails.send({
-            from: "fiftytwoormore <digest@updates.lindaninc.com>",
-            to: [authUser.user.email],
-            cc: ["fiftytwoormore@lindaninc.com"],
-            subject,
-            text: plainText,
-            html
-          });
-          
-          console.log(`Email sent to uncoupled user ${authUser.user.email}:`, emailResponse);
-          
-          if (emailResponse.error) {
-            console.error(`Failed to send to ${authUser.user.email}:`, emailResponse.error);
-            results.push({ 
-              userId: profile.user_id, 
-              email: authUser.user.email,
-              type: emailType,
-              success: false, 
-              error: emailResponse.error.message 
-            });
-          } else {
-            const messageId = emailResponse.data?.id;
-            
-            await logEmailSent(supabase, {
-              userId: profile.user_id,
-              type: emailType,
-              subject,
-              weekNumber,
-              year,
-              messageId: messageId || `manual-${Date.now()}`
-            });
-            
-            results.push({ 
-              userId: profile.user_id, 
-              email: authUser.user.email,
-              type: emailType,
-              messageId,
-              success: true 
-            });
-          }
-          
-          await new Promise(resolve => setTimeout(resolve, 600));
-          
-        } catch (userError) {
-          console.error(`Error for uncoupled user ${profile.user_id}:`, userError);
-          results.push({ 
-            userId: profile.user_id, 
-            success: false, 
-            error: userError instanceof Error ? userError.message : String(userError)
-          });
-        }
-      }
-    }
-    
     const successful = results.filter(r => r.success);
     const failed = results.filter(r => !r.success);
     
     return new Response(
       JSON.stringify({ 
-        message: `Processed ${couples?.length || 0} couples and ${allProfiles?.length || 0} total profiles: ${successful.length} sent, ${failed.length} failed`,
+        message: `Processed ${couples?.length || 0} couples: ${successful.length} sent, ${failed.length} failed`,
         sent: successful.length,
         failed: failed.length,
         results 

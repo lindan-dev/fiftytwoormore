@@ -1,5 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import {
+  getWeekNumber,
+  toLocalDate,
+  calculateStreakWeeks,
+  calculateConsistencyScore,
+} from "../_shared/statsCalculations.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -8,14 +14,6 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-function getWeekNumber(date: Date): number {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const dayNum = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-}
 
 function getCohortKey(anniversaryDate: Date): string {
   const now = new Date();
@@ -59,7 +57,8 @@ async function computeCoupleStats(
   coupleId: string,
   user1Id: string,
   user2Id: string,
-  anniversary: string
+  anniversary: string,
+  timezone: string = 'Europe/Stockholm'
 ): Promise<CoupleStats | null> {
   const userIds = [user1Id, user2Id];
   const cohortKey = getCohortKey(new Date(anniversary));
@@ -77,7 +76,7 @@ async function computeCoupleStats(
   
   const now = new Date();
   
-  // Monthly count (last 30 days)
+  // Monthly count (last 30 days) - using timezone-aware conversion
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   const monthlyCount = activities.filter(
     (a: any) => new Date(a.activity_date) >= thirtyDaysAgo
@@ -89,57 +88,9 @@ async function computeCoupleStats(
     (a: any) => new Date(a.activity_date) >= fourWeeksAgo
   ).length;
   
-  // Consistency score: weeks with activity out of last 12 weeks
-  const weekSet = new Set<string>();
-  const twelveWeeksAgo = new Date(now.getTime() - 84 * 24 * 60 * 60 * 1000);
-  activities
-    .filter((a: any) => new Date(a.activity_date) >= twelveWeeksAgo)
-    .forEach((a: any) => {
-      const date = new Date(a.activity_date);
-      const year = date.getFullYear();
-      const week = getWeekNumber(date);
-      weekSet.add(`${year}-W${week}`);
-    });
-  const consistencyScore = (weekSet.size / 12) * 100;
-  
-  // Streak length (consecutive weeks with activity from current week backwards)
-  const allWeekSet = new Set<string>();
-  activities.forEach((a: any) => {
-    const date = new Date(a.activity_date);
-    const year = date.getFullYear();
-    const week = getWeekNumber(date);
-    allWeekSet.add(`${year}-W${week}`);
-  });
-  
-  let checkYear = now.getFullYear();
-  let checkWeek = getWeekNumber(now);
-  let streakLength = 0;
-  
-  // Check current week
-  if (allWeekSet.has(`${checkYear}-W${checkWeek}`)) {
-    streakLength = 1;
-  }
-  
-  // Go backwards
-  checkWeek--;
-  if (checkWeek < 1) {
-    checkYear--;
-    checkWeek = getWeekNumber(new Date(checkYear, 11, 31));
-  }
-  
-  for (let i = 0; i < 52; i++) {
-    const weekKey = `${checkYear}-W${checkWeek}`;
-    if (allWeekSet.has(weekKey)) {
-      streakLength++;
-    } else {
-      break;
-    }
-    checkWeek--;
-    if (checkWeek < 1) {
-      checkYear--;
-      checkWeek = getWeekNumber(new Date(checkYear, 11, 31));
-    }
-  }
+  // Use shared timezone-aware consistency score and streak calculations
+  const consistencyScore = calculateConsistencyScore(activities, timezone);
+  const streakLength = calculateStreakWeeks(activities, timezone);
   
   return {
     cohortKey,
@@ -210,32 +161,34 @@ const handler = async (req: Request): Promise<Response> => {
     
     console.log(`Found ${couples?.length || 0} couples with anniversary set`);
     
-    // Filter to only opted-in couples
-    const optedInCouples: any[] = [];
+    // Filter to only opted-in couples and get their timezone
+    const optedInCouples: { couple: any; timezone: string }[] = [];
     for (const couple of couples || []) {
-      // Check if either user has opted in
+      // Check if either user has opted in and get timezone
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("user_id, benchmark_opt_in")
+        .select("user_id, benchmark_opt_in, timezone")
         .in("user_id", [couple.user1_id, couple.user2_id]);
       
       const hasOptIn = profiles?.some((p: any) => p.benchmark_opt_in === true);
       if (hasOptIn) {
-        optedInCouples.push(couple);
+        const timezone = profiles?.[0]?.timezone || 'Europe/Stockholm';
+        optedInCouples.push({ couple, timezone });
       }
     }
     
     console.log(`${optedInCouples.length} couples have opted into benchmarks`);
     
-    // Compute stats for each opted-in couple
+    // Compute stats for each opted-in couple using timezone-aware calculations
     const allStats: CoupleStats[] = [];
-    for (const couple of optedInCouples) {
+    for (const { couple, timezone } of optedInCouples) {
       const stats = await computeCoupleStats(
         supabase,
         couple.id,
         couple.user1_id,
         couple.user2_id,
-        couple.anniversary
+        couple.anniversary,
+        timezone
       );
       if (stats) {
         allStats.push(stats);

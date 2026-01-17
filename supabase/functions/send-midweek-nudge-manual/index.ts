@@ -1,6 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { Resend } from "https://esm.sh/resend@4.0.0";
+import {
+  getLocalDate,
+  getWeekNumber,
+  countLogsThisWeek,
+} from "../_shared/statsCalculations.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -10,65 +15,6 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-// ============ Helper Functions ============
-
-function getLocalDate(timezone: string): Date {
-  const now = new Date();
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-  
-  const parts = formatter.formatToParts(now);
-  const year = parseInt(parts.find(p => p.type === 'year')?.value || '2024');
-  const month = parseInt(parts.find(p => p.type === 'month')?.value || '1') - 1;
-  const day = parseInt(parts.find(p => p.type === 'day')?.value || '1');
-  const hour = parseInt(parts.find(p => p.type === 'hour')?.value || '0');
-  const minute = parseInt(parts.find(p => p.type === 'minute')?.value || '0');
-  
-  return new Date(year, month, day, hour, minute);
-}
-
-function getWeekNumber(date: Date): number {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const dayNum = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-}
-
-function getMondayOfWeek(timezone: string): Date {
-  const local = getLocalDate(timezone);
-  const day = local.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  const monday = new Date(local);
-  monday.setDate(local.getDate() + diff);
-  monday.setHours(0, 0, 0, 0);
-  return monday;
-}
-
-async function getLogsThisWeek(supabase: any, userIds: string[], timezone: string): Promise<number> {
-  const monday = getMondayOfWeek(timezone);
-  
-  const { data, error } = await supabase
-    .from('activities')
-    .select('id')
-    .in('user_id', userIds)
-    .gte('activity_date', monday.toISOString());
-  
-  if (error) {
-    console.error('Error fetching logs:', error);
-    return 0;
-  }
-  
-  return data?.length || 0;
-}
 
 function hashUserId(userId: string): number {
   let hash = 0;
@@ -340,9 +286,10 @@ const handler = async (req: Request): Promise<Response> => {
           continue;
         }
         
-        // Calculate logs this week
+        // Fetch activities and calculate logs this week using shared timezone-aware function
         const userIds = [couple.user1_id, couple.user2_id];
-        const logsThisWeek = await getLogsThisWeek(supabase, userIds, timezone);
+        const { data: activities } = await supabase.from('activities').select('activity_date').in('user_id', userIds);
+        const logsThisWeek = countLogsThisWeek(activities || [], timezone);
         
         // Select variant and subject
         const variant = selectVariant(weekNumber, couple.user1_id, logsThisWeek);

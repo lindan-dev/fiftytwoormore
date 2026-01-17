@@ -1,6 +1,17 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { Resend } from "https://esm.sh/resend@4.0.0";
+import {
+  getLocalDate,
+  getWeekNumber,
+  toLocalDate,
+  countLogsThisWeek,
+  countLogsPreviousWeek,
+  countYearTotal,
+  calculateStreakWeeks,
+  getLastLogRelative,
+  calculateConsistencyScore,
+} from "../_shared/statsCalculations.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -11,235 +22,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-function getLocalDate(timezone: string): Date {
-  const now = new Date();
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-  
-  const parts = formatter.formatToParts(now);
-  const year = parseInt(parts.find(p => p.type === 'year')?.value || '2024');
-  const month = parseInt(parts.find(p => p.type === 'month')?.value || '1') - 1;
-  const day = parseInt(parts.find(p => p.type === 'day')?.value || '1');
-  const hour = parseInt(parts.find(p => p.type === 'hour')?.value || '0');
-  const minute = parseInt(parts.find(p => p.type === 'minute')?.value || '0');
-  
-  return new Date(year, month, day, hour, minute);
-}
-
-function getWeekNumber(date: Date): number {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const dayNum = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-}
-
-function getMondayOfWeek(timezone: string): Date {
-  const local = getLocalDate(timezone);
-  const day = local.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  const monday = new Date(local);
-  monday.setDate(local.getDate() + diff);
-  monday.setHours(0, 0, 0, 0);
-  return monday;
-}
-
-async function getLogsThisWeek(supabase: any, userIds: string[], timezone: string): Promise<number> {
-  const monday = getMondayOfWeek(timezone);
-  
-  const { data, error } = await supabase
-    .from('activities')
-    .select('id')
-    .in('user_id', userIds)
-    .gte('activity_date', monday.toISOString());
-  
-  if (error) {
-    console.error('Error fetching logs:', error);
-    return 0;
-  }
-  
-  return data?.length || 0;
-}
-
-async function getPreviousWeekLogs(supabase: any, userIds: string[], timezone: string): Promise<number> {
-  const monday = getMondayOfWeek(timezone);
-  const previousMonday = new Date(monday);
-  previousMonday.setDate(monday.getDate() - 7);
-  
-  const { data, error } = await supabase
-    .from('activities')
-    .select('id')
-    .in('user_id', userIds)
-    .gte('activity_date', previousMonday.toISOString())
-    .lt('activity_date', monday.toISOString());
-  
-  if (error) {
-    console.error('Error fetching previous week logs:', error);
-    return 0;
-  }
-  
-  return data?.length || 0;
-}
-
-async function getLastLogRelative(supabase: any, userIds: string[], timezone: string): Promise<string> {
-  const { data, error } = await supabase
-    .from('activities')
-    .select('activity_date')
-    .in('user_id', userIds)
-    .order('activity_date', { ascending: false })
-    .limit(1)
-    .single();
-  
-  if (error || !data) return "None yet";
-  
-  const lastLog = new Date(data.activity_date);
+function getPaceLabel(yearTotal: number, timezone: string): string {
   const localNow = getLocalDate(timezone);
-  
-  // Use ISO week comparison with timezone-aware current time
-  const lastLogWeek = getWeekNumber(lastLog);
-  const lastLogYear = lastLog.getFullYear();
-  const currentWeek = getWeekNumber(localNow);
-  const currentYear = localNow.getFullYear();
-  
-  const diffHours = (Date.now() - lastLog.getTime()) / (1000 * 60 * 60);
-  const diffDays = Math.floor(diffHours / 24);
-  
-  if (diffHours < 24) return "Last night";
-  
-  // Check if same ISO week (Monday-Sunday)
-  if (lastLogYear === currentYear && lastLogWeek === currentWeek) {
-    return "Earlier this week";
-  }
-  
-  // For activities from previous weeks
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 14) return "Last week";
-  return `${diffDays} days ago`;
-}
-
-async function getYearTotal(supabase: any, userIds: string[], timezone: string): Promise<number> {
-  const localNow = getLocalDate(timezone);
-  const yearStart = new Date(localNow.getFullYear(), 0, 1).toISOString();
-  const { data, error } = await supabase
-    .from('activities')
-    .select('id')
-    .in('user_id', userIds)
-    .gte('activity_date', yearStart);
-  
-  if (error) {
-    console.error('Error fetching year total:', error);
-    return 0;
-  }
-  
-  return data?.length || 0;
-}
-
-async function getStreakWeeks(supabase: any, userIds: string[], timezone: string): Promise<number> {
-  const { data, error } = await supabase
-    .from('activities')
-    .select('activity_date')
-    .in('user_id', userIds)
-    .order('activity_date', { ascending: false });
-  
-  if (error || !data || data.length === 0) return 0;
-  
-  // Group activities by ISO week using Set for O(1) lookups
-  const weekSet = new Set<string>();
-  data.forEach((activity: any) => {
-    const date = new Date(activity.activity_date);
-    const year = date.getFullYear();
-    const week = getWeekNumber(date);
-    weekSet.add(`${year}-W${week}`);
-  });
-  
-  // Use timezone-aware current time for "now"
-  const localNow = getLocalDate(timezone);
-  let checkYear = localNow.getFullYear();
-  let checkWeek = getWeekNumber(localNow);
-  let streak = 0;
-  
-  // Check if current week has activity - if so, count it
-  const currentWeekKey = `${checkYear}-W${checkWeek}`;
-  if (weekSet.has(currentWeekKey)) {
-    streak = 1;
-  }
-  
-  // Move to previous week to start counting backwards
-  checkWeek--;
-  if (checkWeek < 1) {
-    checkYear--;
-    checkWeek = getWeekNumber(new Date(checkYear, 11, 31));
-  }
-  
-  // Count consecutive weeks backwards from previous week
-  for (let i = 0; i < 52; i++) {
-    const weekKey = `${checkYear}-W${checkWeek}`;
-    if (weekSet.has(weekKey)) {
-      streak++;
-    } else {
-      break; // Only break when checking past weeks, not current week
-    }
-    
-    // Move to previous week
-    checkWeek--;
-    if (checkWeek < 1) {
-      checkYear--;
-      checkWeek = getWeekNumber(new Date(checkYear, 11, 31));
-    }
-  }
-  
-  return streak;
-}
-
-function getPaceLabel(yearTotal: number): string {
-  const now = new Date();
-  const weekNumber = getWeekNumber(now);
+  const weekNumber = getWeekNumber(localNow);
   
   if (yearTotal >= weekNumber) return "nicely ahead";
   if (yearTotal === weekNumber - 1) return "on track";
   return "slightly behind—but weekends fix that";
-}
-
-// Calculate consistency score (0-100) - same logic as frontend
-async function getConsistencyScore(supabase: any, userIds: string[], timezone: string): Promise<number> {
-  const localNow = getLocalDate(timezone);
-  const eightWeeksAgo = new Date(localNow);
-  eightWeeksAgo.setDate(localNow.getDate() - 56);
-  
-  const { data, error } = await supabase
-    .from('activities')
-    .select('activity_date')
-    .in('user_id', userIds)
-    .gte('activity_date', eightWeeksAgo.toISOString());
-  
-  if (error || !data) return 0;
-  
-  // Group by week
-  const weekCounts = new Map<string, number>();
-  data.forEach((a: any) => {
-    const date = new Date(a.activity_date);
-    const weekStart = new Date(date);
-    const day = weekStart.getDay();
-    const diff = day === 0 ? -6 : 1 - day;
-    weekStart.setDate(weekStart.getDate() + diff);
-    const weekKey = weekStart.toISOString().split('T')[0];
-    weekCounts.set(weekKey, (weekCounts.get(weekKey) || 0) + 1);
-  });
-  
-  let score = 0;
-  weekCounts.forEach(count => {
-    if (count >= 1) score += 12;
-    if (count >= 2) score += 2;
-  });
-  
-  return Math.min(score, 100);
 }
 
 // Get optional insight for weekly digest
@@ -410,9 +199,8 @@ const handler = async (req: Request): Promise<Response> => {
     if (couplesError) throw couplesError;
     
     const results = [];
-    const processedUserIds = new Set<string>();
     
-    // Process couples first
+    // Process couples
     for (const couple of couples || []) {
       try {
         // Get both partners' profiles
@@ -471,7 +259,6 @@ const handler = async (req: Request): Promise<Response> => {
           if (authUser?.user?.email) {
             emails.push(authUser.user.email);
           }
-          processedUserIds.add(profile.user_id);
         }
         
         if (emails.length === 0) {
@@ -479,19 +266,42 @@ const handler = async (req: Request): Promise<Response> => {
           continue;
         }
         
-        // Calculate combined stats
+        // Fetch all activities for the couple
+        const userIds = [couple.user1_id, couple.user2_id];
+        const { data: activities, error: activitiesError } = await supabase
+          .from('activities')
+          .select('activity_date')
+          .in('user_id', userIds)
+          .order('activity_date', { ascending: false });
+        
+        if (activitiesError) {
+          console.error(`Error fetching activities for couple ${couple.id}:`, activitiesError);
+          continue;
+        }
+        
+        const activityList = activities || [];
+        
+        // Calculate stats using shared timezone-aware functions
         const signupDate = new Date(profiles[0].signup_at || new Date());
         const daysSinceSignup = (Date.now() - signupDate.getTime()) / (1000 * 60 * 60 * 24);
         const isNystart = daysSinceSignup < 28;
         
-        const userIds = [couple.user1_id, couple.user2_id];
-        const logsThisWeek = await getLogsThisWeek(supabase, userIds, timezone);
-        const lastLogRelative = await getLastLogRelative(supabase, userIds, timezone);
-        const yearTotal = await getYearTotal(supabase, userIds, timezone);
-        const streakWeeks = await getStreakWeeks(supabase, userIds, timezone);
-        const paceLabel = getPaceLabel(yearTotal);
-        const consistencyScore = await getConsistencyScore(supabase, userIds, timezone);
-        const previousWeekLogs = await getPreviousWeekLogs(supabase, userIds, timezone);
+        const logsThisWeek = countLogsThisWeek(activityList, timezone);
+        const lastLogRelative = getLastLogRelative(activityList, timezone);
+        const yearTotal = countYearTotal(activityList, timezone);
+        const streakWeeks = calculateStreakWeeks(activityList, timezone);
+        const paceLabel = getPaceLabel(yearTotal, timezone);
+        const consistencyScore = calculateConsistencyScore(activityList, timezone);
+        const previousWeekLogs = countLogsPreviousWeek(activityList, timezone);
+        
+        console.log(`Couple ${couple.id} stats (timezone: ${timezone}):`, {
+          logsThisWeek,
+          streakWeeks,
+          yearTotal,
+          previousWeekLogs,
+          consistencyScore,
+          activitiesCount: activityList.length
+        });
         
         // Generate optional insight for standard digest (not nystart)
         const insight = !isNystart ? getDigestInsight({

@@ -1,6 +1,14 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { Resend } from "https://esm.sh/resend@4.0.0";
+import {
+  getLocalDate,
+  getWeekNumber,
+  countLogsThisWeek,
+  countYearTotal,
+  calculateStreakWeeks,
+  getLastLogRelative,
+} from "../_shared/statsCalculations.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -11,111 +19,18 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-function getLocalDate(timezone: string): Date {
-  const now = new Date();
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-  
-  const parts = formatter.formatToParts(now);
-  const year = parseInt(parts.find(p => p.type === 'year')?.value || '2024');
-  const month = parseInt(parts.find(p => p.type === 'month')?.value || '1') - 1;
-  const day = parseInt(parts.find(p => p.type === 'day')?.value || '1');
-  const hour = parseInt(parts.find(p => p.type === 'hour')?.value || '0');
-  const minute = parseInt(parts.find(p => p.type === 'minute')?.value || '0');
-  
-  return new Date(year, month, day, hour, minute);
-}
-
-function getWeekNumber(date: Date): number {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const dayNum = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-}
-
-function getMondayOfWeek(timezone: string): Date {
-  const now = new Date();
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-  
-  const parts = formatter.formatToParts(now);
-  const year = parseInt(parts.find(p => p.type === 'year')?.value || '2024');
-  const month = parseInt(parts.find(p => p.type === 'month')?.value || '1') - 1;
-  const day = parseInt(parts.find(p => p.type === 'day')?.value || '1');
-  
-  const local = new Date(year, month, day);
-  const dayOfWeek = local.getDay();
-  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-  const monday = new Date(local);
-  monday.setDate(local.getDate() + diff);
-  monday.setHours(0, 0, 0, 0);
-  return monday;
-}
-
-async function getLogsThisWeek(supabase: any, userIds: string[], timezone: string): Promise<number> {
-  const monday = getMondayOfWeek(timezone);
-  
-  const { data, error } = await supabase
-    .from('activities')
-    .select('id')
-    .in('user_id', userIds)
-    .gte('activity_date', monday.toISOString());
-  
-  if (error) {
-    console.error('Error fetching logs:', error);
-    return 0;
+// Simple hash function for user ID to get deterministic rotation
+function hashUserId(userId: string): number {
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    const char = userId.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
   }
-  
-  return data?.length || 0;
+  return Math.abs(hash);
 }
 
-async function getLastLogRelative(supabase: any, userIds: string[], timezone: string): Promise<string> {
-  const { data, error } = await supabase
-    .from('activities')
-    .select('activity_date')
-    .in('user_id', userIds)
-    .order('activity_date', { ascending: false })
-    .limit(1)
-    .single();
-  
-  if (error || !data) return "None yet";
-  
-  const lastLog = new Date(data.activity_date);
-  const localNow = getLocalDate(timezone);
-  
-  // Use ISO week comparison with timezone-aware current time
-  const lastLogWeek = getWeekNumber(lastLog);
-  const lastLogYear = lastLog.getFullYear();
-  const currentWeek = getWeekNumber(localNow);
-  const currentYear = localNow.getFullYear();
-  
-  const diffHours = (Date.now() - lastLog.getTime()) / (1000 * 60 * 60);
-  const diffDays = Math.floor(diffHours / 24);
-  
-  if (diffHours < 24) return "Last night";
-  
-  // Check if same ISO week (Monday-Sunday)
-  if (lastLogYear === currentYear && lastLogWeek === currentWeek) {
-    return "Earlier this week";
-  }
-  
-  // For activities from previous weeks
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 14) return "Last week";
-  return `${diffDays} days ago`;
-}
+// Removed duplicate - using imported getLastLogRelative from shared module
 
 async function getYearTotal(supabase: any, userIds: string[], timezone: string): Promise<number> {
   const localNow = getLocalDate(timezone);
@@ -361,12 +276,15 @@ const handler = async (req: Request): Promise<Response> => {
         const daysSinceSignup = (Date.now() - signupDate.getTime()) / (1000 * 60 * 60 * 24);
         const isNystart = daysSinceSignup < 28;
         
-        // Calculate combined stats
+        // Fetch activities and calculate stats using shared timezone-aware functions
         const userIds = [couple.user1_id, couple.user2_id];
-        const logsThisWeek = await getLogsThisWeek(supabase, userIds, timezone);
-        const lastLogRelative = await getLastLogRelative(supabase, userIds, timezone);
-        const yearTotal = await getYearTotal(supabase, userIds, timezone);
-        const streakWeeks = await getStreakWeeks(supabase, userIds, timezone);
+        const { data: activities } = await supabase.from('activities').select('activity_date').in('user_id', userIds).order('activity_date', { ascending: false });
+        const activityList = activities || [];
+        
+        const logsThisWeek = countLogsThisWeek(activityList, timezone);
+        const lastLogRelative = getLastLogRelative(activityList, timezone);
+        const yearTotal = countYearTotal(activityList, timezone);
+        const streakWeeks = calculateStreakWeeks(activityList, timezone);
         const paceLabel = getPaceLabel(yearTotal);
         
         const emailData = {

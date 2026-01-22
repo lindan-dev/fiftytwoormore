@@ -262,10 +262,10 @@ async function logEmailSent(supabase: any, params: {
   year: number;
   messageId: string;
   resendMessageId?: string;
-}) {
+}): Promise<boolean> {
   const { userId, type, subject, weekNumber, year, messageId, resendMessageId } = params;
   
-  await supabase.from('email_digest_log').insert({
+  const { error: logError } = await supabase.from('email_digest_log').insert({
     user_id: userId,
     type,
     subject,
@@ -275,13 +275,24 @@ async function logEmailSent(supabase: any, params: {
     resend_message_id: resendMessageId
   });
   
-  await supabase.from('email_events').insert({
+  if (logError) {
+    console.error(`Failed to log email to email_digest_log:`, logError);
+    return false;
+  }
+  
+  const { error: eventError } = await supabase.from('email_events').insert({
     message_id: messageId,
     user_id: userId,
     type,
     event: 'sent',
     event_at: new Date().toISOString()
   });
+  
+  if (eventError) {
+    console.error(`Failed to log email event:`, eventError);
+  }
+  
+  return true;
 }
 
 async function hasReceivedEmail(supabase: any, userId: string, emailType: string): Promise<boolean> {

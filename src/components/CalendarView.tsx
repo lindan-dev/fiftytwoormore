@@ -15,6 +15,7 @@ import {
   format, 
   isSameMonth,
   isSameDay,
+  isToday,
   addMonths,
   subMonths,
   startOfWeek,
@@ -302,6 +303,7 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
           const hasActivities = dayActivities.length > 0;
           const activityCount = dayActivities.length;
           const isCurrentMonth = isSameMonth(day, currentMonth);
+          const isCurrentDay = isToday(day);
           const lastEmoji = hasActivities ? dayActivities[dayActivities.length - 1].emoji : null;
           const specialEvent = getSpecialEvent(day);
           const isClickable = hasActivities || specialEvent.isBirthday || specialEvent.isAnniversary;
@@ -320,6 +322,7 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
                 aspect-square flex flex-col items-center justify-center relative rounded-lg
                 transition-all duration-200
                 ${!isCurrentMonth ? 'opacity-30' : ''}
+                ${isCurrentDay ? 'ring-2 ring-primary ring-offset-1 ring-offset-background' : ''}
                 ${isClickable 
                   ? 'hover:scale-105 cursor-pointer' 
                   : 'cursor-default'

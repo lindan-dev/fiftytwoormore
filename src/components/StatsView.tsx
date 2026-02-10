@@ -838,29 +838,35 @@ export default function StatsView({
         </>
       )}
 
-      {/* Year in Review CTA */}
-      {activities.length > 0 && (
-        <Card className="border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5">
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <Sparkles className="w-8 h-8 text-primary flex-shrink-0" />
-                <div>
-                  <p className="font-semibold">Year in Review</p>
-                  <p className="text-sm text-muted-foreground">
-                    Relive your {new Date().getFullYear() - 1} highlights
-                  </p>
+      {/* Year in Review CTA - only if user has previous year data */}
+      {(() => {
+        const previousYear = new Date().getFullYear() - 1;
+        const hasPreviousYearData = activities.some(a => 
+          new Date(a.activity_date).getFullYear() === previousYear
+        );
+        return hasPreviousYearData ? (
+          <Card className="border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5">
+            <CardContent className="p-4 sm:p-5">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <Sparkles className="w-8 h-8 text-primary flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold">Year in Review</p>
+                    <p className="text-sm text-muted-foreground">
+                      Relive your {previousYear} highlights
+                    </p>
+                  </div>
                 </div>
+                <Button asChild size="sm">
+                  <Link to={`/year-in-review?year=${previousYear}`}>
+                    View
+                  </Link>
+                </Button>
               </div>
-              <Button asChild size="sm">
-                <Link to={`/year-in-review?year=${new Date().getFullYear() - 1}`}>
-                  View
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
+        ) : null;
+      })()}
     </div>
   );
 }

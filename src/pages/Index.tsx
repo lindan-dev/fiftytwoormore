@@ -1028,22 +1028,27 @@ const Index = () => {
                           </span>
                         </div>
                       </div>
-                      <div className="relative pb-10">
+                      <div className="relative">
                         <Progress value={progressPercentage} className="h-3" />
                         {lastYearCount > 0 && (
                           <div
-                            className="absolute top-0 flex flex-col items-center pointer-events-none"
-                            style={{ left: `clamp(16px, ${lastYearPercentage}%, calc(100% - 16px))` }}
+                            className="absolute top-0 flex items-center pointer-events-none"
+                            style={{ left: `clamp(4px, ${lastYearPercentage}%, calc(100% - 4px))` }}
                           >
-                            <div className="w-[2px] h-5 bg-destructive/70" style={{ marginLeft: '-1px' }} />
-                            <div className="w-7 h-7 rounded-full bg-foreground flex items-center justify-center -translate-x-1/2 shadow-md" style={{ marginLeft: '1px' }}>
-                              <span className="text-[11px] font-bold text-background">
-                                {lastYearCount}
-                              </span>
-                            </div>
+                            <div className="w-[2px] h-3 bg-destructive/60" style={{ marginLeft: '-1px' }} />
                           </div>
                         )}
                       </div>
+                      {lastYearCount > 0 && (() => {
+                        const diff = yearCount - lastYearCount;
+                        const isAhead = diff > 0;
+                        const isBehind = diff < 0;
+                        return (
+                          <p className={`text-[10px] sm:text-xs text-center font-medium ${isAhead ? 'text-green-600 dark:text-green-400' : isBehind ? 'text-destructive' : 'text-muted-foreground'}`}>
+                            {isAhead ? `${diff} ahead of last year` : isBehind ? `${Math.abs(diff)} behind last year` : 'Same pace as last year'}
+                          </p>
+                        );
+                      })()}
                       <p className="text-xs sm:text-sm text-center text-muted-foreground">
                         {yearCount < 52
                           ? `${52 - yearCount} more to reach your goal with ${weeksLeft} ${weeksLeft === 1 ? "week" : "weeks"} left!`

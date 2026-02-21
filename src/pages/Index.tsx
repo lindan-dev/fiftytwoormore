@@ -1028,17 +1028,19 @@ const Index = () => {
                           </span>
                         </div>
                       </div>
-                      <div className="relative">
+                      <div className="relative pb-5">
                         <Progress value={progressPercentage} className="h-3" />
                         {lastYearCount > 0 && (
                           <div
-                            className="absolute top-0 h-full flex flex-col items-center"
-                            style={{ left: `${lastYearPercentage}%` }}
+                            className="absolute top-0 flex flex-col items-center pointer-events-none"
+                            style={{ left: `clamp(12px, ${lastYearPercentage}%, calc(100% - 12px))` }}
                           >
-                            <div className="w-0.5 h-full bg-muted-foreground/60" />
-                            <span className="absolute -bottom-4 text-[10px] text-muted-foreground whitespace-nowrap -translate-x-1/2">
-                              {lastYearCount} last yr
-                            </span>
+                            <div className="w-[3px] h-3 rounded-full bg-foreground/40" />
+                            <div className="mt-0.5 flex items-center gap-0.5 bg-muted/80 backdrop-blur-sm border border-border/50 rounded-full px-1.5 py-0.5 -translate-x-1/2 shadow-sm">
+                              <span className="text-[9px] font-medium text-muted-foreground whitespace-nowrap">
+                                {lastYearCount} last yr
+                              </span>
+                            </div>
                           </div>
                         )}
                       </div>

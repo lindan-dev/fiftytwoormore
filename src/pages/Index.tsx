@@ -1032,13 +1032,15 @@ const Index = () => {
                         <Progress value={progressPercentage} className="h-3" />
                         {lastYearCount > 0 && (
                           <div
-                            className="absolute -top-1 flex flex-col items-center pointer-events-none"
-                            style={{ left: `clamp(8px, ${lastYearPercentage}%, calc(100% - 8px))` }}
+                            className="absolute top-0 flex flex-col items-center pointer-events-none"
+                            style={{ left: `clamp(12px, ${lastYearPercentage}%, calc(100% - 12px))` }}
                           >
-                            <div className="w-px h-5 bg-accent-foreground/70" />
-                            <span className="mt-0.5 text-[9px] font-medium text-accent-foreground/70 whitespace-nowrap -translate-x-1/2">
-                              {lastYearCount} last yr
-                            </span>
+                            <div className="w-[3px] h-3 rounded-full bg-foreground/40" />
+                            <div className="mt-0.5 flex items-center gap-0.5 bg-muted/80 backdrop-blur-sm border border-border/50 rounded-full px-1.5 py-0.5 -translate-x-1/2 shadow-sm">
+                              <span className="text-[9px] font-medium text-muted-foreground whitespace-nowrap">
+                                {lastYearCount} last yr
+                              </span>
+                            </div>
                           </div>
                         )}
                       </div>

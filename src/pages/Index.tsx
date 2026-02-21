@@ -20,7 +20,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { startOfYear, endOfYear, differenceInWeeks, parseISO } from "date-fns";
+import { startOfYear, endOfYear, differenceInWeeks, parseISO, subYears } from "date-fns";
 
 interface Activity {
   id: string;
@@ -987,6 +987,15 @@ const Index = () => {
                   const yearCount = yearActivities.length;
                   const weeksLeft = Math.max(0, differenceInWeeks(yearEnd, now));
 
+                  // Calculate last year's count at the same point in time
+                  const lastYearStart = startOfYear(subYears(now, 1));
+                  const lastYearSamePoint = subYears(now, 1);
+                  const lastYearActivitiesAtThisPoint = activities.filter((activity) => {
+                    const activityDate = parseISO(activity.activity_date);
+                    return activityDate >= lastYearStart && activityDate <= lastYearSamePoint;
+                  });
+                  const lastYearCount = lastYearActivitiesAtThisPoint.length;
+
                   // Calculate which goal tier we're on (52, 104, 156, etc.)
                   const currentGoal = Math.ceil(yearCount / 52) * 52;
                   const previousGoal = currentGoal - 52;
@@ -994,6 +1003,10 @@ const Index = () => {
                   const progressPercentage = (progressInCurrentTier / 52) * 100;
                   const multiplier = Math.floor(yearCount / 52) + 1;
                   const completedTiers = Math.floor(yearCount / 52);
+
+                  // Last year marker position (within the same tier context)
+                  const lastYearInSameTier = Math.min(lastYearCount, 52);
+                  const lastYearPercentage = (lastYearInSameTier / 52) * 100;
 
                   return (
                     <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-3 sm:p-4 rounded-xl border-2 border-primary/20 shadow-sm space-y-2">
@@ -1015,7 +1028,20 @@ const Index = () => {
                           </span>
                         </div>
                       </div>
-                      <Progress value={progressPercentage} className="h-3" />
+                      <div className="relative">
+                        <Progress value={progressPercentage} className="h-3" />
+                        {lastYearCount > 0 && (
+                          <div
+                            className="absolute top-0 h-full flex flex-col items-center"
+                            style={{ left: `${lastYearPercentage}%` }}
+                          >
+                            <div className="w-0.5 h-full bg-muted-foreground/60" />
+                            <span className="absolute -bottom-4 text-[10px] text-muted-foreground whitespace-nowrap -translate-x-1/2">
+                              {lastYearCount} last yr
+                            </span>
+                          </div>
+                        )}
+                      </div>
                       <p className="text-xs sm:text-sm text-center text-muted-foreground">
                         {yearCount < 52
                           ? `${52 - yearCount} more to reach your goal with ${weeksLeft} ${weeksLeft === 1 ? "week" : "weeks"} left!`

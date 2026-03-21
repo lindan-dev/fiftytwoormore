@@ -112,6 +112,11 @@ export const EMOJI_CATEGORY_MAP: Record<string, string> = {
   '🌳': 'LOCATION_AWAY', '🏖️': 'LOCATION_AWAY', '🏕️': 'LOCATION_AWAY', '🏩': 'LOCATION_AWAY',
   '🚻': 'LOCATION_AWAY', '🧖': 'LOCATION_AWAY', '👙': 'LOCATION_AWAY', '🗺️': 'LOCATION_AWAY',
   '🚗': 'LOCATION_AWAY', '🚌': 'LOCATION_AWAY', '🚂': 'LOCATION_AWAY', '✈️': 'LOCATION_AWAY', '🛥️': 'LOCATION_AWAY',
+  // COUNTRIES
+  '🇫🇷': 'LOCATION_AWAY', '🇪🇸': 'LOCATION_AWAY', '🇮🇹': 'LOCATION_AWAY', '🇬🇷': 'LOCATION_AWAY',
+  '🇵🇹': 'LOCATION_AWAY', '🇬🇧': 'LOCATION_AWAY', '🇩🇪': 'LOCATION_AWAY', '🇳🇱': 'LOCATION_AWAY',
+  '🇺🇸': 'LOCATION_AWAY', '🇹🇭': 'LOCATION_AWAY', '🇲🇽': 'LOCATION_AWAY', '🇯🇵': 'LOCATION_AWAY',
+  '🇦🇺': 'LOCATION_AWAY', '🇭🇷': 'LOCATION_AWAY',
   // META_CAPTURE
   '🎥': 'META_CAPTURE', '📸': 'META_CAPTURE',
 };

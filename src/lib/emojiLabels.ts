@@ -84,6 +84,22 @@ export const EMOJI_LABEL_MAP: Record<string, string> = {
   // Meta / Capture
   '🎥': 'Captured',
   '📸': 'Snapshot',
+  
+  // Countries
+  '🇫🇷': 'France',
+  '🇪🇸': 'Spain',
+  '🇮🇹': 'Italy',
+  '🇬🇷': 'Greece',
+  '🇵🇹': 'Portugal',
+  '🇬🇧': 'United Kingdom',
+  '🇩🇪': 'Germany',
+  '🇳🇱': 'Netherlands',
+  '🇺🇸': 'United States',
+  '🇹🇭': 'Thailand',
+  '🇲🇽': 'Mexico',
+  '🇯🇵': 'Japan',
+  '🇦🇺': 'Australia',
+  '🇭🇷': 'Croatia',
 };
 
 // Emoji category mapping for copy generation
@@ -159,6 +175,22 @@ const LABEL_CATEGORY_MAP: Record<string, EmojiCategory> = {
   'Risky location': 'LOCATION_AWAY',
   'Out in the wild': 'LOCATION_AWAY',
 
+  // COUNTRIES
+  'France': 'LOCATION_AWAY',
+  'Spain': 'LOCATION_AWAY',
+  'Italy': 'LOCATION_AWAY',
+  'Greece': 'LOCATION_AWAY',
+  'Portugal': 'LOCATION_AWAY',
+  'United Kingdom': 'LOCATION_AWAY',
+  'Germany': 'LOCATION_AWAY',
+  'Netherlands': 'LOCATION_AWAY',
+  'United States': 'LOCATION_AWAY',
+  'Thailand': 'LOCATION_AWAY',
+  'Mexico': 'LOCATION_AWAY',
+  'Japan': 'LOCATION_AWAY',
+  'Australia': 'LOCATION_AWAY',
+  'Croatia': 'LOCATION_AWAY',
+
   // META_CAPTURE
   'Captured': 'META_CAPTURE',
   'Snapshot': 'META_CAPTURE',
@@ -205,7 +237,9 @@ export function getEmojiPresets(): Array<{ emoji: string; label: string }> {
     '😈', '👄', '💕', '✨', '🎀', '🧊', '🕯️', '🌹', '💎', '🎭',
     '🦋', '⛓️', '🛏️', '🛋️', '🧺', '🚿', '🛁', '🪑', '🍽️', '🌳',
     '🏖️', '🏕️', '🏩', '🚻', '🧖', '👙', '🗺️', '🚗', '🚌', '🚂',
-    '✈️', '🛥️', '🎥', '📸'
+    '✈️', '🛥️', '🎥', '📸',
+    '🇫🇷', '🇪🇸', '🇮🇹', '🇬🇷', '🇵🇹', '🇬🇧', '🇩🇪', '🇳🇱',
+    '🇺🇸', '🇹🇭', '🇲🇽', '🇯🇵', '🇦🇺', '🇭🇷'
   ];
   
   return displayOrder.map(emoji => ({

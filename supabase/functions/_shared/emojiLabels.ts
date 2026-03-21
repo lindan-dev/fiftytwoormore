@@ -90,6 +90,17 @@ export const EMOJI_LABEL_MAP: Record<string, string> = {
   '🇯🇵': 'Japan',
   '🇦🇺': 'Australia',
   '🇭🇷': 'Croatia',
+  '🇸🇪': 'Sweden',
+  '🇳🇴': 'Norway',
+  '🇩🇰': 'Denmark',
+  '🇫🇮': 'Finland',
+  '🇮🇸': 'Iceland',
+  '🇲🇦': 'Morocco',
+  '🇿🇦': 'South Africa',
+  '🇰🇪': 'Kenya',
+  '🇹🇿': 'Tanzania',
+  '🇪🇬': 'Egypt',
+  '🇳🇬': 'Nigeria',
 };
 
 // Emoji category mapping
@@ -117,6 +128,9 @@ export const EMOJI_CATEGORY_MAP: Record<string, string> = {
   '🇵🇹': 'LOCATION_AWAY', '🇬🇧': 'LOCATION_AWAY', '🇩🇪': 'LOCATION_AWAY', '🇳🇱': 'LOCATION_AWAY',
   '🇺🇸': 'LOCATION_AWAY', '🇹🇭': 'LOCATION_AWAY', '🇲🇽': 'LOCATION_AWAY', '🇯🇵': 'LOCATION_AWAY',
   '🇦🇺': 'LOCATION_AWAY', '🇭🇷': 'LOCATION_AWAY',
+  '🇸🇪': 'LOCATION_AWAY', '🇳🇴': 'LOCATION_AWAY', '🇩🇰': 'LOCATION_AWAY', '🇫🇮': 'LOCATION_AWAY',
+  '🇮🇸': 'LOCATION_AWAY', '🇲🇦': 'LOCATION_AWAY', '🇿🇦': 'LOCATION_AWAY', '🇰🇪': 'LOCATION_AWAY',
+  '🇹🇿': 'LOCATION_AWAY', '🇪🇬': 'LOCATION_AWAY', '🇳🇬': 'LOCATION_AWAY',
   // META_CAPTURE
   '🎥': 'META_CAPTURE', '📸': 'META_CAPTURE',
 };

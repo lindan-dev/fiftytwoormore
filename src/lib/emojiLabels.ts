@@ -175,6 +175,22 @@ const LABEL_CATEGORY_MAP: Record<string, EmojiCategory> = {
   'Risky location': 'LOCATION_AWAY',
   'Out in the wild': 'LOCATION_AWAY',
 
+  // COUNTRIES
+  'France': 'LOCATION_AWAY',
+  'Spain': 'LOCATION_AWAY',
+  'Italy': 'LOCATION_AWAY',
+  'Greece': 'LOCATION_AWAY',
+  'Portugal': 'LOCATION_AWAY',
+  'United Kingdom': 'LOCATION_AWAY',
+  'Germany': 'LOCATION_AWAY',
+  'Netherlands': 'LOCATION_AWAY',
+  'United States': 'LOCATION_AWAY',
+  'Thailand': 'LOCATION_AWAY',
+  'Mexico': 'LOCATION_AWAY',
+  'Japan': 'LOCATION_AWAY',
+  'Australia': 'LOCATION_AWAY',
+  'Croatia': 'LOCATION_AWAY',
+
   // META_CAPTURE
   'Captured': 'META_CAPTURE',
   'Snapshot': 'META_CAPTURE',

@@ -100,6 +100,17 @@ export const EMOJI_LABEL_MAP: Record<string, string> = {
   '🇯🇵': 'Japan',
   '🇦🇺': 'Australia',
   '🇭🇷': 'Croatia',
+  '🇸🇪': 'Sweden',
+  '🇳🇴': 'Norway',
+  '🇩🇰': 'Denmark',
+  '🇫🇮': 'Finland',
+  '🇮🇸': 'Iceland',
+  '🇲🇦': 'Morocco',
+  '🇿🇦': 'South Africa',
+  '🇰🇪': 'Kenya',
+  '🇹🇿': 'Tanzania',
+  '🇪🇬': 'Egypt',
+  '🇳🇬': 'Nigeria',
 };
 
 // Emoji category mapping for copy generation

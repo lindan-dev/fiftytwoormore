@@ -74,6 +74,22 @@ export const EMOJI_LABEL_MAP: Record<string, string> = {
   // Meta / Capture
   '🎥': 'Captured',
   '📸': 'Snapshot',
+  
+  // Countries
+  '🇫🇷': 'France',
+  '🇪🇸': 'Spain',
+  '🇮🇹': 'Italy',
+  '🇬🇷': 'Greece',
+  '🇵🇹': 'Portugal',
+  '🇬🇧': 'United Kingdom',
+  '🇩🇪': 'Germany',
+  '🇳🇱': 'Netherlands',
+  '🇺🇸': 'United States',
+  '🇹🇭': 'Thailand',
+  '🇲🇽': 'Mexico',
+  '🇯🇵': 'Japan',
+  '🇦🇺': 'Australia',
+  '🇭🇷': 'Croatia',
 };
 
 // Emoji category mapping

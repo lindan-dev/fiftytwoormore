@@ -201,6 +201,17 @@ const LABEL_CATEGORY_MAP: Record<string, EmojiCategory> = {
   'Japan': 'LOCATION_AWAY',
   'Australia': 'LOCATION_AWAY',
   'Croatia': 'LOCATION_AWAY',
+  'Sweden': 'LOCATION_AWAY',
+  'Norway': 'LOCATION_AWAY',
+  'Denmark': 'LOCATION_AWAY',
+  'Finland': 'LOCATION_AWAY',
+  'Iceland': 'LOCATION_AWAY',
+  'Morocco': 'LOCATION_AWAY',
+  'South Africa': 'LOCATION_AWAY',
+  'Kenya': 'LOCATION_AWAY',
+  'Tanzania': 'LOCATION_AWAY',
+  'Egypt': 'LOCATION_AWAY',
+  'Nigeria': 'LOCATION_AWAY',
 
   // META_CAPTURE
   'Captured': 'META_CAPTURE',

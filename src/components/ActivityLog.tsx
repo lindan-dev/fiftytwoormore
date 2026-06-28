@@ -1,4 +1,4 @@
-import { Trash2, User, Pencil } from "lucide-react";
+import { Trash2, User, Pencil, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import EmojiSelector from "./EmojiSelector";
+import { countryFlag } from "@/lib/countryFlag";
 
 interface Activity {
   id: string;
@@ -14,6 +15,8 @@ interface Activity {
   user_id: string;
   emoji?: string;
   notes?: string;
+  location_label?: string | null;
+  location_country?: string | null;
 }
 
 interface Profile {

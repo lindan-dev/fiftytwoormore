@@ -1181,6 +1181,18 @@ const Index = () => {
               setCustomTime(now.toTimeString().slice(0, 5));
               setSelectedEmoji("");
               setSelectedNotes("");
+              // Smart default: reuse the most recent activity's location if available
+              const latestWithLoc = activities.find((a) => a.location_label);
+              setSelectedLocation(
+                latestWithLoc?.location_label
+                  ? {
+                      label: latestWithLoc.location_label,
+                      country: latestWithLoc.location_country ?? null,
+                      lat: latestWithLoc.location_lat ?? null,
+                      lng: latestWithLoc.location_lng ?? null,
+                    }
+                  : null,
+              );
               setDialogOpen(true);
             }}
             className="flex-1 h-12 sm:h-14 text-sm sm:text-base font-semibold"
@@ -1216,6 +1228,10 @@ const Index = () => {
                     onChange={(e) => setSelectedNotes(e.target.value)}
                     maxLength={200}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label>Location (optional)</Label>
+                  <LocationPicker value={selectedLocation} onChange={setSelectedLocation} />
                 </div>
                 <Button
                   onClick={handleCustomLog}

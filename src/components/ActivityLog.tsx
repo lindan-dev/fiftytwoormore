@@ -232,7 +232,7 @@ export default function ActivityLog({ activities, onDelete, onUpdate, currentUse
                       <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Edit Activity</DialogTitle>
                     </DialogHeader>

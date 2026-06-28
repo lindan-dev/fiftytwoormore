@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import EmojiSelector from "./EmojiSelector";
 import { countryFlag } from "@/lib/countryFlag";
+import LocationPicker, { LocationValue } from "./LocationPicker";
 
 interface Activity {
   id: string;
@@ -17,6 +18,8 @@ interface Activity {
   notes?: string;
   location_label?: string | null;
   location_country?: string | null;
+  location_lat?: number | null;
+  location_lng?: number | null;
 }
 
 interface Profile {
@@ -28,7 +31,7 @@ interface Profile {
 interface ActivityLogProps {
   activities: Activity[];
   onDelete: (id: string) => void;
-  onUpdate: (id: string, activityDate: Date, emoji: string, notes?: string) => void;
+  onUpdate: (id: string, activityDate: Date, emoji: string, notes?: string, location?: LocationValue | null) => void;
   currentUserId?: string;
 }
 
@@ -39,6 +42,7 @@ export default function ActivityLog({ activities, onDelete, onUpdate, currentUse
   const [editTime, setEditTime] = useState("");
   const [editEmoji, setEditEmoji] = useState("");
   const [editNotes, setEditNotes] = useState("");
+  const [editLocation, setEditLocation] = useState<LocationValue | null>(null);
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -97,18 +101,29 @@ export default function ActivityLog({ activities, onDelete, onUpdate, currentUse
     setEditTime(date.toTimeString().slice(0, 5));
     setEditEmoji(activity.emoji || "");
     setEditNotes(activity.notes || "");
+    setEditLocation(
+      activity.location_label
+        ? {
+            label: activity.location_label,
+            country: activity.location_country ?? null,
+            lat: activity.location_lat ?? null,
+            lng: activity.location_lng ?? null,
+          }
+        : null,
+    );
   };
 
   const handleSaveEdit = () => {
     if (!editingActivity || !editDate || !editTime || !editEmoji) return;
     
     const combinedDateTime = new Date(`${editDate}T${editTime}`);
-    onUpdate(editingActivity.id, combinedDateTime, editEmoji, editNotes);
+    onUpdate(editingActivity.id, combinedDateTime, editEmoji, editNotes, editLocation);
     setEditingActivity(null);
     setEditDate("");
     setEditTime("");
     setEditEmoji("");
     setEditNotes("");
+    setEditLocation(null);
   };
 
   const getSpecialDateBadge = (activityDate: string) => {
@@ -258,6 +273,10 @@ export default function ActivityLog({ activities, onDelete, onUpdate, currentUse
                           onChange={(e) => setEditNotes(e.target.value)}
                           maxLength={200}
                         />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Location (optional)</Label>
+                        <LocationPicker value={editLocation} onChange={setEditLocation} />
                       </div>
                       <Button 
                         onClick={handleSaveEdit} 

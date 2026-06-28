@@ -74,6 +74,7 @@ const Index = () => {
   const [customTime, setCustomTime] = useState("");
   const [selectedEmoji, setSelectedEmoji] = useState("");
   const [selectedNotes, setSelectedNotes] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState<LocationValue | null>(null);
   const [invitationCode, setInvitationCode] = useState("");
   const [enterCode, setEnterCode] = useState("");
   const [sendingInvitation, setSendingInvitation] = useState(false);

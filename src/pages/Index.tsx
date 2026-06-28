@@ -6,6 +6,7 @@ import Auth from "@/components/Auth";
 import Onboarding from "@/components/Onboarding";
 
 import EmojiSelector from "@/components/EmojiSelector";
+import LocationPicker, { LocationValue } from "@/components/LocationPicker";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Heart, Plus, BarChart3, List, LogOut, Copy, Loader2, User, Download, X, Info, Shield, Sparkles } from "lucide-react";
@@ -29,6 +30,10 @@ interface Activity {
   created_at: string;
   emoji?: string;
   notes?: string;
+  location_label?: string | null;
+  location_country?: string | null;
+  location_lat?: number | null;
+  location_lng?: number | null;
 }
 
 interface Invitation {

@@ -1,4 +1,4 @@
-import { Trash2, User, Pencil } from "lucide-react";
+import { Trash2, User, Pencil, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import EmojiSelector from "./EmojiSelector";
+import { countryFlag } from "@/lib/countryFlag";
 
 interface Activity {
   id: string;
@@ -14,6 +15,8 @@ interface Activity {
   user_id: string;
   emoji?: string;
   notes?: string;
+  location_label?: string | null;
+  location_country?: string | null;
 }
 
 interface Profile {
@@ -184,6 +187,14 @@ export default function ActivityLog({ activities, onDelete, onUpdate, currentUse
                 {activity.notes && (
                   <p className="text-xs sm:text-sm text-muted-foreground mt-1 italic">
                     {activity.notes}
+                  </p>
+                )}
+                {activity.location_label && (
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1 inline-flex items-center gap-1">
+                    <MapPin className="w-3 h-3" />
+                    <span>
+                      {countryFlag(activity.location_country)} {activity.location_label}
+                    </span>
                   </p>
                 )}
                 {specialDate && (

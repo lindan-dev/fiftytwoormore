@@ -6,6 +6,7 @@ import Auth from "@/components/Auth";
 import Onboarding from "@/components/Onboarding";
 
 import EmojiSelector from "@/components/EmojiSelector";
+import LocationPicker, { LocationValue } from "@/components/LocationPicker";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Heart, Plus, BarChart3, List, LogOut, Copy, Loader2, User, Download, X, Info, Shield, Sparkles } from "lucide-react";
@@ -29,6 +30,10 @@ interface Activity {
   created_at: string;
   emoji?: string;
   notes?: string;
+  location_label?: string | null;
+  location_country?: string | null;
+  location_lat?: number | null;
+  location_lng?: number | null;
 }
 
 interface Invitation {
@@ -69,6 +74,7 @@ const Index = () => {
   const [customTime, setCustomTime] = useState("");
   const [selectedEmoji, setSelectedEmoji] = useState("");
   const [selectedNotes, setSelectedNotes] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState<LocationValue | null>(null);
   const [invitationCode, setInvitationCode] = useState("");
   const [enterCode, setEnterCode] = useState("");
   const [sendingInvitation, setSendingInvitation] = useState(false);
@@ -537,7 +543,12 @@ const Index = () => {
     }
   };
 
-  const handleLogActivity = async (activityDate?: Date, emoji?: string, notes?: string) => {
+  const handleLogActivity = async (
+    activityDate?: Date,
+    emoji?: string,
+    notes?: string,
+    location?: LocationValue | null,
+  ) => {
     if (!session?.user) return;
 
     const dateToLog = activityDate || new Date();
@@ -548,6 +559,10 @@ const Index = () => {
         activity_date: dateToLog.toISOString(),
         emoji: emoji || null,
         notes: notes || null,
+        location_label: location?.label || null,
+        location_country: location?.country || null,
+        location_lat: location?.lat ?? null,
+        location_lng: location?.lng ?? null,
       },
     ]);
 
@@ -573,6 +588,7 @@ const Index = () => {
       setDialogOpen(false);
       setSelectedEmoji("");
       setSelectedNotes("");
+      setSelectedLocation(null);
     }
   };
 
@@ -596,11 +612,12 @@ const Index = () => {
     }
 
     const combinedDateTime = new Date(`${customDate}T${customTime}`);
-    handleLogActivity(combinedDateTime, selectedEmoji, selectedNotes);
+    handleLogActivity(combinedDateTime, selectedEmoji, selectedNotes, selectedLocation);
     setDialogOpen(false);
     setCustomDate("");
     setCustomTime("");
     setSelectedNotes("");
+    setSelectedLocation(null);
   };
 
   const handleUpdateActivity = async (id: string, activityDate: Date, emoji: string, notes?: string) => {
@@ -1164,6 +1181,18 @@ const Index = () => {
               setCustomTime(now.toTimeString().slice(0, 5));
               setSelectedEmoji("");
               setSelectedNotes("");
+              // Smart default: reuse the most recent activity's location if available
+              const latestWithLoc = activities.find((a) => a.location_label);
+              setSelectedLocation(
+                latestWithLoc?.location_label
+                  ? {
+                      label: latestWithLoc.location_label,
+                      country: latestWithLoc.location_country ?? null,
+                      lat: latestWithLoc.location_lat ?? null,
+                      lng: latestWithLoc.location_lng ?? null,
+                    }
+                  : null,
+              );
               setDialogOpen(true);
             }}
             className="flex-1 h-12 sm:h-14 text-sm sm:text-base font-semibold"
@@ -1199,6 +1228,10 @@ const Index = () => {
                     onChange={(e) => setSelectedNotes(e.target.value)}
                     maxLength={200}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label>Location (optional)</Label>
+                  <LocationPicker value={selectedLocation} onChange={setSelectedLocation} />
                 </div>
                 <Button
                   onClick={handleCustomLog}

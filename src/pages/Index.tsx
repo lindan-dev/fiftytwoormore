@@ -620,13 +620,23 @@ const Index = () => {
     setSelectedLocation(null);
   };
 
-  const handleUpdateActivity = async (id: string, activityDate: Date, emoji: string, notes?: string) => {
+  const handleUpdateActivity = async (
+    id: string,
+    activityDate: Date,
+    emoji: string,
+    notes?: string,
+    location?: LocationValue | null,
+  ) => {
     const { error } = await supabase
       .from("activities")
       .update({
         activity_date: activityDate.toISOString(),
         emoji: emoji,
         notes: notes || null,
+        location_label: location?.label ?? null,
+        location_country: location?.country ?? null,
+        location_lat: location?.lat ?? null,
+        location_lng: location?.lng ?? null,
       })
       .eq("id", id);
 

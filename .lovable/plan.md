@@ -1,70 +1,75 @@
+# Add Location to Activity Logging
 
+## Goal
+Capture an optional location (auto via browser GPS) when logging a moment, with smart default from the last used location. Surface the location in the activity log, stats, and emails.
 
-# Year in Review - Visibility Logic Update
+## User Experience
 
-## Current Issues
+**In the log dialog:**
+- New "Location" row with a 📍 button labeled "Use my location"
+- On click → request browser geolocation → reverse-geocode to "City, Country" (e.g. "Stockholm, Sweden")
+- Once captured, shows as a chip: `📍 Stockholm, Sweden ✕` (clearable)
+- Smart default: pre-fills with the user's most recent activity's location (if any), so frequent loggers don't need to re-tap
+- A small "Edit" link lets them tweak the text manually
+- Fully optional — they can leave it blank and log as before
 
-1. **No data check**: The Year in Review cards show even if the user has zero activities for the previous year
-2. **No Jan 1st availability logic**: The feature doesn't gate on the calendar year turning over
-3. **Top panel never disappears**: The prominent Index.tsx card stays visible all year instead of just the first 2 weeks
-4. **StatsView card visibility**: Should remain available all year (this already works, just needs the data check)
+**In the activity log:**
+- Location chip shown beneath the note (if present)
 
-## Proposed Changes
+**In stats:**
+- New "Top locations" mini-card in the extended stats (rank by count, show top 5 with flag emoji when available)
+- "On this day" copy mentions the location when present ("…in Stockholm")
 
-### 1. Add a helper to check for previous-year data
-
-Create a small helper (or inline logic) that checks whether the user has any activities from the previous calendar year. This determines whether Year in Review is shown at all.
-
-### 2. Index.tsx - Top Panel (prominent card)
-
-- Only show if the user has activities from the previous year
-- Only show during the first 2 weeks of the new year (January 1-14)
-- After January 14, the card disappears from the Index page
-- Available immediately on January 1st
-
-### 3. StatsView - Bottom CTA card
-
-- Only show if the user has activities from the previous year
-- Stays visible throughout the entire year (no time limit)
-- This is the persistent entry point after the top panel disappears
-
-### 4. YearInReview page itself
-
-- No changes needed to the page. It already accepts a `?year=` param and filters data accordingly. If someone navigates to it with no data, it shows a loading/empty state.
-
----
+**In emails (weekly digest, mid-week nudge, on-this-day, year-in-review):**
+- When a featured moment has a location, include it inline ("Monday's moment in Stockholm 🇸🇪")
+- Year in Review gets a new "Places" line: "You logged moments in 3 places this year"
 
 ## Technical Details
 
-### Index.tsx changes (top panel)
+### Database
+- Migration: add `location_label TEXT`, `location_lat NUMERIC`, `location_lng NUMERIC`, `location_country TEXT` to `public.activities` (all nullable)
+- No new RLS needed — inherits existing activity policies
 
-Add two conditions to the Year in Review card:
+### Geocoding
+- Use the existing Google Maps Platform connector (already in the project) via the gateway
+- Reverse geocoding endpoint: `GET /maps/api/geocode/json?latlng={lat},{lng}` through `connector-gateway.lovable.dev/google_maps/...`
+- New edge function `reverse-geocode` that takes `{lat, lng}` and returns `{ label, country }` — keeps API key server-side
+- Parse `address_components` for `locality` (city) and `country` (long name + short code → flag emoji)
 
-```text
-const now = new Date();
-const previousYear = now.getFullYear() - 1;
-const isWithinFirstTwoWeeks = now.getMonth() === 0 && now.getDate() <= 14;
-const hasPreviousYearData = activities.some(a => 
-  new Date(a.activity_date).getFullYear() === previousYear
-);
-```
+### Frontend
+- `src/components/LocationPicker.tsx` — small component used inside the log dialog
+  - Reads `navigator.geolocation.getCurrentPosition`
+  - Calls `supabase.functions.invoke('reverse-geocode', { body: { lat, lng } })`
+  - Emits `{ label, country, lat, lng }` upward
+- Update `Index.tsx` logging flow to pass location fields to insert
+- Update `ActivityLog.tsx` to render the location chip
+- Smart default: query the user's latest activity with non-null `location_label` on dialog open and pre-fill
+- Update `StatsView.tsx` with a "Top locations" card
+- Update `OnThisDay.tsx` copy when location is present
 
-Wrap the card with: `{hasPreviousYearData && isWithinFirstTwoWeeks && ( ... )}`
+### Edge functions
+- `send-weekly-digest`, `send-midweek-nudge`, `send-yearly-review`: include location in the featured-moment lines and aggregate `locationsCount` for the year-in-review
 
-### StatsView.tsx changes (bottom CTA)
+### Country → flag emoji
+- Tiny helper in `src/lib/countryFlag.ts`: ISO-2 code → flag emoji (regional indicator math). Mirror in `supabase/functions/_shared/countryFlag.ts` for emails.
 
-Replace the current `activities.length > 0` condition:
-
-```text
-const previousYear = new Date().getFullYear() - 1;
-const hasPreviousYearData = activities.some(a => 
-  new Date(a.activity_date).getFullYear() === previousYear
-);
-```
-
-Wrap the card with: `{hasPreviousYearData && ( ... )}`
+### Files to add
+- `supabase/functions/reverse-geocode/index.ts`
+- `src/components/LocationPicker.tsx`
+- `src/lib/countryFlag.ts`
+- `supabase/functions/_shared/countryFlag.ts`
+- Migration adding the four new columns
 
 ### Files to modify
-- `src/pages/Index.tsx` - Add date + data gating to the top Year in Review card
-- `src/components/StatsView.tsx` - Add data gating to the bottom Year in Review CTA
+- `src/components/ActivityLog.tsx` — show chip
+- `src/pages/Index.tsx` — wire LocationPicker into log dialog + insert payload + smart default
+- `src/components/StatsView.tsx` — Top Locations card
+- `src/components/OnThisDay.tsx` — include location in copy
+- `supabase/functions/send-weekly-digest/index.ts`
+- `supabase/functions/send-midweek-nudge/index.ts`
+- `supabase/functions/send-yearly-review/index.ts`
 
+## Out of scope
+- Map view of locations (could be a follow-up)
+- Per-user privacy settings to hide locations (current model: only the couple sees their own data)
+- Editing historical activities to add a location retroactively (only new logs get the picker; the edit dialog can be extended later if you want)

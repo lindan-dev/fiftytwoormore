@@ -20,6 +20,10 @@ export type Database = {
           created_at: string
           emoji: string | null
           id: string
+          location_country: string | null
+          location_label: string | null
+          location_lat: number | null
+          location_lng: number | null
           notes: string | null
           user_id: string
         }
@@ -28,6 +32,10 @@ export type Database = {
           created_at?: string
           emoji?: string | null
           id?: string
+          location_country?: string | null
+          location_label?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
           notes?: string | null
           user_id: string
         }
@@ -36,6 +44,10 @@ export type Database = {
           created_at?: string
           emoji?: string | null
           id?: string
+          location_country?: string | null
+          location_label?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
           notes?: string | null
           user_id?: string
         }

@@ -189,6 +189,14 @@ export default function ActivityLog({ activities, onDelete, onUpdate, currentUse
                     {activity.notes}
                   </p>
                 )}
+                {activity.location_label && (
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1 inline-flex items-center gap-1">
+                    <MapPin className="w-3 h-3" />
+                    <span>
+                      {countryFlag(activity.location_country)} {activity.location_label}
+                    </span>
+                  </p>
+                )}
                 {specialDate && (
                   <div className={`mt-1.5 inline-block px-1.5 py-0.5 rounded-full text-xs font-semibold border ${specialDate.color}`}>
                     {specialDate.label}

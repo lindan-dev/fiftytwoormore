@@ -543,7 +543,12 @@ const Index = () => {
     }
   };
 
-  const handleLogActivity = async (activityDate?: Date, emoji?: string, notes?: string) => {
+  const handleLogActivity = async (
+    activityDate?: Date,
+    emoji?: string,
+    notes?: string,
+    location?: LocationValue | null,
+  ) => {
     if (!session?.user) return;
 
     const dateToLog = activityDate || new Date();
@@ -554,6 +559,10 @@ const Index = () => {
         activity_date: dateToLog.toISOString(),
         emoji: emoji || null,
         notes: notes || null,
+        location_label: location?.label || null,
+        location_country: location?.country || null,
+        location_lat: location?.lat ?? null,
+        location_lng: location?.lng ?? null,
       },
     ]);
 
@@ -579,6 +588,7 @@ const Index = () => {
       setDialogOpen(false);
       setSelectedEmoji("");
       setSelectedNotes("");
+      setSelectedLocation(null);
     }
   };
 
@@ -602,11 +612,12 @@ const Index = () => {
     }
 
     const combinedDateTime = new Date(`${customDate}T${customTime}`);
-    handleLogActivity(combinedDateTime, selectedEmoji, selectedNotes);
+    handleLogActivity(combinedDateTime, selectedEmoji, selectedNotes, selectedLocation);
     setDialogOpen(false);
     setCustomDate("");
     setCustomTime("");
     setSelectedNotes("");
+    setSelectedLocation(null);
   };
 
   const handleUpdateActivity = async (id: string, activityDate: Date, emoji: string, notes?: string) => {

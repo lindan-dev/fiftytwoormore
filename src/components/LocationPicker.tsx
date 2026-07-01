@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { MapPin, Loader2, X, Map as MapIcon } from "lucide-react";
 import { countryFlag } from "@/lib/countryFlag";
 import { useToast } from "@/hooks/use-toast";
@@ -33,7 +32,6 @@ interface Props {
 
 export default function LocationPicker({ value, onChange }: Props) {
   const [loading, setLoading] = useState(false);
-  const [editing, setEditing] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
   const { toast } = useToast();
 
@@ -87,10 +85,9 @@ export default function LocationPicker({ value, onChange }: Props) {
         setLoading(false);
         toast({
           title: "Location blocked",
-          description: err.message || "Allow location access or type a place below.",
+          description: err.message || "Allow location access or pick on the map.",
           variant: "destructive",
         });
-        setEditing(true);
       },
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 },
     );
@@ -111,7 +108,7 @@ export default function LocationPicker({ value, onChange }: Props) {
     />
   );
 
-  if (value && !editing) {
+  if (value) {
     return (
       <div className="flex items-center gap-2 flex-wrap">
         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-sm">
@@ -128,30 +125,15 @@ export default function LocationPicker({ value, onChange }: Props) {
             <X className="w-3 h-3" />
           </button>
         </div>
-        <button type="button" className="text-xs text-muted-foreground underline" onClick={() => setEditing(true)}>
-          Edit
-        </button>
-        <button type="button" className="text-xs text-muted-foreground underline" onClick={() => setMapOpen(true)}>
-          Pick on map
-        </button>
-        {mapPickerDialog}
-      </div>
-    );
-  }
-
-  if (editing) {
-    return (
-      <div className="flex gap-2 flex-wrap">
-        <Input
-          autoFocus
-          placeholder="e.g. Stockholm, Sweden"
-          value={value?.label || ""}
-          onChange={(e) => onChange({ ...(value || {}), label: e.target.value })}
-          maxLength={80}
-        />
-        <Button type="button" variant="outline" size="sm" onClick={() => setEditing(false)}>
-          Done
+        <Button type="button" variant="outline" size="sm" onClick={handleUseLocation} disabled={loading}>
+          {loading ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <MapPin className="w-4 h-4 mr-1.5" />}
+          Use my location
         </Button>
+        <Button type="button" variant="outline" size="sm" onClick={() => setMapOpen(true)}>
+          <MapIcon className="w-4 h-4 mr-1.5" />
+          Pick on map
+        </Button>
+        {mapPickerDialog}
       </div>
     );
   }
@@ -165,9 +147,6 @@ export default function LocationPicker({ value, onChange }: Props) {
       <Button type="button" variant="outline" size="sm" onClick={() => setMapOpen(true)}>
         <MapIcon className="w-4 h-4 mr-1.5" />
         Pick on map
-      </Button>
-      <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(true)}>
-        Type instead
       </Button>
       {mapPickerDialog}
     </div>
@@ -185,7 +164,18 @@ function MapClickHandler({ onPick }: { onPick: (lat: number, lng: number) => voi
 
 function RecenterOnChange({ pos }: { pos: { lat: number; lng: number } | null }) {
   const map = useMap();
-  if (pos) map.setView([pos.lat, pos.lng], map.getZoom());
+  useEffect(() => {
+    if (pos) map.setView([pos.lat, pos.lng], map.getZoom());
+  }, [pos, map]);
+  return null;
+}
+
+function InvalidateOnMount() {
+  const map = useMap();
+  useEffect(() => {
+    const t = setTimeout(() => map.invalidateSize(), 200);
+    return () => clearTimeout(t);
+  }, [map]);
   return null;
 }
 
@@ -204,21 +194,25 @@ function MapPickerDialog({
   const center: [number, number] = initial ? [initial.lat, initial.lng] : [20, 0];
   const zoom = initial ? 10 : 2;
 
+  useEffect(() => {
+    if (open) setPos(initial);
+  }, [open, initial]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl z-[100]">
         <DialogHeader>
           <DialogTitle>Pick a location</DialogTitle>
         </DialogHeader>
-        <div className="h-[60vh] w-full rounded-md overflow-hidden border">
-          <MapContainer center={center} zoom={zoom} style={{ height: "100%", width: "100%" }}>
+        <div className="h-[60vh] w-full rounded-md overflow-hidden border relative z-0">
+          <MapContainer center={center} zoom={zoom} style={{ height: "100%", width: "100%" }} scrollWheelZoom>
             <TileLayer
               attribution='&copy; OpenStreetMap'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
+            <InvalidateOnMount />
             <MapClickHandler onPick={(lat, lng) => setPos({ lat, lng })} />
             {pos && <Marker position={[pos.lat, pos.lng]} />}
-            <RecenterOnChange pos={pos} />
           </MapContainer>
         </div>
         <p className="text-xs text-muted-foreground">Tap or click anywhere on the map to drop a pin.</p>

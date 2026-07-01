@@ -211,6 +211,11 @@ function LeafletMap({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
+  const onPickRef = useRef(onPick);
+
+  useEffect(() => {
+    onPickRef.current = onPick;
+  }, [onPick]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -223,7 +228,7 @@ function LeafletMap({
     }).addTo(map);
 
     map.on("click", (event: L.LeafletMouseEvent) => {
-      onPick(event.latlng.lat, event.latlng.lng);
+      onPickRef.current(event.latlng.lat, event.latlng.lng);
     });
 
     const resizeTimer = window.setTimeout(() => map.invalidateSize(), 200);
@@ -234,7 +239,7 @@ function LeafletMap({
       mapRef.current = null;
       markerRef.current = null;
     };
-  }, [center, zoom, onPick]);
+  }, []);
 
   useEffect(() => {
     const map = mapRef.current;

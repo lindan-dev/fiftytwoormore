@@ -1,12 +1,14 @@
 import { useState, useMemo, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Trash2, MapPin } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import EmojiSelector from "./EmojiSelector";
+import LocationPicker, { LocationValue } from "./LocationPicker";
 import OnThisDay from "./OnThisDay";
+import { countryFlag } from "@/lib/countryFlag";
 import { supabase } from "@/integrations/supabase/client";
 import {
   startOfMonth, 
@@ -28,6 +30,10 @@ interface Activity {
   user_id: string;
   emoji?: string;
   notes?: string;
+  location_label?: string | null;
+  location_country?: string | null;
+  location_lat?: number | null;
+  location_lng?: number | null;
 }
 
 interface Profile {
@@ -40,7 +46,7 @@ interface CalendarViewProps {
   activities: Activity[];
   currentUserId?: string;
   onDelete: (id: string) => void;
-  onUpdate: (id: string, activityDate: Date, emoji: string, notes?: string) => void;
+  onUpdate: (id: string, activityDate: Date, emoji: string, notes?: string, location?: LocationValue | null) => void;
 }
 
 export default function CalendarView({ activities, currentUserId, onDelete, onUpdate }: CalendarViewProps) {
@@ -52,6 +58,7 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
   const [editTime, setEditTime] = useState("");
   const [editEmoji, setEditEmoji] = useState("");
   const [editNotes, setEditNotes] = useState("");
+  const [editLocation, setEditLocation] = useState<LocationValue | null>(null);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [anniversary, setAnniversary] = useState<string | null>(null);
 
@@ -209,18 +216,29 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
     setEditTime(date.toTimeString().slice(0, 5));
     setEditEmoji(activity.emoji || "");
     setEditNotes(activity.notes || "");
+    setEditLocation(
+      activity.location_label
+        ? {
+            label: activity.location_label,
+            country: activity.location_country ?? null,
+            lat: activity.location_lat ?? null,
+            lng: activity.location_lng ?? null,
+          }
+        : null,
+    );
   };
 
   const handleSaveEdit = () => {
     if (!editingActivity || !editDate || !editTime || !editEmoji) return;
     
     const combinedDateTime = new Date(`${editDate}T${editTime}`);
-    onUpdate(editingActivity.id, combinedDateTime, editEmoji, editNotes);
+    onUpdate(editingActivity.id, combinedDateTime, editEmoji, editNotes, editLocation);
     setEditingActivity(null);
     setEditDate("");
     setEditTime("");
     setEditEmoji("");
     setEditNotes("");
+    setEditLocation(null);
   };
 
   const handleDelete = (id: string) => {
@@ -403,6 +421,14 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
                       {activity.notes && (
                         <p className="text-sm mt-1 italic">{activity.notes}</p>
                       )}
+                      {activity.location_label && (
+                        <p className="text-xs sm:text-sm text-muted-foreground mt-1 inline-flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          <span>
+                            {countryFlag(activity.location_country)} {activity.location_label}
+                          </span>
+                        </p>
+                      )}
                     </div>
                     {isCurrentUser && (
                       <div className="flex gap-1 flex-shrink-0">
@@ -434,7 +460,7 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
 
       {/* Edit Activity Dialog */}
       <Dialog open={editingActivity !== null} onOpenChange={(open) => !open && setEditingActivity(null)}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Activity</DialogTitle>
           </DialogHeader>
@@ -475,6 +501,10 @@ export default function CalendarView({ activities, currentUserId, onDelete, onUp
                 onChange={(e) => setEditNotes(e.target.value)}
                 maxLength={200}
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Location (optional)</Label>
+              <LocationPicker value={editLocation} onChange={setEditLocation} />
             </div>
             <Button 
               onClick={handleSaveEdit} 

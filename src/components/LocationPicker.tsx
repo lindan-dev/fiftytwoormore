@@ -4,15 +4,17 @@ import { MapPin, Loader2, X, Map as MapIcon } from "lucide-react";
 import { countryFlag } from "@/lib/countryFlag";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import markerIconUrl from "leaflet/dist/images/marker-icon.png";
+import markerIconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
+import markerShadowUrl from "leaflet/dist/images/marker-shadow.png";
 
 // Fix default marker icons (Leaflet+bundlers issue)
 const DefaultIcon = L.icon({
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconUrl: markerIconUrl,
+  iconRetinaUrl: markerIconRetinaUrl,
+  shadowUrl: markerShadowUrl,
   iconSize: [25, 41],
   iconAnchor: [12, 41],
 });
@@ -153,32 +155,6 @@ export default function LocationPicker({ value, onChange }: Props) {
   );
 }
 
-function MapClickHandler({ onPick }: { onPick: (lat: number, lng: number) => void }) {
-  useMapEvents({
-    click(e) {
-      onPick(e.latlng.lat, e.latlng.lng);
-    },
-  });
-  return null;
-}
-
-function RecenterOnChange({ pos }: { pos: { lat: number; lng: number } | null }) {
-  const map = useMap();
-  useEffect(() => {
-    if (pos) map.setView([pos.lat, pos.lng], map.getZoom());
-  }, [pos, map]);
-  return null;
-}
-
-function InvalidateOnMount() {
-  const map = useMap();
-  useEffect(() => {
-    const t = setTimeout(() => map.invalidateSize(), 200);
-    return () => clearTimeout(t);
-  }, [map]);
-  return null;
-}
-
 function MapPickerDialog({
   open,
   onOpenChange,
@@ -205,15 +181,7 @@ function MapPickerDialog({
           <DialogTitle>Pick a location</DialogTitle>
         </DialogHeader>
         <div className="h-[60vh] w-full rounded-md overflow-hidden border relative z-0">
-          <MapContainer center={center} zoom={zoom} style={{ height: "100%", width: "100%" }} scrollWheelZoom>
-            <TileLayer
-              attribution='&copy; OpenStreetMap'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <InvalidateOnMount />
-            <MapClickHandler onPick={(lat, lng) => setPos({ lat, lng })} />
-            {pos && <Marker position={[pos.lat, pos.lng]} />}
-          </MapContainer>
+          {open && <LeafletMap center={center} zoom={zoom} pos={pos} onPick={(lat, lng) => setPos({ lat, lng })} />}
         </div>
         <p className="text-xs text-muted-foreground">Tap or click anywhere on the map to drop a pin.</p>
         <DialogFooter>
@@ -227,4 +195,69 @@ function MapPickerDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+function LeafletMap({
+  center,
+  zoom,
+  pos,
+  onPick,
+}: {
+  center: [number, number];
+  zoom: number;
+  pos: { lat: number; lng: number } | null;
+  onPick: (lat: number, lng: number) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
+  const onPickRef = useRef(onPick);
+
+  useEffect(() => {
+    onPickRef.current = onPick;
+  }, [onPick]);
+
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return;
+
+    const map = L.map(containerRef.current, { scrollWheelZoom: true }).setView(center, zoom);
+    mapRef.current = map;
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap",
+    }).addTo(map);
+
+    map.on("click", (event: L.LeafletMouseEvent) => {
+      onPickRef.current(event.latlng.lat, event.latlng.lng);
+    });
+
+    const resizeTimer = window.setTimeout(() => map.invalidateSize(), 200);
+
+    return () => {
+      window.clearTimeout(resizeTimer);
+      map.remove();
+      mapRef.current = null;
+      markerRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (!pos) {
+      markerRef.current?.remove();
+      markerRef.current = null;
+      return;
+    }
+
+    const latLng: L.LatLngExpression = [pos.lat, pos.lng];
+    if (markerRef.current) {
+      markerRef.current.setLatLng(latLng);
+    } else {
+      markerRef.current = L.marker(latLng).addTo(map);
+    }
+  }, [pos]);
+
+  return <div ref={containerRef} className="h-full w-full" />;
 }

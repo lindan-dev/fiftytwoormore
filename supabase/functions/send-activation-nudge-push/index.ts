@@ -1,9 +1,12 @@
+// Push equivalent of send-activation-emails. Targets users who signed up
+// recently but haven't logged a single activity yet. Manually triggered
+// for now (see BACKLOG.md Ticket 2).
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { corsHeaders, requireSuperuserOrServiceRole, sendPushToUsers } from "../_shared/pushHelpers.ts";
 
 interface RequestBody {
   user_ids?: string[];
-  max_days_since_signup?: number;
+  max_days_since_signup?: number; // default 14
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -52,7 +55,7 @@ const handler = async (req: Request): Promise<Response> => {
       usersWithoutActivity,
       "Ready when you are 💛",
       "Log your first moment on fiftytwoormore - it only takes a few seconds.",
-      { screen: "Home" },
+      { screen: "Home", action: "openLogDialog" },
     );
 
     return new Response(

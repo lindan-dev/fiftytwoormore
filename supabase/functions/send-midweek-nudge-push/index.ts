@@ -1,3 +1,6 @@
+// Push equivalent of send-midweek-nudge. Manually triggered for now (see
+// BACKLOG.md Ticket 2). Unlike the email version, no A/B message variants
+// yet - can be added later once we know push open/engagement rates.
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { countLogsThisWeek } from "../_shared/statsCalculations.ts";
 import { corsHeaders, requireSuperuserOrServiceRole, sendPushToUsers } from "../_shared/pushHelpers.ts";
@@ -56,7 +59,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       const message = NUDGE_MESSAGES[Math.floor(Math.random() * NUDGE_MESSAGES.length)];
-      const sent = await sendPushToUsers(supabase, memberIds, "fiftytwoormore", message, { screen: "Home" });
+      const sent = await sendPushToUsers(supabase, memberIds, "fiftytwoormore", message, { screen: "Home", action: "openLogDialog" });
       totalSent += sent;
       results.push({ couple_id: couple.id, sent });
     }

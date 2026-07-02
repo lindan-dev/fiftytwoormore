@@ -1,9 +1,13 @@
+// Push equivalent of send-weekly-digest. Manually triggered for now (see
+// BACKLOG.md Ticket 2 - actual cron cadence is an open decision). Reuses
+// the same shared stats calculations as the email version so the numbers
+// never diverge between channels.
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { countLogsThisWeek, calculateStreakWeeks } from "../_shared/statsCalculations.ts";
 import { corsHeaders, requireSuperuserOrServiceRole, sendPushToUsers } from "../_shared/pushHelpers.ts";
 
 interface RequestBody {
-  user_ids?: string[];
+  user_ids?: string[]; // optional: scope to specific users for testing
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -18,9 +22,8 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { user_ids }: RequestBody = await req.json().catch(() => ({}));
 
-    const { data: couples, error: couplesError } = await supabase
-      .from("couples")
-      .select("id, user1_id, user2_id");
+    let couplesQuery = supabase.from("couples").select("id, user1_id, user2_id");
+    const { data: couples, error: couplesError } = await couplesQuery;
     if (couplesError) throw couplesError;
 
     let totalSent = 0;
@@ -51,7 +54,7 @@ const handler = async (req: Request): Promise<Response> => {
           ? `You're on a ${streakWeeks}-week streak. Keep it going!`
           : "No moments logged yet this week - there's still time.";
 
-      const sent = await sendPushToUsers(supabase, memberIds, title, body, { screen: "Home" });
+      const sent = await sendPushToUsers(supabase, memberIds, title, body, { screen: "Home", action: "openStats" });
       totalSent += sent;
       results.push({ couple_id: couple.id, sent });
     }

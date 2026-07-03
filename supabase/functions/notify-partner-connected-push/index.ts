@@ -9,9 +9,16 @@ const corsHeaders = {
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
 
 interface NotifyRequest {
-  partner_id: string;
+  partner_id: string; // the OTHER user in the couple, not the caller
 }
 
+// Purpose-built, narrow-scope function: the caller can only trigger a
+// notification about a couple relationship they are themselves part of,
+// and the message content is fixed here rather than accepted from the
+// client. This is deliberately less flexible than the generic
+// send-push-notification function (which is superuser-only) so that an
+// ordinary authenticated user can safely call it after connecting with a
+// partner, without opening up arbitrary "notify anyone, anything" access.
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -48,6 +55,8 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
+    // Verify a real couple relationship exists between the caller and the
+    // named partner - prevents notifying an arbitrary user_id.
     const { data: couple, error: coupleError } = await supabase
       .from("couples")
       .select("id")
@@ -64,6 +73,7 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
+    // Get the caller's name for personalization.
     const { data: callerProfile } = await supabase
       .from("profiles")
       .select("name")
@@ -71,20 +81,21 @@ const handler = async (req: Request): Promise<Response> => {
       .maybeSingle();
     const callerName = callerProfile?.name || "Your partner";
 
+    // Only the OTHER party gets a push - whoever just tapped "Connect"
+    // already sees an immediate in-app confirmation (Alert.alert in
+    // HomeScreen), so pushing them too was a redundant double
+    // notification for the same event.
     const { data: tokenRows, error: tokensError } = await supabase
       .from("push_tokens")
       .select("token, user_id")
-      .in("user_id", [user.id, partner_id]);
+      .eq("user_id", partner_id);
 
     if (tokensError) throw tokensError;
 
     const messages = (tokenRows || []).map((row) => ({
       to: row.token,
       title: "You're connected! 🎉",
-      body:
-        row.user_id === user.id
-          ? "You and your partner are now connected."
-          : `${callerName} connected with you. You're all set!`,
+      body: `${callerName} connected with you. You're all set!`,
       sound: "default" as const,
     }));
 

@@ -92,12 +92,19 @@ Deno.serve(async (req) => {
 
     console.log('Valid invitation found:', matchingInvite.id)
 
+    const { data: senderProfile } = await supabase
+      .from('profiles')
+      .select('name')
+      .eq('user_id', matchingInvite.sender_id)
+      .maybeSingle()
+
     return new Response(
       JSON.stringify({ 
         success: true, 
         invitation: {
           id: matchingInvite.id,
-          sender_id: matchingInvite.sender_id
+          sender_id: matchingInvite.sender_id,
+          sender_name: senderProfile?.name ?? null
         }
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

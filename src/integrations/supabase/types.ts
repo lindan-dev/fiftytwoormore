@@ -281,6 +281,36 @@ export type Database = {
         }
         Relationships: []
       }
+      push_notification_log: {
+        Row: {
+          channel: string
+          created_at: string
+          id: string
+          type: string
+          user_id: string
+          week_number: number
+          year: number
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          id?: string
+          type: string
+          user_id: string
+          week_number: number
+          year: number
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          id?: string
+          type?: string
+          user_id?: string
+          week_number?: number
+          year?: number
+        }
+        Relationships: []
+      }
       push_tokens: {
         Row: {
           created_at: string

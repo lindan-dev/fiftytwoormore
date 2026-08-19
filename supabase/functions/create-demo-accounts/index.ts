@@ -67,9 +67,15 @@ const handler = async (req: Request): Promise<Response> => {
     // handle_new_user trigger creates the profiles rows automatically on
     // insert into auth.users - no need to insert those manually here.
 
+    // couples has a check constraint requiring user1_id < user2_id
+    // (lexicographically), to prevent the same pair being stored twice in
+    // reversed order - sort the two generated UUIDs before inserting,
+    // since there's no guarantee which one comes out smaller.
+    const [orderedUser1, orderedUser2] = [user1Id, user2Id].sort();
+
     const { error: coupleError } = await supabase.from("couples").insert({
-      user1_id: user1Id,
-      user2_id: user2Id,
+      user1_id: orderedUser1,
+      user2_id: orderedUser2,
       anniversary: "2024-02-14",
     });
     if (coupleError) throw new Error(`Creating couple: ${coupleError.message}`);

@@ -331,7 +331,7 @@ const handler = async (req: Request): Promise<Response> => {
         
         // Send ONE email to BOTH partners
         const emailResponse = await resend.emails.send({
-          from: "fiftytwoormore <updates@fiftytwoormore.com>",
+          from: "fiftytwoormore <digest@updates.fiftytwoormore.com>",
           to: emails,
           subject,
           text: plainText,

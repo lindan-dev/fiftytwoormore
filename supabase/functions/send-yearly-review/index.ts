@@ -916,7 +916,7 @@ const handler = async (req: Request): Promise<Response> => {
 
         try {
           const emailResponse = await resend.emails.send({
-            from: "fiftytwoormore <updates@fiftytwoormore.com>",
+            from: "fiftytwoormore <digest@updates.fiftytwoormore.com>",
             to: emails, // Send to all partners at once
             subject,
             html,

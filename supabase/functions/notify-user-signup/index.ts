@@ -33,7 +33,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Sending welcome email for new signup:", email);
 
     const emailResponse = await resend.emails.send({
-      from: "52 or More <onboarding@resend.dev>",
+      from: "fiftytwoormore <updates@fiftytwoormore.com>",
       to: ["fiftytwoormore@lindaninc.com"],
       subject: "New User Signup - 52 or More",
       html: `
@@ -79,3 +79,4 @@ const handler = async (req: Request): Promise<Response> => {
 };
 
 serve(handler);
+

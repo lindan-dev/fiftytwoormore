@@ -82,7 +82,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Sending partner joined email to admin");
 
     const emailResponse = await resend.emails.send({
-      from: "52 or More <onboarding@resend.dev>",
+      from: "fiftytwoormore <updates@fiftytwoormore.com>",
       to: ["fiftytwoormore@lindaninc.com"],
       subject: "Partner Connection Completed - 52 or More",
       html: `
@@ -133,3 +133,4 @@ const handler = async (req: Request): Promise<Response> => {
 };
 
 serve(handler);
+

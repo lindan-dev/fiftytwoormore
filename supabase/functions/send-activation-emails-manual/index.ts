@@ -459,7 +459,7 @@ const handler = async (req: Request): Promise<Response> => {
             console.log(`Sending ${emailToSend.type} to ${email}`);
             
             const emailResponse = await resend.emails.send({
-              from: "fiftytwoormore <updates@fiftytwoormore.com>",
+              from: "fiftytwoormore <digest@updates.fiftytwoormore.com>",
               to: [email],
               cc: ["fiftytwoormore@lindaninc.com"],
               subject,
@@ -555,7 +555,7 @@ const handler = async (req: Request): Promise<Response> => {
           console.log(`Sending ${emailToSend.type} to couple ${coupleInfo.coupleId} (${emails.join(', ')})`);
           
           const emailResponse = await resend.emails.send({
-            from: "fiftytwoormore <updates@fiftytwoormore.com>",
+            from: "fiftytwoormore <digest@updates.fiftytwoormore.com>",
             to: emails,
             cc: ["fiftytwoormore@lindaninc.com"],
             subject,

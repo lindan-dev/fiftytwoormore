@@ -34,6 +34,13 @@ export const EMOJI_LABEL_MAP: Record<string, string> = {
   '💕': 'All the feels',
   '🌹': 'Romantic vibes',
   '💎': 'Something special',
+
+  // Surprises & Twists
+  '😴': 'Sleepy Surprise',
+  '🥷': 'Nightly Visit',
+  '🙈': 'Blindfolded',
+  '⚡️': 'Quickie',
+  '🔺': 'Table for three',
   
   // Extras & Props
   '🥕': 'Extra help',
@@ -109,13 +116,14 @@ export const EMOJI_CATEGORY_MAP: Record<string, string> = {
   '🍑': 'SPICY_HEAT', '🍆': 'SPICY_HEAT', '🍌': 'SPICY_HEAT', '👄': 'SPICY_HEAT', '👅': 'SPICY_HEAT',
   '🍩': 'SPICY_HEAT', '👉': 'SPICY_HEAT', '✂️': 'SPICY_HEAT', '♋️': 'SPICY_HEAT', '🏇': 'SPICY_HEAT',
   '💦': 'SPICY_HEAT', '🔥': 'SPICY_HEAT', '🌶️': 'SPICY_HEAT', '🥕': 'SPICY_HEAT', '⛓️': 'SPICY_HEAT',
-  '🧊': 'SPICY_HEAT', '🌽': 'SPICY_HEAT', '🍒': 'SPICY_HEAT',
+  '🧊': 'SPICY_HEAT', '🌽': 'SPICY_HEAT', '🍒': 'SPICY_HEAT', '🔺': 'SPICY_HEAT',
   // ROMANTIC_SOFT
   '💋': 'ROMANTIC_SOFT', '💕': 'ROMANTIC_SOFT', '✨': 'ROMANTIC_SOFT', '🌹': 'ROMANTIC_SOFT',
   '💎': 'ROMANTIC_SOFT', '🕯️': 'ROMANTIC_SOFT', '🎀': 'ROMANTIC_SOFT', '🍦': 'ROMANTIC_SOFT',
   // PLAYFUL_TEASE
   '😈': 'PLAYFUL_TEASE', '🦋': 'PLAYFUL_TEASE', '💃': 'PLAYFUL_TEASE', '🎭': 'PLAYFUL_TEASE',
   '🥵': 'PLAYFUL_TEASE', '💥': 'PLAYFUL_TEASE',
+  '😴': 'PLAYFUL_TEASE', '🥷': 'PLAYFUL_TEASE', '🙈': 'PLAYFUL_TEASE', '⚡️': 'PLAYFUL_TEASE',
   // LOCATION_HOME
   '🛏️': 'LOCATION_HOME', '🛋️': 'LOCATION_HOME', '🧺': 'LOCATION_HOME', '🚿': 'LOCATION_HOME',
   '🛁': 'LOCATION_HOME', '🪑': 'LOCATION_HOME', '🍽️': 'LOCATION_HOME',
@@ -148,3 +156,4 @@ export function getEmojiLabel(emoji: string): string {
 export function getEmojiCategory(emoji: string): string {
   return EMOJI_CATEGORY_MAP[emoji] || 'UNKNOWN';
 }
+

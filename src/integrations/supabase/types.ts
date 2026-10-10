@@ -632,6 +632,7 @@ export type Database = {
         Returns: boolean
       }
       is_beta_user_or_partner: { Args: { _user_id: string }; Returns: boolean }
+      recent_signup_exists: { Args: { _email: string }; Returns: boolean }
     }
     Enums: {
       app_role: "superuser" | "user" | "beta_user" | "test_user"

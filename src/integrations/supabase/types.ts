@@ -243,7 +243,15 @@ export type Database = {
           week_number?: number
           year?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "email_digest_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_funnel"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       email_events: {
         Row: {
@@ -279,7 +287,15 @@ export type Database = {
           user_id?: string
           variant_key?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "email_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_funnel"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -374,7 +390,15 @@ export type Database = {
           week_number?: number
           year?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "push_notification_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_funnel"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       push_tokens: {
         Row: {
@@ -462,7 +486,15 @@ export type Database = {
           session_id?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_funnel"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

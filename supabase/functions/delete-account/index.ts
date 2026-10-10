@@ -55,6 +55,14 @@ const handler = async (req: Request): Promise<Response> => {
     await supabase.from("user_roles").delete().eq("user_id", userId);
     await supabase.from("profiles").delete().eq("user_id", userId);
 
+    // Analytics and log tables. A database cascade (migration 003) also covers these when the
+    // account is deleted, but we clear them explicitly too. Best effort: an error here is logged
+    // and must never stop someone from deleting their account.
+    for (const table of ["user_events", "email_digest_log", "email_events", "push_notification_log"]) {
+      const { error: cleanupError } = await supabase.from(table).delete().eq("user_id", userId);
+      if (cleanupError) console.error(`Cleanup failed for ${table}:`, cleanupError.message);
+    }
+
     const { error: deleteUserError } = await supabase.auth.admin.deleteUser(userId);
     if (deleteUserError) throw deleteUserError;
 

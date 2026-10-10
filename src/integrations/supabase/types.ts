@@ -567,6 +567,62 @@ export type Database = {
       }
     }
     Functions: {
+      admin_all_users: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          email_confirmed_at: string
+          is_superuser: boolean
+          is_test: boolean
+          last_sign_in_at: string
+          name: string
+          user_id: string
+        }[]
+      }
+      admin_is_superuser: { Args: never; Returns: boolean }
+      admin_stuck_users: {
+        Args: never
+        Returns: {
+          email: string | null
+          name: string | null
+          rule: string | null
+          since: string | null
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "stuck_users"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      admin_user_funnel: {
+        Args: never
+        Returns: {
+          active_week2: boolean | null
+          activity_count: number | null
+          connected_at: string | null
+          created_at: string | null
+          email: string | null
+          email_confirmed_at: string | null
+          first_activity_at: string | null
+          has_push_token: boolean | null
+          invite_created_at: string | null
+          last_activity_at: string | null
+          name: string | null
+          onboarded_at: string | null
+          stage: string | null
+          stage_rank: number | null
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "user_funnel"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_partner_id: { Args: { user_id: string }; Returns: string }
       has_role: {
         Args: {
@@ -576,6 +632,7 @@ export type Database = {
         Returns: boolean
       }
       is_beta_user_or_partner: { Args: { _user_id: string }; Returns: boolean }
+      recent_signup_exists: { Args: { _email: string }; Returns: boolean }
     }
     Enums: {
       app_role: "superuser" | "user" | "beta_user" | "test_user"

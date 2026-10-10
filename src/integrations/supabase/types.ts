@@ -51,7 +51,41 @@ export type Database = {
           notes?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "activities_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_funnel"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      admin_alert_log: {
+        Row: {
+          alerted_at: string
+          rule: string
+          user_id: string
+        }
+        Insert: {
+          alerted_at?: string
+          rule: string
+          user_id: string
+        }
+        Update: {
+          alerted_at?: string
+          rule?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_alert_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_funnel"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       benchmark_cohorts: {
         Row: {
@@ -120,7 +154,15 @@ export type Database = {
           sender_id?: string
           status?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "couple_invitations_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "user_funnel"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       couples: {
         Row: {
@@ -144,7 +186,22 @@ export type Database = {
           user1_id?: string
           user2_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "couples_user1_id_fkey"
+            columns: ["user1_id"]
+            isOneToOne: true
+            referencedRelation: "user_funnel"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "couples_user2_id_fkey"
+            columns: ["user2_id"]
+            isOneToOne: true
+            referencedRelation: "user_funnel"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       email_digest_log: {
         Row: {
@@ -279,7 +336,15 @@ export type Database = {
           user_id?: string
           year_total?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_funnel"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       push_notification_log: {
         Row: {
@@ -336,7 +401,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "push_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_funnel"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       superuser_last_check: {
         Row: {
@@ -354,7 +427,15 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "superuser_last_check_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_funnel"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       user_events: {
         Row: {
@@ -402,11 +483,56 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_funnel"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
     }
     Views: {
-      [_ in never]: never
+      funnel_summary: {
+        Row: {
+          rank: number | null
+          stage: string | null
+          users: number | null
+        }
+        Relationships: []
+      }
+      stuck_users: {
+        Row: {
+          email: string | null
+          name: string | null
+          rule: string | null
+          since: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      user_funnel: {
+        Row: {
+          active_week2: boolean | null
+          activity_count: number | null
+          connected_at: string | null
+          created_at: string | null
+          email: string | null
+          email_confirmed_at: string | null
+          first_activity_at: string | null
+          has_push_token: boolean | null
+          invite_created_at: string | null
+          last_activity_at: string | null
+          name: string | null
+          onboarded_at: string | null
+          stage: string | null
+          stage_rank: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_partner_id: { Args: { user_id: string }; Returns: string }

@@ -15,6 +15,13 @@
       "when": 1791623696262,
       "tag": "0001_gdpr_cleanup",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791648604249,
+      "tag": "0002_admin_rpc",
+      "breakpoints": true
     }
   ]
 }

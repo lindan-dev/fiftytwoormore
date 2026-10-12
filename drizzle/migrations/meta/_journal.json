@@ -36,6 +36,13 @@
       "when": 1791650910943,
       "tag": "0004_funnel_opened_app",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791828194684,
+      "tag": "0005_admin_delete_users",
+      "breakpoints": true
     }
   ]
 }

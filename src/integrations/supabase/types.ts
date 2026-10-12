@@ -87,6 +87,41 @@ export type Database = {
           },
         ]
       }
+      admin_audit_log: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          created_at: string
+          details: Json
+          id: string
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          created_at?: string
+          details?: Json
+          id?: string
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          created_at?: string
+          details?: Json
+          id?: string
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_audit_log_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_funnel"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       benchmark_cohorts: {
         Row: {
           cohort_key: string
@@ -577,6 +612,34 @@ export type Database = {
           is_test: boolean
           last_sign_in_at: string
           name: string
+          user_id: string
+        }[]
+      }
+      admin_audit_recent: {
+        Args: never
+        Returns: {
+          action: string
+          actor_email: string
+          created_at: string
+          details: Json
+          target_user_id: string
+        }[]
+      }
+      admin_delete_preview: {
+        Args: { _user_id: string }
+        Returns: {
+          created_at: string
+          email: string
+          invitations: number
+          is_self: boolean
+          is_superuser: boolean
+          name: string
+          own_activities: number
+          partner_activities: number
+          partner_email: string
+          partner_name: string
+          partner_user_id: string
+          push_tokens: number
           user_id: string
         }[]
       }

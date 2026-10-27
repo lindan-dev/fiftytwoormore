@@ -9,20 +9,12 @@ const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const APP_URL = "https://fiftytwoormore.com/app-redirect?type=open";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const ALLOWED_TYPES = new Set([
-  "weekly-digest",
-  "digest",
-  "digest-nystart",
-  "midweek-nudge",
-  "yearly-review",
-  "activation-uncoupled-day2",
-  "activation-uncoupled-day6",
-  "activation-uncoupled-day14",
-  "activation-coupled-day2",
-  "activation-coupled-day6",
-  "activation-reengagement",
-  "signup-notification",
-]);
+// The email type is only a label (for example "digest" or "activation-uncoupled-1") that the admin
+// statistics group by. It used to be checked against a fixed list, but the list drifted out of sync
+// with the emails we actually send (all activation emails and the manual sends were missing), so
+// their clicks were silently dropped. Now any well-formed label is accepted: letters, digits and
+// hyphens only, so nothing odd can end up in the database, and a new kind of email works at once.
+const TYPE_REGEX = /^[a-z0-9-]{1,50}$/i;
 const VARIANT_REGEX = /^[a-z0-9_-]{0,10}$/i;
 
 const handler = async (req: Request): Promise<Response> => {
@@ -47,8 +39,8 @@ const handler = async (req: Request): Promise<Response> => {
       return Response.redirect(APP_URL, 302);
     }
     const sanitizedType = (emailType || "").slice(0, 50);
-    if (sanitizedType && !ALLOWED_TYPES.has(sanitizedType)) {
-      console.log("Rejected unknown email type:", sanitizedType);
+    if (sanitizedType && !TYPE_REGEX.test(sanitizedType)) {
+      console.log("Rejected malformed email type:", sanitizedType);
       return Response.redirect(APP_URL, 302);
     }
     const sanitizedVariant = (variantKey || "").slice(0, 10);
@@ -97,4 +89,3 @@ const handler = async (req: Request): Promise<Response> => {
 };
 
 serve(handler);
-

@@ -4,7 +4,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-const APP_URL = "https://app.fiftytwoormore.com";
+// Where every click in our emails ends up. This used to be the old web app (app.fiftytwoormore.com).
+// The bridge page tries to open the installed app and otherwise shows the App Store button.
+const APP_URL = "https://fiftytwoormore.com/app-redirect?type=open";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ALLOWED_TYPES = new Set([
@@ -27,7 +29,9 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const url = new URL(req.url);
     const messageId = url.searchParams.get("mid");
-    const userId = url.searchParams.get("u");
+    // "u" is what most emails send; the yearly review email sends "uid", so accept both
+    // (before this, its clicks were never recorded because the user id looked missing).
+    const userId = url.searchParams.get("u") ?? url.searchParams.get("uid");
     const emailType = url.searchParams.get("type");
     const variantKey = url.searchParams.get("v");
 
@@ -93,3 +97,4 @@ const handler = async (req: Request): Promise<Response> => {
 };
 
 serve(handler);
+

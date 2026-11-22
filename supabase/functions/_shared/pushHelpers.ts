@@ -13,9 +13,29 @@ const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
  * (manual trigger from the admin panel). Returns the Supabase client to
  * use, or null + a Response to return immediately if unauthorized.
  */
+function constantTimeEqual(a: string, b: string): boolean {
+  const enc = new TextEncoder();
+  const ab = enc.encode(a);
+  const bb = enc.encode(b);
+  let diff = ab.length ^ bb.length;
+  const len = Math.max(ab.length, bb.length);
+  for (let i = 0; i < len; i++) diff |= (ab[i] ?? 0) ^ (bb[i] ?? 0);
+  return diff === 0;
+}
+
 export async function requireSuperuserOrServiceRole(
   req: Request,
 ): Promise<{ supabase: SupabaseClient } | { errorResponse: Response }> {
+  // Trusted cron caller: shared secret in x-cron-secret. Never accepted when
+  // either side is empty.
+  const cronHeader = req.headers.get("x-cron-secret") ?? "";
+  const cronSecret = Deno.env.get("CRON_SECRET") ?? "";
+  if (cronHeader && cronSecret && constantTimeEqual(cronHeader, cronSecret)) {
+    return {
+      supabase: createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!),
+    };
+  }
+
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
     return {

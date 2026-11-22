@@ -332,6 +332,24 @@ export type Database = {
           },
         ]
       }
+      feature_flags: {
+        Row: {
+          key: string
+          mode: string
+          updated_at: string
+        }
+        Insert: {
+          key: string
+          mode?: string
+          updated_at?: string
+        }
+        Update: {
+          key?: string
+          mode?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           benchmark_opt_in: boolean | null
@@ -396,6 +414,117 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      prompt_answers: {
+        Row: {
+          answers: Json
+          created_at: string
+          id: string
+          partner_notified_at: string | null
+          round_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          answers: Json
+          created_at?: string
+          id?: string
+          partner_notified_at?: string | null
+          round_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          partner_notified_at?: string | null
+          round_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompt_answers_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_rounds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prompt_answers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_funnel"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      prompt_rounds: {
+        Row: {
+          couple_id: string
+          created_at: string
+          id: string
+          prompt_id: string
+          week_start: string
+        }
+        Insert: {
+          couple_id: string
+          created_at?: string
+          id?: string
+          prompt_id: string
+          week_start: string
+        }
+        Update: {
+          couple_id?: string
+          created_at?: string
+          id?: string
+          prompt_id?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompt_rounds_couple_id_fkey"
+            columns: ["couple_id"]
+            isOneToOne: false
+            referencedRelation: "couples"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prompt_rounds_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "prompts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prompts: {
+        Row: {
+          active: boolean
+          category: string
+          created_at: string
+          id: string
+          sort_order: number
+          text: string
+        }
+        Insert: {
+          active?: boolean
+          category: string
+          created_at?: string
+          id?: string
+          sort_order: number
+          text: string
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          id?: string
+          sort_order?: number
+          text?: string
+        }
+        Relationships: []
       }
       push_notification_log: {
         Row: {
@@ -686,6 +815,12 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      couple_week_start: { Args: { p_couple_id: string }; Returns: string }
+      feature_enabled: { Args: { flag_key: string }; Returns: boolean }
+      feature_enabled_for: {
+        Args: { flag_key: string; uid: string }
+        Returns: boolean
+      }
       get_partner_id: { Args: { user_id: string }; Returns: string }
       has_role: {
         Args: {
@@ -694,8 +829,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      i_have_answered: { Args: { p_round_id: string }; Returns: boolean }
       is_beta_user_or_partner: { Args: { _user_id: string }; Returns: boolean }
+      my_couple_id: { Args: never; Returns: string }
+      question_state: { Args: never; Returns: Json }
       recent_signup_exists: { Args: { _email: string }; Returns: boolean }
+      round_is_mine: { Args: { p_round_id: string }; Returns: boolean }
+      submit_answers: {
+        Args: { p_answers: Json; p_round_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "superuser" | "user" | "beta_user" | "test_user"

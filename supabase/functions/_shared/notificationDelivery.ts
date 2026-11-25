@@ -19,6 +19,33 @@ export function recentTokens(rows: TokenRow[], now = new Date()): TokenRow[] {
   return rows.filter(row => Date.parse(row.updated_at) >= cutoff);
 }
 
+export const DEMO_EMAILS = ["demo1@fiftytwoormore.com", "demo2@fiftytwoormore.com"];
+export type TestAccountLookup = { ok: true; ids: Set<string> } | { ok: false };
+
+// Test/demo accounts never receive scheduled nudges or digests. Lookup errors are never "not a test account".
+export async function loadTestAccounts(
+  fetchTestRoleIds: () => Promise<{ data: Array<{ user_id: string }> | null; error: unknown }>,
+  fetchUsers: () => Promise<{ data: Array<{ id: string; email?: string | null }> | null; error: unknown }>,
+): Promise<TestAccountLookup> {
+  try {
+    const roles = await fetchTestRoleIds();
+    if (roles.error || !roles.data) return { ok: false };
+    const users = await fetchUsers();
+    if (users.error || !users.data) return { ok: false };
+    const ids = new Set(roles.data.map(row => row.user_id));
+    for (const user of users.data) if (user.email && DEMO_EMAILS.includes(user.email.toLowerCase())) ids.add(user.id);
+    return { ok: true, ids };
+  } catch {
+    return { ok: false };
+  }
+}
+
+// First per-person rule; force does not bypass it. Returns null when the person may continue to normal checks.
+export function testAccountGate(userId: string, lookup: TestAccountLookup): Decision | null {
+  if (!lookup.ok) return { channel: "none", reason: "test_account_lookup_failed" };
+  return lookup.ids.has(userId) ? { channel: "none", reason: "test_account" } : null;
+}
+
 export function chooseDelivery(userId: string, tokens: TokenRow[], logs: DeliveryLog[], activityNeeded = true, now = new Date()): Decision {
   if (logs.some(log => log.delivery_scope === "couple" || log.user_id === userId)) {
     return { channel: "none", reason: "already_sent_this_week" };

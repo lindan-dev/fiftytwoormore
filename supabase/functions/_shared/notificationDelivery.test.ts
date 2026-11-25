@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { chooseDelivery, deliverPerson, overrideAllowed, recentTokens, sendExpoTickets, recipientIds, inDeliveryWindow, type TokenRow } from "./notificationDelivery.ts";
+import { chooseDelivery, deliverPerson, overrideAllowed, recentTokens, sendExpoTickets, recipientIds, inDeliveryWindow, loadTestAccounts, testAccountGate, type TokenRow } from "./notificationDelivery.ts";
 
 const now = new Date("2026-11-25T09:00:00Z");
 const token = (id: string, user_id = "person-a", days = 1): TokenRow => ({
@@ -128,5 +128,31 @@ describe("Expo tickets with fake requests only", () => {
       async () => { deletions++; }, async () => new Response("unavailable", { status: 503 }));
     expect(outcomes[0].outcome).toBe("push_failed");
     expect(deletions).toBe(0);
+  });
+});
+describe("Test accounts are skipped by scheduled notifications", () => {
+  const ok = (rows: Array<{ user_id: string }>, users: Array<{ id: string; email: string }>) =>
+    loadTestAccounts(async () => ({ data: rows, error: null }), async () => ({ data: users, error: null }));
+  test("a test_user person is skipped, and force cannot change that", async () => {
+    const lookup = await ok([{ user_id: "person-a" }], []);
+    expect(testAccountGate("person-a", lookup)).toEqual({ channel: "none", reason: "test_account" });
+    let pushed = false;
+    const result = await deliverPerson(testAccountGate("person-a", lookup)!, false, async () => { pushed = true; return { user_id: "person-a", outcome: "push_ok", accepted: 1, attempted: 1 }; }, async () => { pushed = true; return true; }, async () => { pushed = true; });
+    expect(result.reason).toBe("test_account");
+    expect(pushed).toBe(false);
+  });
+  test("a demo email in mixed case is skipped", async () => {
+    const lookup = await ok([], [{ id: "demo", email: "Demo2@FiftyTwoOrMore.com" }]);
+    expect(testAccountGate("demo", lookup)?.reason).toBe("test_account");
+  });
+  test("a real person whose partner is a test account is still handled", async () => {
+    const lookup = await ok([{ user_id: "person-b" }], [{ id: "person-a", email: "real@example.com" }]);
+    expect(testAccountGate("person-a", lookup)).toBeNull();
+    expect(chooseDelivery("person-a", [token("t1", "person-a")], [], true, now).channel).toBe("push");
+  });
+  test("a failed role lookup sends nothing", async () => {
+    const lookup = await loadTestAccounts(async () => ({ data: null, error: new Error("down") }), async () => ({ data: [], error: null }));
+    expect(lookup.ok).toBe(false);
+    expect(testAccountGate("person-a", lookup)).toEqual({ channel: "none", reason: "test_account_lookup_failed" });
   });
 });

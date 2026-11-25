@@ -1,7 +1,7 @@
 import { z } from "npm:zod@3.25.76";
 import { getLocalDate, getWeekNumber, countLogsThisWeek, calculateStreakWeeks } from "./statsCalculations.ts";
 import { corsHeaders, requireSuperuserOrServiceRole, sendPushToUsersDetailed } from "./pushHelpers.ts";
-import { chooseDelivery, deliverPerson, overrideAllowed, inDeliveryWindow, type Decision, type TokenRow } from "./notificationDelivery.ts";
+import { chooseDelivery, deliverPerson, loadTestAccounts, testAccountGate, overrideAllowed, inDeliveryWindow, type Decision, type TokenRow } from "./notificationDelivery.ts";
 
 const RequestSchema = z.object({
   user_ids: z.array(z.string().uuid()).max(100).optional(),
@@ -36,6 +36,21 @@ export function createNotificationOrchestrator(type: "weekly-digest" | "midweek-
       const results: Array<{ couple_id: string; people: Array<Decision & { user_id: string }> }> = [];
       let pushSent = 0;
       let emailFallbacks = 0;
+      const allMemberIds = [...new Set((couples || []).flatMap(c => [c.user1_id, c.user2_id]))];
+      const testAccounts = await loadTestAccounts(
+        async () => await supabase.from("user_roles").select("user_id").eq("role", "test_user").in("user_id", allMemberIds),
+        async () => {
+          const all: Array<{ id: string; email?: string | null }> = [];
+          for (let page = 1; page <= 20; page++) {
+            const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
+            if (error) return { data: null, error };
+            all.push(...data.users.map(u => ({ id: u.id, email: u.email })));
+            if (data.users.length < 1000) break;
+          }
+          return { data: all, error: null };
+        },
+      );
+      if (!testAccounts.ok) console.error("Test account lookup failed; skipping couples", { type });
 
       for (const couple of couples || []) {
         const memberIds: string[] = [couple.user1_id, couple.user2_id];
@@ -47,6 +62,10 @@ export function createNotificationOrchestrator(type: "weekly-digest" | "midweek-
         const localDate = getLocalDate(timezone);
         const people: Array<Decision & { user_id: string }> = [];
         results.push({ couple_id: couple.id.slice(0, 8), people });
+        if (!testAccounts.ok) {
+          for (const id of memberIds) people.push({ user_id: id.slice(0, 8), channel: "none", reason: "test_account_lookup_failed" });
+          continue;
+        }
         if (!force && !inDeliveryWindow(type, localDate)) {
           for (const id of memberIds) people.push({ user_id: id.slice(0, 8), channel: "none", reason: "outside_delivery_window" });
           continue;
@@ -69,6 +88,8 @@ export function createNotificationOrchestrator(type: "weekly-digest" | "midweek-
           ? `You're on a ${streakWeeks}-week streak. Keep it going!` : "No moments logged yet this week - there's still time.";
 
         for (const userId of memberIds) {
+          const skip = testAccountGate(userId, testAccounts);
+          if (skip) { people.push({ user_id: userId.slice(0, 8), ...skip }); continue; }
           const decision = chooseDelivery(userId, tokens, logs || [], type !== "midweek-nudge" || logsThisWeek === 0);
           const result = await deliverPerson(decision, dry_run, async () => {
             const outcomes = await sendPushToUsersDetailed(supabase, [userId], title, body,

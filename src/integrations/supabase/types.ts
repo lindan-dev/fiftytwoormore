@@ -530,7 +530,10 @@ export type Database = {
         Row: {
           channel: string
           created_at: string
+          delivery_scope: string
           id: string
+          outcome: string | null
+          reason: string | null
           type: string
           user_id: string
           week_number: number
@@ -539,7 +542,10 @@ export type Database = {
         Insert: {
           channel: string
           created_at?: string
+          delivery_scope?: string
           id?: string
+          outcome?: string | null
+          reason?: string | null
           type: string
           user_id: string
           week_number: number
@@ -548,7 +554,10 @@ export type Database = {
         Update: {
           channel?: string
           created_at?: string
+          delivery_scope?: string
           id?: string
+          outcome?: string | null
+          reason?: string | null
           type?: string
           user_id?: string
           week_number?: number

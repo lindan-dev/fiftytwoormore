@@ -50,6 +50,13 @@
       "when": 1795351869136,
       "tag": "0006_three_things",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795616396968,
+      "tag": "0007_notification_person_scope",
+      "breakpoints": true
     }
   ]
 }

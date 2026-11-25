@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { Resend } from "https://esm.sh/resend@4.0.0";
+import { z } from "npm:zod@3.25.76";
+import { requireSuperuserOrServiceRole } from "../_shared/pushHelpers.ts";
+import { recipientIds } from "../_shared/notificationDelivery.ts";
 import {
   getLocalDate,
   getWeekNumber,
@@ -214,22 +217,29 @@ function getHtml(text: string, trackingParams?: { messageId: string; userId: str
 
 // ============ Main Handler ============
 
+const ManualRequestSchema = z.object({
+  couple_id: z.string().uuid().optional(),
+  recipient_user_id: z.string().uuid().optional(),
+}).strict().refine(body => !body.recipient_user_id || !!body.couple_id);
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Server-to-server uses the runtime service credential, not vault/cron headers.
+    const auth = await requireSuperuserOrServiceRole(req, { allowCron: false });
+    if ("errorResponse" in auth) return auth.errorResponse;
     const supabase = createClient(supabaseUrl, supabaseKey);
     
     // Parse request body for optional couple_id
-    let requestedCoupleId: string | null = null;
-    try {
-      const body = await req.json();
-      requestedCoupleId = body?.couple_id || null;
-    } catch {
-      // No body or invalid JSON, proceed with all couples
-    }
+    const parsed = ManualRequestSchema.safeParse(await req.json().catch(() => ({})));
+    if (!parsed.success) return new Response(JSON.stringify({ error: "Valid couple_id required with recipient_user_id" }), {
+      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+    const requestedCoupleId = parsed.data.couple_id;
+    const recipientUserId = parsed.data.recipient_user_id;
     
     console.log('Starting manual mid-week nudge...', requestedCoupleId ? `for couple ${requestedCoupleId}` : 'for all couples');
     
@@ -242,6 +252,11 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: couples, error: couplesError } = await couplesQuery;
     
     if (couplesError) throw couplesError;
+    if (recipientUserId && !(couples || []).some(c => c.user1_id === recipientUserId || c.user2_id === recipientUserId)) {
+      return new Response(JSON.stringify({ error: "Recipient must belong to the selected couple" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     
     const results: any[] = [];
     const now = new Date();
@@ -274,7 +289,9 @@ const handler = async (req: Request): Promise<Response> => {
         
         // Get both partners' emails
         const emails: string[] = [];
+        const targetIds = recipientIds([couple.user1_id, couple.user2_id], recipientUserId);
         for (const profile of profiles) {
+          if (!targetIds.includes(profile.user_id)) continue;
           const { data: authUser } = await supabase.auth.admin.getUserById(profile.user_id);
           if (authUser?.user?.email) {
             emails.push(authUser.user.email);
@@ -304,12 +321,12 @@ const handler = async (req: Request): Promise<Response> => {
         const plainText = variant.body;
         const html = getHtml(plainText, {
           messageId: trackingId,
-          userId: couple.user1_id,
+          userId: recipientUserId ?? couple.user1_id,
           emailType: 'midweek-nudge-manual',
           variantKey: variant.key
         });
         
-        // Send ONE email to BOTH partners
+        // Default: both partners; orchestrator may explicitly target one recipient.
         const emailResponse = await resend.emails.send({
           from: "fiftytwoormore <digest@updates.fiftytwoormore.com>",
           to: emails,
@@ -336,7 +353,7 @@ const handler = async (req: Request): Promise<Response> => {
           await supabase
             .from('email_digest_log')
             .insert({
-              user_id: couple.user1_id,
+              user_id: recipientUserId ?? couple.user1_id,
               type: 'midweek-nudge-manual',
               week_number: weekNumber,
               year,
@@ -351,7 +368,7 @@ const handler = async (req: Request): Promise<Response> => {
             .from('email_events')
             .insert({
               message_id: trackingId,
-              user_id: couple.user1_id,
+              user_id: recipientUserId ?? couple.user1_id,
               type: 'midweek-nudge-manual',
               variant_key: variant.key,
               event: 'sent',

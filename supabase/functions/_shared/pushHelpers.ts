@@ -1,11 +1,17 @@
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders as sdkCorsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { recentTokens, sendExpoTickets, type TokenRow, type PushOutcome } from "./notificationDelivery.ts";
 
 export const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  ...sdkCorsHeaders,
+  "Access-Control-Allow-Headers": `${sdkCorsHeaders["Access-Control-Allow-Headers"]}, x-cron-secret`,
 };
 
-const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
+function requiredEnv(name: string): string {
+  const value = Deno.env.get(name);
+  if (!value) throw new Error(`Missing configuration: ${name}`);
+  return value;
+}
 
 /**
  * Verifies the caller is either the service role key itself (trusted
@@ -25,14 +31,16 @@ function constantTimeEqual(a: string, b: string): boolean {
 
 export async function requireSuperuserOrServiceRole(
   req: Request,
-): Promise<{ supabase: SupabaseClient } | { errorResponse: Response }> {
+  options: { allowCron?: boolean } = {},
+): Promise<{ supabase: SupabaseClient; caller: "cron" | "service-role" | "superuser" } | { errorResponse: Response }> {
   // Trusted cron caller: shared secret in x-cron-secret. Never accepted when
   // either side is empty.
   const cronHeader = req.headers.get("x-cron-secret") ?? "";
   const cronSecret = Deno.env.get("CRON_SECRET") ?? "";
-  if (cronHeader && cronSecret && constantTimeEqual(cronHeader, cronSecret)) {
+  if (options.allowCron !== false && cronHeader && cronSecret && constantTimeEqual(cronHeader, cronSecret)) {
     return {
-      supabase: createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!),
+      supabase: createClient(requiredEnv("SUPABASE_URL"), requiredEnv("SUPABASE_SERVICE_ROLE_KEY")),
+      caller: "cron",
     };
   }
 
@@ -47,11 +55,11 @@ export async function requireSuperuserOrServiceRole(
   }
 
   const token = authHeader.replace("Bearer ", "");
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, serviceRoleKey);
+  const serviceRoleKey = requiredEnv("SUPABASE_SERVICE_ROLE_KEY");
+  const supabase = createClient(requiredEnv("SUPABASE_URL"), serviceRoleKey);
 
   if (token === serviceRoleKey) {
-    return { supabase };
+    return { supabase, caller: "service-role" };
   }
 
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
@@ -80,52 +88,42 @@ export async function requireSuperuserOrServiceRole(
     };
   }
 
-  return { supabase };
+  return { supabase, caller: "superuser" };
 }
 
-function chunk<T>(items: T[], size: number): T[][] {
-  const chunks: T[][] = [];
-  for (let i = 0; i < items.length; i += size) chunks.push(items.slice(i, i + size));
-  return chunks;
-}
-
-/** Sends push messages for a set of user_ids, looking up their tokens. */
-export async function sendPushToUsers(
+/** Detailed per-person results; all callers share ticket handling and cleanup. */
+export async function sendPushToUsersDetailed(
   supabase: SupabaseClient,
   userIds: string[],
   title: string,
   body: string,
   data?: Record<string, unknown>,
-): Promise<number> {
-  if (userIds.length === 0) return 0;
+  recentOnly = false,
+): Promise<PushOutcome[]> {
+  if (userIds.length === 0) return [];
 
   const { data: tokenRows, error } = await supabase
     .from("push_tokens")
-    .select("token")
+    .select("id, user_id, token, updated_at")
     .in("user_id", userIds);
 
-  if (error) throw error;
-  if (!tokenRows || tokenRows.length === 0) return 0;
-
-  const messages = tokenRows.map((row: { token: string }) => ({
-    to: row.token,
-    title,
-    body,
-    data,
-    sound: "default" as const,
-  }));
-
-  for (const batch of chunk(messages, 100)) {
-    await fetch(EXPO_PUSH_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "Accept-encoding": "gzip, deflate",
-      },
-      body: JSON.stringify(batch),
-    });
+  if (error) throw new Error("Push token lookup failed");
+  const rows: TokenRow[] = tokenRows || [];
+  const outcomes = await sendExpoTickets(recentOnly ? recentTokens(rows) : rows, userIds, title, body, data, async row => {
+    // Match ownership too, so a concurrent reassignment cannot delete another user's token.
+    const { error: deleteError } = await supabase.from("push_tokens").delete().eq("id", row.id).eq("user_id", row.user_id).eq("token", row.token);
+    if (deleteError) console.error("Dead push token cleanup failed", { user_id: row.user_id.slice(0, 8) });
+  });
+  for (const result of outcomes) {
+    console.log("Push outcome", { user_id: result.user_id.slice(0, 8), outcome: result.outcome, attempted: result.attempted, accepted: result.accepted });
   }
+  return outcomes;
+}
 
-  return messages.length;
+/** Compatible numeric API for existing callers: number of OK Expo tickets. */
+export async function sendPushToUsers(
+  supabase: SupabaseClient, userIds: string[], title: string, body: string, data?: Record<string, unknown>,
+): Promise<number> {
+  const results = await sendPushToUsersDetailed(supabase, userIds, title, body, data);
+  return results.reduce((sum, result) => sum + result.accepted, 0);
 }

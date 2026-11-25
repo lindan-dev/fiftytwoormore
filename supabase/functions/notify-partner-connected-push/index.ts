@@ -1,12 +1,12 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendPushToUsers } from "../_shared/pushHelpers.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
 
 interface NotifyRequest {
   partner_id: string; // the OTHER user in the couple, not the caller
@@ -85,33 +85,10 @@ const handler = async (req: Request): Promise<Response> => {
     // already sees an immediate in-app confirmation (Alert.alert in
     // HomeScreen), so pushing them too was a redundant double
     // notification for the same event.
-    const { data: tokenRows, error: tokensError } = await supabase
-      .from("push_tokens")
-      .select("token, user_id")
-      .eq("user_id", partner_id);
+    const sent = await sendPushToUsers(supabase, [partner_id], "You're connected! 🎉",
+      `${callerName} connected with you. You're all set!`);
 
-    if (tokensError) throw tokensError;
-
-    const messages = (tokenRows || []).map((row) => ({
-      to: row.token,
-      title: "You're connected! 🎉",
-      body: `${callerName} connected with you. You're all set!`,
-      sound: "default" as const,
-    }));
-
-    if (messages.length > 0) {
-      await fetch(EXPO_PUSH_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          "Accept-encoding": "gzip, deflate",
-        },
-        body: JSON.stringify(messages),
-      });
-    }
-
-    return new Response(JSON.stringify({ sent: messages.length }), {
+    return new Response(JSON.stringify({ sent }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

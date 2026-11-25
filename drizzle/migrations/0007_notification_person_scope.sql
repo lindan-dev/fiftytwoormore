@@ -1,0 +1,3 @@
+ALTER TABLE public.push_notification_log ADD COLUMN delivery_scope text NOT NULL DEFAULT 'couple' CHECK (delivery_scope IN ('couple', 'person')), ADD COLUMN outcome text CHECK (outcome IN ('push_ok', 'push_failed', 'no_token')), ADD COLUMN reason text;
+COMMENT ON COLUMN public.push_notification_log.delivery_scope IS 'Legacy rows remain couple-wide; orchestrators explicitly insert person for independent delivery.';
+COMMENT ON COLUMN public.push_notification_log.outcome IS 'Token-free per-person Expo outcome; channel records the successful final delivery.';
